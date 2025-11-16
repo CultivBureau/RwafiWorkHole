@@ -1,0 +1,1816 @@
+{
+  "aside": {
+    "mainMenu": "Main Menu",
+    "settings": "Settings",
+    "dashboard": "Dashboard",
+    "All_Employees": "All Employees",
+    "New_Employee": "New Employee",
+    "Roles_Permissions": "Roles & Permissions",
+    "New_Role": "New Role",
+    "tasks": "Tasks & Projects",
+    "tasks-list": "Tasks List",
+    "projects": "Projects",
+    "performance": "Performance",
+    "overview": "Overview",
+    "reports": "Reports",
+    "leaves": "Leaves",
+    "wallet": "Team Wallet",
+    "Company": "Company",
+    "settingsItem": "Settings",
+    "subscriptions": "Subscriptions",
+    "help": "Help",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode",
+    "arabic": "Arabic",
+    "english": "English",
+    "time_tracking": "Time Tracking",
+    "attendance": "Attendance Logs",
+    "break_tracking": "Break Tracking",
+    "all_attendance": "All Attendance",
+    "all_departments": "All Departments",
+    "new_department": "New Department",
+    "break": "Break Management",
+    "shifts": "Shifts",
+    "admin_shifts": "Shifts",
+    "all_teams": "All Teams",
+    "admin_new_department": "New Department",
+    "admin_new_role": "New Role",
+    "admin_leaves": "Leave Requests",
+    "admin_attendance": "Attendance",
+    "admin_break": "Break Management",
+    "admin_teams": "All Teams",
+    "admin_performance": "Performance",
+    "admin_wallet": "Team Wallet",
+    "admin_employees": "All Employees",
+    "admin_new_employee": "New Employee",
+    "admin_departments": "Departments",
+    "admin_company": "Company",
+    "admin_roles_permissions": "Roles & Permissions",
+    "user_time_tracking": "Time Tracking",
+    "user_attendance": "Attendance",
+    "user_break_tracking": "Break Tracking",
+    "user_leaves": "Leaves",
+    "user_performance": "Performance",
+    "user_wallet": "Team Wallet",
+    "adminMenu": "Admin",
+    "userMenu": "User Pages"
+  },
+  "comingSoon": "Coming Soon",
+  "navbar": {
+    "greeting": "Good Morning",
+    "online": "Online",
+    "arabic": "Arabic",
+    "english": "English",
+    "searchPlaceholder": "Search...",
+    "role": "Frontend Developer",
+    "profileName": "Adam Wael",
+    "months": {
+      "0": "Jan",
+      "1": "Feb",
+      "2": "Mar",
+      "3": "Apr",
+      "4": "May",
+      "5": "Jun",
+      "6": "Jul",
+      "7": "Aug",
+      "8": "Sep",
+      "9": "Oct",
+      "10": "Nov",
+      "11": "Dec"
+    },
+    "days": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "profile": "Profile",
+    "logout": "Log out",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications",
+    "viewAll": "View all"
+  },
+  "dashboard": {
+    "quickActions": {
+      "title": "Quick Actions",
+      "subtitle": "Access your most-used actions in one click",
+      "clockIn": {
+        "title": "Clock In/Out",
+        "subtitle": "Track your work hours"
+      },
+      "requestLeave": {
+        "title": "Request Leave",
+        "subtitle": "Submit leave request"
+      },
+      "newTask": {
+        "title": "New Task",
+        "subtitle": "Create a new task"
+      },
+      "myKpis": {
+        "title": "My KPIs",
+        "subtitle": "View performance metrics"
+      },
+      "askAi": {
+        "title": "Ask AI",
+        "subtitle": "Get AI assistance"
+      },
+      "myTasks": {
+        "title": "My Tasks",
+        "subtitle": "View assigned tasks"
+      }
+    },
+    "activityHeatmap": {
+      "eachSquareRepresents": "Each square represents a day - darker means more hours worked",
+      "less": "Less",
+      "more": "More",
+      "weekDays": [
+        "Sat",
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri"
+      ],
+      "months": [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ]
+    },
+    "statusCards": {
+      "status": "Status",
+      "notClockedIn": "Not Clocked in",
+      "goToTimeTracker": "Go to Time Tracker",
+      "leaveRequest": "Leave Request",
+      "noLeaveRequest": "No Leave Request",
+      "noRequestText": "You haven't requested any leave for this month",
+      "dailyShift": "Daily Shift",
+      "hoursWorked": "Hours Worked",
+      "performance": "Performance",
+      "tasksCompleted": "Tasks completed this week",
+      "leave": "Leave",
+      "pending": "Pending",
+      "clock": "Clock",
+      "comingSoon": "Coming Soon"
+    }
+  },
+  "adminDashboard": {
+    "cards": {
+      "activeEmployees": "Active Employees",
+      "todayAttendance": "Today Attendance",
+      "leaveRequests": "Leave Requests",
+      "overdueTasks": "Overdue Tasks"
+    },
+    "buttons": {
+      "addNewEmployee": "Add New Employee",
+      "approveRequests": "Approve Requests",
+      "viewAttendance": "View Attendance",
+      "manageRolesPermissions": "Manage Permissions"
+    },
+    "table": {
+      "attendanceOverview": "Attendance Overview",
+      "search": "Search",
+      "designation": "Designation",
+      "location": "Location",
+      "status": "Status",
+      "all": "All",
+      "allStatus": "All Status",
+      "viewAll": "View All",
+      "employeeName": "Employee Name",
+      "type": "Type",
+      "checkInTime": "Clock In",
+      "office": "Office",
+      "remote": "Remote",
+      "onTime": "On Time",
+      "late": "Late"
+    },
+    "departments": {
+      "overview": "Departments Overview",
+      "viewAll": "View All",
+      "members": "Members",
+      "presentToday": "Present Today",
+      "absentToday": "Absent Today"
+    },
+    "recentActivity": {
+      "title": "Recent Activity",
+      "today": "Today",
+      "approvedLeaveRequest": "approved a leave request"
+    }
+  },
+  "adminAttendance": {
+    "cards": {
+      "totalEmployees": "Total Employees",
+      "presentToday": "Present Today",
+      "absentToday": "Absent Today",
+      "lateArrivals": "Late Arrivals"
+    },
+    "table": {
+      "sortBy": "Sort By",
+      "sort": {
+        "newestFirst": "Newest First",
+        "oldestFirst": "Oldest First"
+      },
+      "location": {
+        "title": "Location",
+        "all": "All",
+        "office": "Office",
+        "home": "Home",
+        "workFromOffice": "Work from office",
+        "workFromHome": "Work from home"
+      },
+      "status": {
+        "title": "Status",
+        "allStatus": "All Status",
+        "present": "Present",
+        "absent": "Absent",
+        "lateArrival": "Late arrival"
+      },
+      "dateFrom": "Date from",
+      "dateTo": "Date To",
+      "pageOf": "5 of 18 page",
+      "columns": {
+        "employeeName": "Employees Name",
+        "date": "Date",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "workHours": "Work hours",
+        "status": "Status",
+        "location": "Location",
+        "shift": "Shift",
+        "reason": "Reason",
+        "breakDuration": "Break Duration"
+      }
+    }
+  },
+  "adminPerformance": {
+    "cards": {
+      "efficiencyScore": "Efficiency Score",
+      "kpiTrend": "KPI Trend vs Last Month",
+      "kpiAchievements": "KPI Achievements",
+      "pendingKpiApprovals": "Pending KPI Approvals"
+    },
+    "chart": {
+      "departmentKpiOverview": "Department KPI Overview",
+      "averageKpiScore": "Average KPI score per department",
+      "efficiency": "efficiency",
+      "present": "Present",
+      "absent": "Absent",
+      "days": "days",
+      "presenceVsAbsence": "Presence vs absence",
+      "companyAttendanceOverview": "Company Attendance Overview"
+    },
+    "departments": {
+      "development": "Development",
+      "business": "Business",
+      "sales": "Sales",
+      "marketing": "Marketing",
+      "hr": "HR",
+      "finance": "Finance",
+      "support": "Support",
+      "it": "IT",
+      "admin": "Admin",
+      "rnd": "R&D",
+      "logistics": "Logistics",
+      "operations": "Operations"
+    },
+    "periods": {
+      "quarter": "Quarter",
+      "semester": "Semester",
+      "annual": "Annual"
+    },
+    "buttons": {
+      "allDepartment": "All Department",
+      "viewLogs": "View Logs"
+    },
+    "insights": {
+      "keyInsights": "Key Insights",
+      "quickHighlights": "Quick highlights of team and department performance",
+      "bestPerforming": "Best Performing",
+      "needsAttention": "Needs Attention",
+      "highestKpi": "Highest average KPI this period",
+      "belowAverageKpi": "Below average KPI this period"
+    },
+    "stats": {
+      "presenceRate": "Presence Rate",
+      "absenceRate": "Absence Rate"
+    }
+  },
+  "breakTime": {
+    "title": "Break Time",
+    "selectReason": "Select Reason",
+    "startBreak": "Start Break",
+    "breakSummary": "Break Summary",
+    "breakPatterns": "Your break patterns this day",
+    "dailyAverage": "Daily average",
+    "total": "total",
+    "minutes": "minutes",
+    "reasons": {
+      "prayer": "Prayer",
+      "lunch": "Lunch",
+      "breakfast": "Break Fast",
+      "personal": "Personal",
+      "emergency": "Emergency",
+      "coffee": "Coffee Break"
+    }
+  },
+  "attendanceStats": {
+    "totalDaysPresent": "Total Days Present",
+    "totalDaysAbsent": "Total Days Absent",
+    "lateArrivals": "Late Arrivals",
+    "averageClockIn": "Average Clock-in",
+    "hoursWorked": "Hours Worked",
+    "breakToday": "You've taken this much break today",
+    "lateThisMonth": "You arrived late this month",
+    "basedOnMonth": "Based on this month",
+    "upFromMonth": "Up from Month",
+    "downFromMonth": "Down from Month"
+  },
+  "stats": {
+    "thisWeek": "This Week",
+    "totalHoursWorked": "Total Hours Worked",
+    "breaksTaken": "Breaks Taken",
+    "totalOvertime": "Total Overtime",
+    "extraHoursThisMonth": "This month's extra hours worked"
+  },
+  "timeUnits": {
+    "am": "AM",
+    "pm": "PM",
+    "hours": "H",
+    "minutes": "M",
+    "seconds": "S"
+  },
+  "attendanceTable": {
+    "sortBy": "Sort By",
+    "sort": {
+      "newestFirst": "Newest First",
+      "oldestFirst": "Oldest First"
+    },
+    "location": {
+      "title": "Location",
+      "all": "All",
+      "office": "Work from office",
+      "home": "Work from home",
+      "none": "No location"
+    },
+    "status": {
+      "title": "Status",
+      "all": "All Status",
+      "present": "Present",
+      "absent": "Absent",
+      "late": "Late arrival"
+    },
+    "dateFrom": "Date from",
+    "dateTo": "Date to",
+    "showing": "Showing {{count}} of {{total}} records",
+    "loading": "Loading...",
+    "noData": "No attendance data available",
+    "columns": {
+      "date": "Date",
+      "day": "Day",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "workHours": "Work hours",
+      "status": "Status",
+      "location": "Location",
+      "office": "Office Name",
+      "breakDuration": "Break Duration"
+    },
+    "pageOf": "Page {{page}} of {{total}}"
+  },
+  "profile": {
+    "profile": "Profile",
+    "personalInformation": "Personal Information",
+    "professionalInformation": "Professional Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "mobileNumber": "Mobile Number",
+    "emailAddress": "Email Address",
+    "dateOfBirth": "Date of Birth",
+    "maritalStatus": "Marital Status",
+    "married": "Married",
+    "gender": "Gender",
+    "female": "Female",
+    "nationality": "Nationality",
+    "america": "America",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "unitedState": "United State",
+    "zipCode": "Zip Code",
+    "projectManager": "Project Manager",
+    "teamLead": "Team lead",
+    "srProjectManager": "Sr. Project Manager",
+    "editProfile": "Edit Profile"
+  },
+  "breakStats": {
+    "todaysBreakTime": "Today's Break Time",
+    "mostUsedBreak": "Most Used Break",
+    "avgBreakPerDay": "Avg. Break per Day",
+    "breaksOverLimit": "Breaks Over Limit",
+    "timeTakenToday": "Time taken today",
+    "mostCommonThisWeek": "Most common this week",
+    "basedOnLast7Days": "Based on last 7 days",
+    "exceededLimit": "You exceeded your break limit",
+    "period": {
+      "lastWeek": "Last Week",
+      "thisWeek": "This Week",
+      "lastMonth": "Last Month"
+    },
+    "yAxis": {
+      "m30": "30m",
+      "m20": "20m",
+      "m10": "10m",
+      "m0": "0"
+    }
+  },
+  "breakHistoryTable": {
+    "sort": {
+      "newest": "Newest",
+      "oldest": "Oldest"
+    },
+    "sortBy": "Sort By",
+    "date": {
+      "all": "All Dates",
+      "label": "Date"
+    },
+    "type": {
+      "all": "All Types",
+      "label": "Type"
+    },
+    "of": "of",
+    "entries": "entries",
+    "loading": "Loading...",
+    "noData": "No break history found.",
+    "columns": {
+      "date": "Date",
+      "type": "Type",
+      "duration": "Duration",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "status": "Status"
+    },
+    "status": {
+      "exceeded": "Exceeded",
+      "normal": "Normal"
+    },
+    "page": "Page",
+    "totalEntries": "entries"
+  },
+  "leaves": {
+    "statusCards": {
+      "annualLeave": "Annual leave",
+      "sickLeave": "Sick leave",
+      "emergencyLeave": "Emergency leave",
+      "unpaidLeave": "Unpaid leave",
+      "daysLeftThisYear": "You have 12 days left this year",
+      "daysLeft": "You have 4 days left"
+    },
+    "summaryCards": {
+      "availableLeaves": "Available Leaves days",
+      "rejectedLeaves": "Rejected Leaves days",
+      "pendingLeaves": "Pending Leaves days",
+      "approvedLeaves": "Approved Leaves days",
+      "totalAvailable": "Total Available days",
+      "totalRejected": "Total Rejected days",
+      "awaitingApproval": "Awaiting Approval",
+      "totalApproved": "Total Approved days"
+    },
+    "types": {
+      "annual": "Annual Leave",
+      "sick": "Sick Leave",
+      "emergency": "Emergency Leave",
+      "unpaid": "Unpaid Leave"
+    },
+    "balances": "Leave Balances",
+    "balancesDescription": "Your available leave balances",
+    "days": "Days",
+    "noAvailableBalance": "No available leave balance",
+    "form": {
+      "step1Title": "Step 1 - Leave Details",
+      "step2Title": "Step 2 - Reason & Attachment",
+      "step3Title": "Step 3 - Review & Submit",
+      "fromDate": "From",
+      "toDate": "To",
+      "numberOfDays": "No of Days",
+      "reason": "Enter Your leave reason",
+      "reasonPlaceholder": "Please provide the reason for your leave request...",
+      "attachment": "You can attach a medical document",
+      "uploadFile": "Import file, Click here",
+      "supportedFormats": "Supported formats: PDF, DOC, DOCX, JPG, PNG",
+      "type": "Type",
+      "days": "Days",
+      "dates": "Dates",
+      "step": "Step",
+      "of": "of",
+      "back": "Back",
+      "next": "Next",
+      "submit": "Submit",
+      "submitting": "Submitting...",
+      "successTitle": "Leave Request Submitted",
+      "successMessage": "Your leave request has been successfully submitted and is pending approval.",
+      "uploadImageOrDocument": "Upload Image or Document",
+      "upload": "Upload",
+      "browse": "Browse"
+    },
+    "table": {
+      "sortBy": "Sort By",
+      "leaveType": {
+        "label": "Leave Type",
+        "all": "All Leaves",
+        "annual": "Annual",
+        "sick": "Sick",
+        "emergency": "Emergency",
+        "unpaid": "Unpaid"
+      },
+      "status": {
+        "label": "Status",
+        "all": "All Status",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "dateFrom": "Date From",
+      "dateTo": "Date To",
+      "of": "of",
+      "entries": "entries",
+      "columns": {
+        "leaveType": "Leave Type",
+        "from": "From",
+        "to": "To",
+        "days": "Days",
+        "status": "Status",
+        "reason": "Reason",
+        "approver": "Approver",
+        "action": "Action"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit"
+      },
+      "sort": {
+        "newest": "Newest First",
+        "oldest": "Oldest First"
+      },
+      "page": "Page",
+      "totalEntries": "total entries"
+    }
+  },
+  "mainContent": {
+    "currentStatus": "Current Status",
+    "notClockedIn": "Not Clocked in",
+    "activeWorkTime": "Active Work Time",
+    "todaysProgress": "Today's Progress",
+    "workHours": "Work Hours",
+    "break": "Break",
+    "efficiency": "Efficiency",
+    "complete": "Complete",
+    "remaining": "Remaining",
+    "tuesday": "Tuesday",
+    "mostProductiveDay": "Most Productive Day",
+    "thisWeek": "This Week",
+    "focusTime": "Focus Time",
+    "activeFocus": "Active Focus",
+    "focusSession": "Focus Session",
+    "running": "Running",
+    "paused": "Paused",
+    "startYourDay": "Start Your Day",
+    "endYourDay": "End Your Day",
+    "attendanceLogs": "Attendance Logs",
+    "attendanceLogsDesc": "Check your daily check-ins and hours worked.",
+    "viewAttendanceLogs": "View Attendance Logs",
+    "breakTracking": "Break Tracking",
+    "breakTrackingDesc": "Monitor and manage your break time easily.",
+    "viewBreakLogs": "View Break Logs",
+    "timerFocus": "Focus Timer",
+    "startTimer": "Start Timer",
+    "timerRunning": "Timer Running...",
+    "timerPaused": "Timer Paused",
+    "taskName": "Task Name",
+    "taskPlaceholder": "Enter your task (e.g. Coding API)",
+    "note": "Note",
+    "notePlaceholder": "Optional note...",
+    "startNow": "Start",
+    "starting": "Starting...",
+    "cancel": "Cancel"
+  },
+  "timer": {
+    "quickStart": "Quick Start Timer",
+    "timerControl": "Timer Control",
+    "currentTask": "Current Task",
+    "remainingTime": "Remaining Time",
+    "status": "Status",
+    "running": "Running",
+    "paused": "Paused",
+    "pause": "Pause",
+    "pausing": "Pausing...",
+    "resume": "Resume",
+    "resuming": "Resuming...",
+    "complete": "Complete",
+    "completeTimer": "Complete Timer",
+    "cancel": "Cancel Timer",
+    "close": "Close",
+    "task": "Task",
+    "addNote": "Add Note",
+    "optional": "optional",
+    "notePlaceholder": "Add any notes about this task...",
+    "back": "Back",
+    "processing": "Processing...",
+    "startNewTimer": "Start New Timer",
+    "clickToControl": "Click to Control",
+    "duration": "Duration",
+    "durationPlaceholder": "Minutes",
+    "started": "Timer started successfully!",
+    "startError": "Failed to start timer",
+    "invalidInput": "Please enter a valid task name and duration"
+  },
+  "timerLogs": {
+    "title": "Timer Logs",
+    "viewLogs": "View All",
+    "time": "Time",
+    "duration": "Duration",
+    "tag": "Task",
+    "status": "Status",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "paused": "Paused",
+    "running": "Running"
+  },
+  "timerCard": {
+    "activeTimer": "Active Timer",
+    "focusTimer": "Focus Timer",
+    "running": "Running",
+    "paused": "Paused",
+    "startTimer": "Start Timer",
+    "controlTimer": "Control Timer",
+    "starting": "Starting...",
+    "clickToControl": "Click to control timer",
+    "startToEnable": "Start the timer to enable controls",
+    "decreaseDuration": "Decrease duration",
+    "increaseDuration": "Increase duration",
+    "taskNameRequired": "Task name required",
+    "startFailed": "Failed to start timer. Please try again.",
+    "pauseFailed": "Failed to pause timer",
+    "resumeFailed": "Failed to resume timer",
+    "completeFailed": "Failed to complete timer",
+    "cancelFailed": "Failed to cancel timer",
+    "autoCompleted": "Auto-completed - duration reached"
+  },
+  "login": {
+    "welcomeBack": "Welcome Back",
+    "signInToContinue": "Sign in to continue to",
+    "emailAddress": "Email Address",
+    "enterEmail": "Enter your email",
+    "password": "Password",
+    "enterPassword": "Enter your password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot Password?",
+    "signIn": "Sign In",
+    "signingIn": "Signing In...",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "secureLogin": "🔒 Your data is secured with end-to-end encryption",
+    "companyId": "Company ID",
+    "enterCompanyId": "Enter Company ID",
+    "loading": "Loading...",
+    "continue": "Continue",
+    "backToEmail": "Back to email",
+    "selectCompany": "Select Company",
+    "fillAllFields": "Please fill all fields",
+    "noCompanies": "No companies found for this email",
+    "chooseCompany": "Choose a company",
+    "companyAvailable": "company available",
+    "companiesAvailable": "companies available"
+  },
+  "employees": {
+    "totalEmployees": "Total Employees",
+    "activeStaffMembers": "Active staff members",
+    "newHires": "New Hires",
+    "joinedThisMonth": "Joined this month",
+    "maleEmployees": "Male Employees",
+    "activeMaleEmployees": "Active male employees",
+    "femaleEmployees": "Female Employees",
+    "activeFemaleEmployees": "Active female employees",
+    "search": {
+      "placeholder": "Search employees..."
+    },
+    "clearAll": "Clear All",
+    "results": "results",
+    "addNew": "Add New Employee",
+    "add": "Add",
+    "filters": {
+      "status": "Status",
+      "role": "Role",
+      "department": "Department",
+      "joinDate": "Join Date"
+    },
+    "table": {
+      "employee": "Employee",
+      "role": "Role",
+      "joinDate": "Join Date",
+      "department": "Department",
+      "status": "Status",
+      "action": "Action"
+    },
+    "pagination": {
+      "page": "Page",
+      "of": "of",
+      "total": "total employees"
+    },
+    "actions": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "newEmployeeForm": {
+      "title": "Add New Employee",
+      "breadcrumb": "All Employee",
+      "steps": {
+        "personalInfo": "Personal Information",
+        "professionalInfo": "Professional Information",
+        "documents": "Documents",
+        "accountAccess": "Account Access & Permissions"
+      },
+      "personalInfo": {
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "mobileNumber": "Mobile Number",
+        "emailAddress": "Email Address",
+        "dateOfBirth": "Date of Birth",
+        "status": "Status",
+        "gender": "Gender",
+        "nationality": "Nationality",
+        "address": "Address",
+        "active": "Active",
+        "inactive": "Inactive",
+        "male": "Male",
+        "female": "Female",
+        "other": "Other",
+        "unitedStates": "United States",
+        "unitedKingdom": "United Kingdom",
+        "canada": "Canada"
+      },
+      "professionalInfo": {
+        "employeeId": "Employee ID",
+        "userName": "User Name",
+        "selectEmployeeRole": "Select Employee Role",
+        "selectDepartment": "Select Department",
+        "selectTeam": "Select Team",
+        "selectShift": "Select Shift",
+        "managerSupervisor": "Enter Manager / Supervisor",
+        "selectWorkingDays": "Select Working Days",
+        "selectEmploymentType": "Select Employment Type",
+        "selectOfficeLocation": "Select Office Location",
+        "selectJoiningDate": "Select Joining Date",
+        "generate": "Generate",
+        "manager": "Manager",
+        "developer": "Developer",
+        "designer": "Designer",
+        "humanResources": "Human Resources",
+        "it": "IT",
+        "finance": "Finance",
+        "fiveDays": "5 Days",
+        "sixDays": "6 Days",
+        "fullTime": "Full Time",
+        "partTime": "Part Time",
+        "contract": "Contract",
+        "mainOffice": "Main Office",
+        "branchOffice": "Branch Office"
+      },
+      "documents": {
+        "uploadProofOfIdentity": "Upload Proof of Identity",
+        "uploadEmploymentContract": "Upload Employment Contract",
+        "uploadCertificatesQualifications": "Upload Certificates & Qualifications",
+        "uploadSocialInsuranceDocs": "Upload Social Insurance Docs",
+        "optional": "(optional)",
+        "dragDrop": "Drag & Drop or",
+        "chooseFile": "choose file",
+        "toUpload": "to upload",
+        "supportedFormats": "Supported formats: Jpeg, pdf",
+        "removeFile": "Remove file",
+        "fileSizeLimit": "File size must be less than 5MB",
+        "invalidFileType": "Please upload only JPEG or PDF files"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "next": "Next",
+        "back": "Back",
+        "submit": "Submit",
+        "submitting": "Submitting..."
+      },
+      "success": {
+        "title": "Employee Added!",
+        "message": "You have successfully added a new employee.",
+        "teamAssigned": "User assigned to team successfully",
+        "shiftAssigned": "User assigned to shift successfully"
+      },
+      "processing": {
+        "register": "Registering user...",
+        "assignTeam": "Assigning user to team...",
+        "assignShift": "Assigning user to shift..."
+      },
+      "validation": {
+        "isRequired": "is required",
+        "usernameLettersOnly": "Username must contain only letters (A-Z)",
+        "invalidEmail": "Please enter a valid email address",
+        "passwordMinLength": "Password must be at least 8 characters long",
+        "passwordUppercase": "Password must contain at least one uppercase letter",
+        "passwordLowercase": "Password must contain at least one lowercase letter",
+        "passwordSpecialChar": "Password must contain at least one special character",
+        "validUsername": "Valid username",
+        "validEmail": "Valid email",
+        "strongPassword": "Strong password",
+        "validPhone": "Valid phone number",
+        "validFirstName": "Valid first name",
+        "validLastName": "Valid last name",
+        "validJobTitle": "Valid job title",
+        "roleRequired": "Role is required",
+        "missingFields": "Please fill in all required fields"
+      },
+      "errors": {
+        "tokenNotFound": "Could not find token in register response",
+        "tokenDecodeFailed": "Failed to decode authentication token",
+        "userIdNotFound": "Could not extract user ID from token",
+        "teamAssignmentFailed": "Failed to assign user to team",
+        "shiftAssignmentFailed": "Failed to assign user to shift",
+        "createFailed": "Failed to create employee"
+      }
+    }
+  },
+  "departments": {
+    "newDepartmentForm": {
+      "title": "Create New Department",
+      "breadcrumb": {
+        "allDepartments": "All Departments",
+        "addNewDepartment": "Add New Department"
+      },
+      "steps": {
+        "departmentInfo": "Department Info",
+        "assignSupervisor": "Assign Supervisor",
+        "setupTeams": "Setup Teams",
+        "reviewAndDone": "Review & Done"
+      },
+      "departmentInfo": {
+        "departmentName": "Department Name",
+        "shortName": "Short Name",
+        "description": "Description",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "assignSupervisor": {
+        "chooseSupervisor": "Choose Supervisor",
+        "supervisor": "Supervisor",
+        "supervisorManager": "Supervisor Manager",
+        "chooseRole": "Choose Role",
+        "searchUsers": "Search users..."
+      },
+      "setupTeams": {
+        "teamName": "Team Name",
+        "chooseEmployee": "Choose Employee",
+        "description": "Description",
+        "addNewTeam": "Add New Team",
+        "members": "Members",
+        "membersCount": "{{count}} member{{plural}}",
+        "membersCountPlural": "s",
+        "membersCountSingular": "",
+        "teamLeader": "Team Leader",
+        "membersLabel": "Members:"
+      },
+      "review": {
+        "reviewDepartmentDetails": "Review Department Details",
+        "departmentName": "Department Name",
+        "shortName": "Short Name",
+        "description": "Description",
+        "status": "Status",
+        "supervisor": "Supervisor"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "next": "Next",
+        "back": "Back",
+        "add": "Add",
+        "allDepartments": "All Departments"
+      },
+      "success": {
+        "title": "Department Created!",
+        "message": "You have successfully created a new department."
+      }
+    },
+    "editDepartmentForm": {
+      "title": "Edit Department",
+      "breadcrumb": {
+        "allDepartments": "All Departments",
+        "editDepartment": "Edit Department"
+      },
+      "steps": {
+        "departmentInfo": "Department Info",
+        "assignSupervisor": "Assign Supervisor",
+        "setupTeams": "Setup Teams",
+        "reviewAndSave": "Review & Save"
+      },
+      "departmentInfo": {
+        "departmentName": "Department Name",
+        "shortName": "Short Name",
+        "description": "Description",
+        "status": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "assignSupervisor": {
+        "chooseSupervisor": "Choose Supervisor",
+        "supervisor": "Supervisor",
+        "chooseRole": "Choose Role",
+        "searchUsers": "Search users..."
+      },
+      "setupTeams": {
+        "teamName": "Team Name",
+        "chooseEmployee": "Choose Employee",
+        "description": "Description",
+        "addNewTeam": "Add New Team",
+        "members": "Members",
+        "membersCount": "{{count}} member{{plural}}",
+        "membersCountPlural": "s",
+        "membersCountSingular": "",
+        "teamLeader": "Team Leader",
+        "membersLabel": "Members:"
+      },
+      "review": {
+        "reviewDepartmentDetails": "Review Department Details",
+        "departmentName": "Department Name",
+        "shortName": "Short Name",
+        "description": "Description",
+        "status": "Status",
+        "supervisor": "Supervisor"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "next": "Next",
+        "back": "Back",
+        "add": "Add",
+        "save": "Save Changes",
+        "allDepartments": "All Departments"
+      },
+      "success": {
+        "title": "Department Updated!",
+        "message": "You have successfully updated the department."
+      }
+    }
+  },
+  "allDepartments": {
+    "statusCards": {
+      "totalDepartments": {
+        "title": "Total Departments",
+        "count": "20",
+        "description": "Number of departments in the company"
+      },
+      "highestDepartment": {
+        "title": "Highest Department",
+        "name": "Design Department",
+        "description": "Most popular department"
+      },
+      "employeesDepartment": {
+        "title": "Employees Department",
+        "count": "120",
+        "description": "Total employees in all departments"
+      },
+      "departmentsIssues": {
+        "title": "Departments Issues",
+        "count": "4",
+        "description": "Departments with high disciplinary reports"
+      }
+    },
+    "search": {
+      "placeholder": "Search departments...",
+      "addNewDepartment": "Add New Department",
+      "editDepartment": "Edit Department"
+    },
+    "departmentCard": {
+      "members": "Members",
+      "teams": "Teams",
+      "viewAll": "View all",
+      "supervisor": "Supervisor",
+      "edit": "Edit"
+    }
+  },
+  "allTeams": {
+    "title": "All Teams",
+    "statusCards": {
+      "totalTeams": {
+        "title": "Total Teams",
+        "count": "15",
+        "description": "Number of teams across departments"
+      },
+      "pendingTasks": {
+        "title": "Pending Tasks",
+        "count": "8",
+        "description": "Tasks awaiting completion"
+      },
+      "attendanceRate": {
+        "title": "Attendance Rate",
+        "count": "95%",
+        "description": "Average team attendance this month"
+      },
+      "kpiPerformance": {
+        "title": "KPI Performance",
+        "count": "87%",
+        "description": "Teams meeting performance targets"
+      }
+    },
+    "search": {
+      "placeholder": "Search teams...",
+      "addNewTeam": "Add New Team"
+    },
+    "editTeam": {
+      "title": "Edit Team",
+      "loadingTeamData": "Loading team data...",
+      "noRolesFound": "No roles found",
+      "noUsersFound": "No users found",
+      "selected": "selected",
+      "selectedMembers": "Selected Members",
+      "removeMember": "Remove member",
+      "cancel": "Cancel",
+      "saveChanges": "Save Changes",
+      "updatingTeam": "Updating team...",
+      "updatingMembers": "Updating members...",
+      "errors": {
+        "enterTeamName": "Please enter a team name",
+        "selectTeamLeader": "Please select a team leader",
+        "teamIdMissing": "Team ID is missing",
+        "departmentIdMissing": "Department ID is missing",
+        "updateFailed": "Failed to update team. Please try again."
+      }
+    },
+    "teamCard": {
+      "members": "Members",
+      "department": "Department",
+      "lead": "Team Lead",
+      "view": "View Details",
+      "edit": "Edit",
+      "tasks": "Tasks",
+      "performance": "Performance"
+    }
+  },
+  "walletCards": {
+    "myDeductions": {
+      "header": "My Deductions",
+      "title": "$120",
+      "subTitle": "Total penalties applied this month"
+    },
+    "teamDeductions": {
+      "header": "Team Deductions",
+      "title": "$850",
+      "subTitle": "Penalties across your team"
+    },
+    "incentivesEarned": {
+      "header": "Incentives Earned",
+      "title": "$200",
+      "subTitle": "Linked to your performance"
+    },
+    "hoursLogged": {
+      "header": "Hours Logged",
+      "title": "160hrs",
+      "subTitle": "160 hrs this month"
+    }
+  },
+  "walletCharts": {
+    "teamDeductions": {
+      "header": "Team Deductions Breakdown",
+      "subtitle": "See what affected your balance most"
+    },
+    "deductions": {
+      "header": "Deductions Breakdown",
+      "subtitle": "See what affected your balance most",
+      "legend": {
+        "lateArrivals": "Late Arrivals",
+        "missedDeadline": "Missed Deadline",
+        "absences": "Absences"
+      }
+    },
+    "period": {
+      "year": "Year",
+      "month": "Month"
+    },
+    "bonuses": {
+      "header": "Bonuses Breakdown",
+      "subtitle": "See what boosted your incentives most",
+      "legend": {
+        "tasks": "Tasks",
+        "kpi": "KPI",
+        "attendance": "Attendance"
+      }
+    },
+    "team": {
+      "header": "Team",
+      "viewAll": "View All"
+    },
+    "initiative": "Initiative",
+    "totalTasks": " Tasks",
+    "teamChart": {
+      "deductions": "Deductions",
+      "bonuses": "Bonuses"
+    }
+  },
+  "walletTable": {
+    "columns": {
+      "transactionDate": "Transaction Date",
+      "issuedBy": "Issued by",
+      "action": "Action",
+      "reason": "Reason",
+      "amount": "Amount",
+      "status": "Status"
+    },
+    "status": {
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "page": "Page",
+    "of": "of"
+  },
+  "walletPopup": {
+    "title": "Transaction Details",
+    "close": "Close"
+  },
+  "roles": {
+    "title": "Roles & Permissions",
+    "pageDescription": "Allow this employee to access Workhole",
+    "searchPlaceholder": "Search Role",
+    "search": "Search roles...",
+    "searchUsers": "Search users...",
+    "addNewRole": "Add New Role",
+    "allRoles": "All Roles",
+    "editRoleTitle": "Edit Role",
+    "roleNameLabel": "Role Name",
+    "roleNamePlaceholder": "Enter role name",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter role description",
+    "optional": "(optional)",
+    "permissions": "Permissions",
+    "permissionsDescription": "Select the permissions you want to assign to this role",
+    "permissionsSelected": "permissions selected",
+    "selectAll": "Select All",
+    "basicInformation": "Basic Information",
+    "basicInformationDesc": "Enter role name and description",
+    "save": "Save",
+    "cancel": "Cancel",
+    "back": "Back",
+    "add": "Add",
+    "delete": "Delete",
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete this role?",
+    "roleDeleted": "Role deleted successfully",
+    "roleSaved": "Role saved successfully",
+    "users": "Users",
+    "lastUpdated": "Last Updated Date",
+    "view": "View",
+    "editRole": {
+      "categories": {
+        "timeAndAttendance": "Time & Attendance",
+        "tasksAndProjects": "Tasks & Projects",
+        "employeeManagement": "Employee Management",
+        "leaveManagement": "Leave Management",
+        "hrAndAdminTools": "HR & Admin Tools",
+        "breakManagement": "Break Management",
+        "breakLogs": "Break Logs",
+        "company": "Company",
+        "department": "Department",
+        "leaveBalance": "Leave Balance",
+        "leaveType": "Leave Type",
+        "permission": "Permission",
+        "roles": "Roles",
+        "team": "Team"
+      },
+      "permissions": {
+        "clockInOut": "Clock In/Out"
+      },
+      "roleName": "Role Name",
+      "roleNamePlaceholder": "Enter role name"
+    },
+    "permissionsList": {
+      "editAttendanceLogs": "Edit Attendance Logs",
+      "viewAttendanceReports": "View Attendance Reports",
+      "approveLateArrivalJustifications": "Approve Late Arrival Justifications",
+      "createTasks": "Create Tasks",
+      "assignTasksToOthers": "Assign Tasks to Others",
+      "changeTaskStatus": "Change Task Status",
+      "viewAllTasksProjects": "View All Tasks & Projects",
+      "createProjects": "Create Projects",
+      "addEditEmployees": "Add/Edit Employees",
+      "assignRoles": "Assign Roles",
+      "viewEmployeeProfiles": "View Employee Profiles",
+      "deactivateEmployees": "Deactivate Employees",
+      "requestLeave": "Request Leave",
+      "approveRejectLeaveRequests": "Approve/Reject Leave Requests",
+      "editLeaveBalance": "Edit Leave Balance",
+      "viewLeaveCalendar": "View Leave Calendar",
+      "viewReportsDashboard": "View Reports Dashboard",
+      "editCompanySettings": "Edit Company Settings",
+      "manageBreakCategories": "Manage Break Categories",
+      "accessPayrollData": "Access Payroll Data"
+    },
+    "table": {
+      "role": "Role",
+      "users": "Users",
+      "actions": "Actions",
+      "lastUpdated": "Last Updated Date",
+      "status": "Status",
+      "noRoles": "No roles found"
+    },
+    "filters": {
+      "roleType": "Role Type",
+      "allStatus": "All Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "assignUsers": "Assign Users",
+    "clickRoleInTable": "Click on a role in the table",
+    "assignUsersPage": {
+      "title": "Manage Role Assignments",
+      "subtitle": "Add or remove users from role: {roleName}",
+      "roleLabel": "Role",
+      "description": "Assign or remove users from this role",
+      "filters": {
+        "search": "Search by name or email...",
+        "department": "Department",
+        "team": "Team",
+        "all": "All"
+      },
+      "table": {
+        "name": "Name",
+        "email": "Email",
+        "currentRole": "Current Role",
+        "department": "Department",
+        "team": "Team",
+        "actions": "Actions"
+      },
+      "addRole": "Add Role",
+      "removeRole": "Remove Role",
+      "add": "Add",
+      "remove": "Remove",
+      "noUsers": "No users found",
+      "tryDifferentFilters": "Try adjusting your filters",
+      "addSuccess": "User added to role successfully",
+      "removeSuccess": "User removed from role successfully",
+      "addError": "Failed to add user to role",
+      "removeError": "Failed to remove user from role",
+      "usersWithoutRole": "Users Without Role",
+      "usersWithRole": "Users With Role"
+    },
+    "statusCards": {
+      "totalRoles": "Total Roles",
+      "activeRoles": "Active Roles",
+      "customRoles": "Custom Roles",
+      "totalUsers": "Total Users",
+      "allRolesAvailable": "All roles available in the system",
+      "rolesAssignedToActive": "Roles assigned to active users",
+      "createdManually": "Created manually for specific needs",
+      "allUsersInSystem": "All users in the system"
+    },
+    "validation": {
+      "roleNameRequired": "Role name is required"
+    },
+    "errors": {
+      "createFailed": "Failed to create role",
+      "loadPermissionsFailed": "Failed to load permissions",
+      "loadRolesFailed": "Failed to load roles",
+      "updateFailed": "Failed to update role",
+      "deleteFailed": "Failed to delete role"
+    },
+    "noPermissionToViewPermissions": "No Permission to View Permissions",
+    "noPermissionToViewPermissionsDesc": "You do not have permission to view permissions. You can still create a role, but you will not be able to assign permissions to it."
+  },
+  "adminLeaves": {
+    "manageLeaveTypes": "Manage Leave Types",
+    "cards": {
+      "totalLeaveRequests": "Total Leave Requests",
+      "pendingApprovals": "Pending Approvals",
+      "approvedLeaves": "Approved Leaves",
+      "rejectedRequests": "Rejected Requests"
+    },
+    "table": {
+      "sortBy": "Sort By",
+      "sort": {
+        "newest": "Newest First",
+        "oldest": "Oldest First"
+      },
+      "leaveType": {
+        "label": "Leave Type",
+        "all": "All Leaves",
+        "annual": "Annual",
+        "sick": "Sick",
+        "emergency": "Emergency",
+        "unpaid": "Unpaid"
+      },
+      "status": {
+        "label": "Status",
+        "all": "All Status",
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "dateFrom": "Date From",
+      "dateTo": "Date To",
+      "pageOf": "{{page}} of {{total}} page",
+      "columns": {
+        "name": "Name",
+        "leaveType": "Leave Type",
+        "from": "From",
+        "to": "To",
+        "days": "Days",
+        "status": "Status",
+        "reason": "Reason",
+        "approver": "Approver",
+        "action": "Action"
+      }
+    },
+    "popup": {
+      "leaveType": "Leave Type",
+      "from": "From",
+      "to": "To",
+      "days": "Days",
+      "reason": "Reason",
+      "approve": "Approve",
+      "reject": "Reject",
+      "comment": "Comment",
+      "projectManager": "Project Manager",
+      "roles": {
+        "employee": "Employee",
+        "teamLead": "Team Lead",
+        "hr": "HR"
+      },
+      "actions": {
+        "created": "Created",
+        "viewed": "Viewed",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "activityLog": {
+        "time": "Time",
+        "date": "Date",
+        "actor": "Actor",
+        "role": "Role",
+        "action": "Action"
+      }
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    }
+  },
+  "adminTeamWallet": {
+    "cards": {
+      "totalPenalties": "Total Penalties",
+      "teamsWithWarnings": "Teams with Warnings",
+      "highestPenaltyTeam": "Highest Penalty Team",
+      "resolvedIssues": "Resolved Issues"
+    },
+    "table": {
+      "columns": {
+        "transactionDate": "Transaction Date",
+        "issuedBy": "Issued by",
+        "team": "Team",
+        "employee": "Employee",
+        "action": "Action",
+        "amount": "Amount",
+        "reason": "Reason"
+      },
+      "actionTypes": {
+        "penalty": "Penalty",
+        "bonus": "Bonus"
+      },
+      "actions": {
+        "viewDetails": "View Details",
+        "moreOptions": "More Options"
+      },
+      "pagination": {
+        "showing": "Showing {{from}} to {{to}} of {{total}} transactions",
+        "previous": "Previous",
+        "next": "Next"
+      }
+    },
+    "chart": {
+      "teamPenaltiesOverview": "Team Penalties Overview",
+      "description": "Shows total penalties for each team in this department",
+      "totalPenalties": "Total penalties"
+    },
+    "topChart": {
+      "title": "Top Teams with Bonuses",
+      "description": "This chart shows the top teams ranked by total bonuses"
+    },
+    "periods": {
+      "monthly": "Monthly",
+      "quarter": "Quarter",
+      "annual": "Annual"
+    },
+    "sections": {
+      "bestComplianceTeam": "Best Compliance Team",
+      "needsAttention": "Needs Attention"
+    },
+    "buttons": {
+      "viewAll": "View All"
+    },
+    "popups": {
+      "allBestComplianceTeams": "All Best Compliance Teams",
+      "allNeedsAttentionTeams": "All Needs Attention Teams"
+    },
+    "insights": {
+      "bestPerforming": "Best Performing",
+      "needsAttention": "Needs Attention",
+      "highestKpi": "Highest average KPI this period",
+      "belowAverageKpi": "Below average KPI this period"
+    }
+  },
+  "teamDetails": {
+    "statusCards": {
+      "teamKpiScore": "Team KPI Score",
+      "overallPerformance": "Overall performance score for this team",
+      "tasksProgress": "Tasks Progress",
+      "completedVsAssigned": "Completed vs assigned tasks (This Month)",
+      "averageAttendance": "Average Attendance",
+      "presenceRate": "Presence rate of team members",
+      "topPerformer": "Top Performer",
+      "bestPerforming": "Best performing member in this team"
+    },
+    "centerContent": {
+      "ongoingTasks": "Ongoing Tasks",
+      "viewAll": "View All",
+      "taskStatusOverview": "Task Status Overview",
+      "currentDistribution": "Current distribution of team tasks",
+      "totalTasks": "Total Tasks",
+      "search": "Search...",
+      "dateFrom": "Date from",
+      "employeesName": "Employees Name",
+      "date": "Date",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "taskCompletion": "Task Completion",
+      "overYear": "Over Year",
+      "overMonth": "Over Month",
+      "overWeek": "Over Week"
+    },
+    "supervisorOverview": {
+      "title": "Supervisor Overview",
+      "role": "Lead UI/UX Designer",
+      "teamKpi": "Team KPI",
+      "achievement": "Achievement",
+      "approvals": "Approvals &",
+      "reviews": "Reviews",
+      "lastSystem": "Last System",
+      "activity": "Activity",
+      "viewLogs": "View Logs"
+    }
+  },
+  "breakChart": {
+    "title": "Break Type Usage",
+    "subtitle": "Total time spent by break type",
+    "week": "Week",
+    "month": "Month",
+    "count": "Count",
+    "total": "Total",
+    "totalTypes": "Total Types",
+    "totalTime": "Total Time",
+    "mostUsed": "Most Used"
+  },
+  "breaks": {
+    "title": "Break Management",
+    "searchPlaceholder": "Search breaks...",
+    "addNew": "Add New",
+    "createTitle": "Create Break",
+    "editTitle": "Edit Break",
+    "cancel": "Cancel",
+    "save": "Save",
+    "create": "Create",
+    "delete": "Delete",
+    "confirmDelete": "Confirm Delete",
+    "deleteMessage": "Are you sure you want to delete this break?",
+    "deleteSuccess": "Break deleted successfully",
+    "deleteFailed": "Failed to delete break",
+    "createSuccess": "Break created successfully",
+    "updateSuccess": "Break updated successfully",
+    "minutes": "min",
+    "hours": "hr",
+    "status": {
+      "label": "Status",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "filters": {
+      "allStatus": "All Status"
+    },
+    "table": {
+      "name": "Name",
+      "duration": "Duration",
+      "status": "Status",
+      "actions": "Actions",
+      "noBreaks": "No breaks found"
+    },
+    "form": {
+      "name": "Break Name",
+      "namePlaceholder": "Enter break name",
+      "duration": "Duration (minutes)",
+      "durationPlaceholder": "Enter duration in minutes"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "validation": {
+      "nameRequired": "Break name is required",
+      "durationRequired": "Duration must be greater than 0",
+      "companyIdRequired": "Company ID is required"
+    },
+    "errors": {
+      "loadFailed": "Failed to load breaks",
+      "saveFailed": "Failed to save break"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "back": "Back"
+  },
+  "performance": {
+    "statusCards": {
+      "myKpiScore": "My KPI Score",
+      "tasksCompleted": "Tasks Completed",
+      "attendanceRate": "Attendance Rate",
+      "hoursLogged": "Hours Logged"
+    },
+    "myKpiBreakdown": {
+      "title": "My KPI Breakdown",
+      "subtitle": "See how your score is distributed across criteria",
+      "totalTasks": "Total Tasks",
+      "tasks": "Tasks",
+      "teamwork": "Teamwork",
+      "taskOverdue": "Task overdue",
+      "tasksDescription": "Successfully completed tasks",
+      "teamworkDescription": "Team collaboration efforts",
+      "taskOverdueDescription": "Incomplete or delayed tasks"
+    },
+    "attendanceOverview": {
+      "title": "Attendance Overview",
+      "subtitle": "Presence vs absence",
+      "present": "Present",
+      "absent": "Absent",
+      "presenceRate": "Presence Rate",
+      "absenceRate": "Absence Rate",
+      "viewLogs": "View Logs",
+      "presentDays": "Present: {{days}} days ({{percent}}%)",
+      "absentDays": "Absent: {{days}} days ({{percent}}%)"
+    },
+    "kpiTrend": {
+      "title": "KPI Trend",
+      "subtitle": "Track your performance over time",
+      "highestScore": "Your highest score this period",
+      "lowestScore": "Lowest score this period",
+      "changeFromPrevious": "Change from previous month",
+      "vsLastMonth": "vs Last Month"
+    },
+    "periods": {
+      "overWeek": "Over Week",
+      "overMonth": "Over Month",
+      "overYear": "Over Year"
+    }
+  },
+  "shifts": {
+    "addNewShift": "Add New Shift",
+    "loading": "Loading shifts...",
+    "search": {
+      "placeholder": "Search shifts..."
+    },
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "view": "View Details",
+      "edit": "Edit",
+      "delete": "Delete",
+      "restore": "Restore",
+      "assignUsers": "Assign Users",
+      "updateAssignments": "Update Assignments",
+      "manageAssignments": "Manage Assignments"
+    },
+    "location": {
+      "enabled": "Location required"
+    },
+    "details": {
+      "workingHours": "Working Hours",
+      "workingDays": "Working Days"
+    },
+    "gracePeriod": "Grace Period",
+    "minutes": "minutes",
+    "overtime": "Overtime",
+    "hours": "hours",
+    "empty": {
+      "title": "No shifts found",
+      "search": "No shifts match \"{{searchTerm}}\". Try adjusting your search.",
+      "message": "No shifts available at the moment."
+    },
+    "results": "Showing {{count}} {{status}} shift{{plural}}",
+    "resultsActive": "active",
+    "resultsInactive": "inactive",
+    "resultsPlural": "s",
+    "resultsSingular": "",
+    "delete": {
+      "title": "Delete Shift",
+      "confirm": "Are you sure you want to delete this shift?",
+      "confirmButton": "Delete",
+      "cancel": "Cancel",
+      "success": "Shift deleted successfully",
+      "error": "Failed to delete shift"
+    },
+    "restore": {
+      "title": "Restore Shift",
+      "confirm": "Are you sure you want to restore this shift?",
+      "confirmButton": "Restore",
+      "cancel": "Cancel",
+      "success": "Shift restored successfully",
+      "error": "Failed to restore shift"
+    },
+    "validation": {
+      "companyIdRequired": "Company ID is required",
+      "timeRequired": "Start time and end time are required",
+      "nameRequired": "Shift name is required",
+      "locationFieldsRequired": "Latitude, Longitude, and Radius are required when location is enabled",
+      "workDaysRequired": "At least one work day must be selected"
+    },
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "form": {
+      "name": "Shift Name",
+      "namePlaceholder": "Enter shift name",
+      "gracePeriodMinutes": "Grace Period (minutes)",
+      "gracePeriodMinutesPlaceholder": "Enter grace period in minutes",
+      "hasLocation": "Require Location",
+      "yes": "Yes",
+      "no": "No",
+      "latitude": "Latitude",
+      "latitudePlaceholder": "Enter latitude",
+      "longitude": "Longitude",
+      "longitudePlaceholder": "Enter longitude",
+      "radius": "Radius (meters)",
+      "radiusPlaceholder": "Enter radius",
+      "hasOvertime": "Enable Overtime",
+      "maxOvertime": "Max Overtime (hours)",
+      "maxOvertimePlaceholder": "Enter max overtime hours",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "isFaceRecognition": "Face Recognition",
+      "isDevice": "Device Check",
+      "workDays": "Working Days",
+      "close": "Close",
+      "cancel": "Cancel",
+      "update": "Update Shift",
+      "updating": "Updating...",
+      "create": "Create Shift",
+      "creating": "Creating...",
+      "success": "Shift created successfully!",
+      "error": "Failed to create shift",
+      "updateSuccess": "Shift updated successfully!",
+      "updateError": "Failed to update shift"
+    },
+    "addShift": {
+      "title": "Add New Shift"
+    },
+    "editShift": {
+      "title": "Edit Shift"
+    },
+    "viewShift": {
+      "title": "View Shift Details"
+    },
+    "assignUsers": {
+      "title": "Assign Users to Shift",
+      "updateTitle": "Update Shift Assignments",
+      "shiftName": "Shift",
+      "effectiveFrom": "Effective From",
+      "effectiveTo": "Effective To",
+      "searchPlaceholder": "Search users by name or email...",
+      "selectedCount": "{{count}} user(s) selected",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "loadingUsers": "Loading users...",
+      "noUsersFound": "No users found matching your search",
+      "noUsers": "No users available",
+      "noUsersSelected": "Please select at least one user",
+      "effectiveFromRequired": "Effective from date is required",
+      "effectiveToRequired": "Effective to date is required",
+      "invalidDateRange": "Effective to date must be after effective from date",
+      "assign": "Assign Users",
+      "assigning": "Assigning...",
+      "assignSuccess": "Users assigned to shift successfully!",
+      "assignError": "Failed to assign users to shift",
+      "update": "Update Assignments",
+      "updating": "Updating...",
+      "updateSuccess": "Shift assignments updated successfully!",
+      "updateError": "Failed to update shift assignments",
+      "cancel": "Cancel",
+      "filterDepartment": "Department",
+      "filterTeam": "Team",
+      "allDepartments": "All Departments",
+      "allTeams": "All Teams",
+      "currentlyAssigned": "Currently assigned: {{count}} user(s)",
+      "unselectToRemove": "Unselect to remove",
+      "assigned": "Assigned",
+      "alreadyAssigned": "Already assigned to this shift",
+      "manageTitle": "Manage Shift Assignments",
+      "assignedUsers": "Assigned Users",
+      "searchAssigned": "Search assigned users...",
+      "noAssignedFound": "No assigned users found matching your search",
+      "noAssignedUsers": "No users assigned to this shift",
+      "remove": "Remove",
+      "removeTitle": "Remove User from Shift",
+      "removeConfirm": "Are you sure you want to remove this user from the shift?",
+      "removeSuccess": "User removed from shift successfully",
+      "removeError": "Failed to remove user from shift",
+      "addUsers": "Add Users to Shift",
+      "allUsersAssigned": "All users are already assigned to this shift",
+      "adding": "Adding...",
+      "addSelected": "Add Selected Users ({{count}})",
+      "addSuccess": "Users added to shift successfully!",
+      "addError": "Failed to add users to shift",
+      "close": "Close",
+      "totalAssigned": "{{count}} users assigned"
+    }
+  },
+  "leaveTypes": {
+    "title": "Manage Leave Types",
+    "addNew": "Add New Leave Type",
+    "loading": "Loading leave types...",
+    "filter": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "addTitle": "Add New Leave Type",
+    "editTitle": "Edit Leave Type",
+    "create": "Create",
+    "creating": "Creating...",
+    "update": "Update",
+    "updating": "Updating...",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "restore": "Restore",
+    "isPaid": "Paid",
+    "carryOver": "Carry Over",
+    "maxDays": "Max Days/Year",
+    "balanceChecked": "Balance Checked",
+    "yes": "Yes",
+    "no": "No",
+    "createSuccess": "Leave type created successfully",
+    "updateSuccess": "Leave type updated successfully",
+    "deleteSuccess": "Leave type deleted successfully",
+    "deleteError": "Failed to delete leave type",
+    "restoreSuccess": "Leave type restored successfully",
+    "restoreError": "Failed to restore leave type",
+    "error": "Failed to save leave type",
+    "deleteConfirm": "Are you sure you want to delete this leave type?",
+    "validation": {
+      "nameRequired": "Leave type name is required"
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "Enter leave type name",
+      "maxDaysPerYear": "Max Days Per Year",
+      "maxDaysPlaceholder": "Enter max days (optional)",
+      "isPaid": "Is Paid",
+      "isCarryOverAllowed": "Carry Over Allowed",
+      "isBalanceChecked": "Balance Checked"
+    },
+    "empty": {
+      "title": "No leave types found",
+      "message": "No leave types available at the moment."
+    }
+  }
+}

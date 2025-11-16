@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Theme tokens */
+:root {
+  color-scheme: light;
+}
+
+[data-theme="light"] {
+  --bg-color: #ffffff;
+  --container-color: #e5e7eb;
+  --text-color: #1f2937;
+  --sub-text-color: #6b7280;
+  --accent-color: #09D1C7;
+  --accent-hover: #15919B;
+  --hover-color: #fdf4ff;
+  --border-color: #e5e7eb;
+  --divider-color: #e5e7eb;
+}
+
+[data-theme="dark"] {
+  --bg-color: #111827;
+  --container-color: #4b5563;
+  --text-color: #f9fafb;
+  --sub-text-color: #d1d5db;
+  --accent-color: #09D1C7;
+  --accent-hover: #15919B;
+  --hover-color: #374151;
+  --border-color: #374151;
+  --divider-color: #4b5563;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* utility: hide scrollbar for side menu */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

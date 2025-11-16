@@ -1,0 +1,391 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100..900;1,100..900&display=swap");
+@import "tailwindcss";
+
+#root {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+body {
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial,
+    "Noto Sans", "Helvetica Neue", sans-serif;
+}
+
+:root {
+  /* Light Theme Colors */
+  --bg-color: #ffffff;
+  --container-color: #eeeeee;
+  --text-color: #1f2937;
+  --sub-text-color: #6b7280;
+  --accent-color: #15919B;
+  --accent-hover: #09D1C7;
+  --hover-color: #CDFFFC9C;
+  --border-color: #E0FFFD;
+  --divider-color: #E0FFFD;
+  --text-color-2: #202224;
+  --shadow-color: rgba(0, 0, 0, 0.2);
+
+  /* Active menu item background */
+  --menu-active-bg: #DDF8FA;
+  --menu-active-bg-dark: #1a3a3d;
+
+  /* bg for card in time tracking page */
+  --card-bg: #F3F3F3;
+
+  /* Purple Gradient Colors */
+  --gradient-start: #15919B;
+  --gradient-end: #09D1C7;
+
+  /* Theme Toggle Colors */
+  --toggle-bg: #E0FFFD;
+  --toggle-border: #E0FFFD;
+  --knob-gradient-start: #09D1C7;
+  --knob-gradient-end: #15919B;
+
+  /* Status Colors */
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+  --info-color: #3b82f6;
+
+  --table-bg: #fff;
+  --table-header-bg: #f9fafb;
+  --table-text: #18181b;
+
+  /* Chart Colors */
+  --chart-bar: #5EC6C6;
+  --chart-bar-highlight: #5EC6C6;
+  --chart-bg: #fff;
+  --chart-border: #E0FFFD;
+  --chart-label: #B0B0B0;
+  --chart-grid: #E0FFFD;
+  --chart-dashed: #B0B0B0;
+
+  /* Light mode - colored box backgrounds only */
+  --available-leave-box-bg: #DBEAFE;
+  --rejected-leave-box-bg: #FECACA;
+  --pending-leave-box-bg: #FED7AA;
+  --approved-leave-box-bg: #BBF7D0;
+
+
+}
+
+/* Gradient Text Utilities */
+.gradient-text {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.gradient-text-active {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+/* Menu Active Styles */
+.menu-active-bg {
+  background-color: var(--menu-active-bg);
+}
+
+.menu-active-text {
+  background: linear-gradient(135deg, #09D1C7, #15919B);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+.menu-active-icon {
+  background: linear-gradient(135deg, #09D1C7, #15919B);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+[data-theme="light"] {
+  --bg-all: #F4F4F4;
+  --bg-color: #ffffff;
+  --container-color: #F4F4F4;
+  --text-color: #202224;
+  --text-color-2: rgba(23, 23, 24, 0.933);
+  --sub-text-color: #777D86;
+  --sub-text-color-2: #B0B0B0;
+  --accent-color: #09D1C7;
+  --accent-hover: #15919B;
+  --hover-color: #e5e7eb;
+  --border-color: #e5e7eb;
+  --divider-color: #e5e7eb;
+  --shadow-color: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
+  --card-color: #0000;
+  --menu-active-bg: #DDF8FA;
+}
+
+[data-theme="dark"] {
+  --bg-all: #1a232e;
+  --bg-color: #111827;
+  --container-color: #1a232e;
+  --text-color: #f9fafb;
+  --text-color-2: black;
+  --sub-text-color: #d1d5db;
+  --sub-text-color-2: #B0B0B0;
+  --accent-color: #09D1C7;
+  --accent-hover: #15919B;
+  --hover-color: #4b5563;
+  --border-color: #374151;
+  --divider-color: #4b5563;
+  --table-bg: #111827;
+  --table-header-bg: #4b5563;
+  --table-text: #fff;
+  --shadow-color: 0 4px 6px -1px rgba(255, 255, 255, 0.05), 0 2px 4px -2px rgba(255, 255, 255, 0.05);
+
+  --card-bg: #111827;
+  --card-color: #ffffff;
+  --menu-active-bg: #1a3a3d;
+
+  /* Chart Colors for Dark Mode */
+  --chart-bar: #5EC6C6;
+  --chart-bar-highlight: #5EC6C6;
+  --chart-bg: #1a232e;
+  --chart-border: #374151;
+  --chart-label: #B0B0B0;
+  --chart-grid: #374151;
+  --chart-dashed: #5EC6C6;
+
+  /* Dark mode - colored box backgrounds only */
+  --available-leave-box-bg: #075985;
+  --rejected-leave-box-bg: #991B1B;
+  --pending-leave-box-bg: #A16207;
+  --approved-leave-box-bg: #166534;
+}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sub-text-color);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Hide scrollbar arrows */
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+/* Hide scrollbar completely (optional) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari and Opera */
+}
+
+/* Light/Dark theme specific scrollbar colors */
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #374151;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@font-face {
+  font-family: 'Digital Numbers';
+  src: url('./assets/fonts/digital-7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.digital-numbers {
+  font-family: 'Digital Numbers', 'Courier New', Courier, monospace;
+  font-size: 2.5rem;
+  letter-spacing: 0.08em;
+}
+
+/* Add this at the end of your CSS file or after the table styles */
+
+.attendance-table-row:hover {
+  background: var(--table-header-bg) !important;
+}
+
+/* Colored box styles */
+.available-leave-box {
+  background-color: var(--available-leave-box-bg);
+  color: var(--sub-text-color);
+}
+
+.rejected-leave-box {
+  background-color: var(--rejected-leave-box-bg);
+  color: var(--sub-text-color);
+}
+
+.pending-leave-box {
+  background-color: var(--pending-leave-box-bg);
+  color: var(--sub-text-color);
+}
+
+.approved-leave-box {
+  background-color: var(--approved-leave-box-bg);
+  color: var(--sub-text-color);
+}
+
+/* Add this to your global CSS file (e.g., index.css or App.css) */
+@keyframes toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-in-rtl {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popup-scale {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-toast-slide-in {
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+.animate-toast-slide-in-rtl {
+  animation: toast-slide-in-rtl 0.3s ease-out;
+}
+
+.animate-popup-scale {
+  animation: popup-scale 0.2s ease-out;
+}
+
+/* Form Styles */
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: var(--accent-color);
+}
+
+.form-input::placeholder {
+  color: var(--sub-text-color);
+}
+
+/* Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gradient-end), var(--gradient-start));
+}
+
+.btn-secondary {
+  background: var(--container-color);
+  color: var(--text-color);
+  border: 2px solid var(--border-color);
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background: var(--sub-text-color-2);
+}
