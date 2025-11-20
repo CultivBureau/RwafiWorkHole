@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import NavBarAdmin from "../../../components/admin/NavBarAdmin";
 import SideBarAdmin from "../../../components/admin/SideBarAdmin";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import Card from "../../../components/Time_Tracking_Components/Stats/Card";
 import Table from "../../../components/admin/dashboard/Table/Table";
 import Departments from "../../../components/admin/dashboard/Departments/Departments";
+import { useGetDashboardStatisticsQuery } from "../../../services/apis/DashboardApi";
 
 const DashboardAdmin = () => {
   const { t, i18n } = useTranslation();
@@ -31,28 +32,49 @@ const DashboardAdmin = () => {
     }
   }, [i18n]);
 
-  const CardData = [
+  // Fetch dashboard statistics
+  const { 
+    data: statisticsData, 
+    isLoading: isLoadingStatistics, 
+    error: statisticsError 
+  } = useGetDashboardStatisticsQuery();
+
+  // Extract statistics from API response
+  const statistics = statisticsData?.value || {};
+
+  // Format average working hours
+  const formatHours = (hours) => {
+    if (typeof hours !== 'number' || isNaN(hours)) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+
+  // Create card data from API statistics
+  const CardData = useMemo(() => [
     {
       title: t("adminDashboard.cards.activeEmployees", "Active Employees"),
-      value: 100,
+      value: statistics?.activeEmployees ?? 0,
       icon: <img src="/assets/AdminDashboard/Active.svg" alt="employees" />
     },
     {
-      title: t("adminDashboard.cards.todayAttendance", "Today Attendance"),
-      value: 90,
-      icon: <img src="/assets/AdminDashboard/today.svg" alt="employees" />
+      title: t("adminDashboard.cards.attendanceRateToday", "Attendance Rate Today"),
+      value: typeof statistics?.attendanceRateToday === 'number' 
+        ? `${Math.round(statistics.attendanceRateToday)}%` 
+        : "0%",
+      icon: <img src="/assets/AdminDashboard/today.svg" alt="attendance" />
     },
     {
-      title: t("adminDashboard.cards.leaveRequests", "Leave Requests"),
-      value: 2,
-      icon: <img src="/assets/AdminDashboard/leavee.svg" alt="employees" />
+      title: t("adminDashboard.cards.totalLeaveRequests", "Total Leave Requests"),
+      value: statistics?.leaveRequests?.total ?? 0,
+      icon: <img src="/assets/AdminDashboard/leavee.svg" alt="leave requests" />
     },
     {
-      title: t("adminDashboard.cards.overdueTasks", "Overdue Tasks"),
-      value: 4,
-      icon: <img src="/assets/AdminDashboard/task.svg" alt="employees" />
+      title: t("adminDashboard.cards.averageWorkingHoursThisWeek", "Average Working Hours This Week"),
+      value: formatHours(statistics?.averageWorkingHoursThisWeek ?? 0),
+      icon: <img src="/assets/AdminDashboard/task.svg" alt="working hours" />
     }
-  ]
+  ], [statistics, t]);
 
   return (
     <PermissionGuard 

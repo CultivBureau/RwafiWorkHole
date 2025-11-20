@@ -176,7 +176,11 @@
       "totalEmployees": "إجمالي الموظفين",
       "presentToday": "حاضر اليوم",
       "absentToday": "غائب اليوم",
-      "lateArrivals": "الوصول المتأخر"
+      "lateArrivals": "الوصول المتأخر",
+      "mostFrequentAbsentees": "أكثر المتغيبين تكراراً (أفضل 3)",
+      "mostActiveDepartment": "أكثر الأقسام نشاطاً",
+      "leastActiveDepartment": "أقل الأقسام نشاطاً",
+      "noData": "لا توجد بيانات"
     },
     "table": {
       "sortBy": "ترتيب حسب",

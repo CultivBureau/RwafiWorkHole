@@ -9,11 +9,38 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  // Debug: Log the received data
+  React.useEffect(() => {
+    console.log('StatusCards received dashboardData:', dashboardData);
+    console.log('StatusCards - activeEmployees:', dashboardData?.activeEmployees);
+    console.log('StatusCards - averageWorkingHoursThisWeek:', dashboardData?.averageWorkingHoursThisWeek);
+    console.log('StatusCards - totalLeaveRequests:', dashboardData?.totalLeaveRequests);
+    console.log('StatusCards - attendanceRateToday:', dashboardData?.attendanceRateToday);
+  }, [dashboardData]);
+
   // Use API response fields with proper fallbacks
   const status = dashboardData?.currentStatus || t("dashboard.statusCards.notClockedIn");
-  const leaveStatus = dashboardData?.leaveStatus || t("dashboard.statusCards.pending");
-  const dailyShift = dashboardData?.dailyShift || "0h 0m";
-  const performance = dashboardData?.performance || t("dashboard.statusCards.comingSoon");
+  
+  // Get statistics from API
+  const activeEmployees = dashboardData?.activeEmployees ?? 0;
+  const averageWorkingHoursThisWeek = dashboardData?.averageWorkingHoursThisWeek ?? 0;
+  const totalLeaveRequests = dashboardData?.totalLeaveRequests ?? 0;
+  const attendanceRateToday = dashboardData?.attendanceRateToday ?? 0;
+  
+  // Format average working hours
+  const formatHours = (hours) => {
+    if (typeof hours !== 'number' || isNaN(hours)) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+  
+  const averageHoursFormatted = formatHours(averageWorkingHoursThisWeek);
+  
+  // Format attendance rate as percentage
+  const attendanceRateFormatted = typeof attendanceRateToday === 'number' 
+    ? `${Math.round(attendanceRateToday)}%` 
+    : "0%";
 
   // Enhanced SVGs with better styling
   const CalendarIcon = (
@@ -143,14 +170,19 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
         <Card
           header={t("dashboard.statusCards.status")}
           title={
-            <div className="flex items-center gap-2">
-              <span className="text-sm sm:text-base lg:text-sm xl:text-base">{status}</span>
-              {isLive && (
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-1.5 lg:h-1.5 xl:w-2 xl:h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-green-500 font-medium">Live</span>
-                </div>
-              )}
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm sm:text-base lg:text-sm xl:text-base">{status}</span>
+                {isLive && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 lg:w-1.5 lg:h-1.5 xl:w-2 xl:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-green-500 font-medium">Live</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-[var(--sub-text-color)]">
+                {t("dashboard.statusCards.activeEmployees", "Active Employees")}: {activeEmployees}
+              </div>
             </div>
           }
           statusDot={
@@ -183,7 +215,7 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
         
         <Card
           header={t("dashboard.statusCards.leaveRequest")}
-          title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{leaveStatus}</span>}
+          title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{totalLeaveRequests}</span>}
           rightIcon={LeaveIcon}
           footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
@@ -193,7 +225,7 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
           header={t("dashboard.statusCards.dailyShift")}
           title={
             <span className="transition-all duration-300 flex items-center gap-2">
-              <span className="text-sm sm:text-base lg:text-sm xl:text-base">{dynamicShift}</span>
+              <span className="text-sm sm:text-base lg:text-sm xl:text-base">{averageHoursFormatted}</span>
               {isLive && <TrendingUp size={14} className="sm:w-4 sm:h-4 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 text-green-500 animate-pulse" />}
             </span>
           }
@@ -206,10 +238,10 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
         
         <Card
           header={t("dashboard.statusCards.performance")}
-          title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{performance}</span>}
+          title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{attendanceRateFormatted}</span>}
           rightIcon={PerformanceIcon}
-          bar={dashboardData?.performanceBar || 75}
-          percentage={dashboardData?.performanceBar || 75}
+          bar={Math.round(attendanceRateToday)}
+          percentage={Math.round(attendanceRateToday)}
           footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />
