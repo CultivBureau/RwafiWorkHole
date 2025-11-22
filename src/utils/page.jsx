@@ -33,6 +33,7 @@ export const getRefreshToken = () => {
 export const removeAuthToken = () => {
   Cookies.remove("access_token");
   Cookies.remove("refresh_token");
+  Cookies.remove("refresh_token_expires_at");
   Cookies.remove("user_info");
   Cookies.remove("user_permissions");
 };
