@@ -8,7 +8,7 @@ export const clockinLogApi = createApi({
   endpoints: (builder) => ({
     getCompanyClockinLogs: builder.query({
       query: ({ pageNumber = 1, pageSize = 20 } = {}) => ({
-        url: "/api/ClockinLogs/company",
+        url: "/api/v1/ClockinLogs/GetAllByCompanyId/company",
         method: "GET",
         params: { pageNumber, pageSize },
       }),
@@ -21,7 +21,7 @@ export const clockinLogApi = createApi({
           throw new Error("User ID is required");
         }
         return {
-          url: `/api/ClockinLogs/user/${userId}`,
+          url: `/api/v1/ClockinLogs/GetAllByUserId/user/${userId}`,
           method: "GET",
           params: { pageNumber, pageSize },
         };
@@ -30,7 +30,6 @@ export const clockinLogApi = createApi({
       transformErrorResponse: (response, meta, arg) => {
         // If 404, return empty data instead of throwing
         if (response?.status === 404) {
-          console.warn(`User clock-in logs not found for userId: ${arg?.userId}`);
           return { value: [], totalCount: 0 };
         }
         return response;
@@ -44,7 +43,7 @@ export const clockinLogApi = createApi({
 
     getDepartmentClockinLogs: builder.query({
       query: () => ({
-        url: "/api/ClockinLogs/department",
+        url: "/api/v1/ClockinLogs/GetDepartmentClockinLogs/department",
         method: "GET",
       }),
       transformResponse: (response) => {
@@ -73,7 +72,7 @@ export const clockinLogApi = createApi({
           throw new Error("Team ID is required");
         }
         return {
-          url: `/api/ClockinLogs/team/${teamId}`,
+          url: `/api/v1/ClockinLogs/GetTeamClockinLogs/team/${teamId}`,
           method: "GET",
         };
       },
@@ -96,7 +95,6 @@ export const clockinLogApi = createApi({
       },
       transformErrorResponse: (response, meta, arg) => {
         if (response?.status === 404) {
-          console.warn(`Team clock-in logs not found for teamId: ${arg}`);
           return [];
         }
         return response;
@@ -109,7 +107,7 @@ export const clockinLogApi = createApi({
 
     getClockinLogById: builder.query({
       query: (id) => ({
-        url: `/api/ClockinLogs/${id}`,
+        url: `/api/v1/ClockinLogs/GetById/${id}`,
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "ClockinLogs", id }],
@@ -123,7 +121,7 @@ export const clockinLogApi = createApi({
           pageSize,
         };
         return {
-          url: `/api/ClockinLogs/user/profile/${userId}`,
+          url: `/api/v1/ClockinLogs/GetUserClockinProfile/user/profile/${userId}`,
           method: "GET",
           params,
         };
@@ -156,38 +154,14 @@ export const clockinLogApi = createApi({
           utcDateTime: utcDateTime, // Send UTC time to backend
         };
         
-        // Log request for debugging (only in development)
-        if (import.meta.env.DEV) {
-          console.log("ClockIn API Request:", {
-            url: "/api/ClockinLogs/clockin",
-            method: "POST",
-            body: requestBody,
-            latitude: lat,
-            longitude: lng,
-            utcDateTime: utcDateTime,
-            localTime: new Date().toLocaleString(),
-          });
-        }
-        
         return {
-          url: "/api/ClockinLogs/clockin",
+          url: "/api/v1/ClockinLogs/Clockin/clockin",
           method: "POST",
           body: requestBody,
         };
       },
       // Transform response to handle different API response structures
       transformResponse: (response, meta, arg) => {
-        // Log response for debugging
-        if (import.meta.env.DEV) {
-          console.log("ClockIn API Response:", response);
-          console.log("ClockIn API Response structure:", {
-            hasValue: !!response?.value,
-            hasData: !!response?.data,
-            isArray: Array.isArray(response),
-            value: response?.value,
-            statusCode: response?.statusCode,
-          });
-        }
         // Return response as-is - API returns { value: {...}, statusCode: 200, ... }
         return response;
       },
@@ -221,21 +195,8 @@ export const clockinLogApi = createApi({
           utcDateTime: utcDateTime, // Send UTC time to backend
         };
         
-        // Log request for debugging (only in development)
-        if (import.meta.env.DEV) {
-          console.log("ClockOut API Request:", {
-            url: "/api/ClockinLogs/clockout",
-            method: "POST",
-            body: requestBody,
-            latitude: lat,
-            longitude: lng,
-            utcDateTime: utcDateTime,
-            localTime: new Date().toLocaleString(),
-          });
-        }
-        
         return {
-          url: "/api/ClockinLogs/clockout",
+          url: "/api/v1/ClockinLogs/Clockout/clockout",
           method: "POST",
           body: requestBody,
         };
@@ -249,6 +210,24 @@ export const clockinLogApi = createApi({
         ];
       },
     }),
+
+    // Get attendance summary
+    getAttendanceSummary: builder.query({
+      query: () => ({
+        url: "/api/v1/ClockinLogs/GetAttendanceSummary/summary",
+        method: "GET",
+      }),
+      providesTags: [{ type: "ClockinLogs", id: "SUMMARY" }],
+    }),
+
+    // Get current attendance summary
+    getCurrentAttendanceSummary: builder.query({
+      query: () => ({
+        url: "/api/v1/ClockinLogs/GetCurrentAttendanceSummary/summary/current",
+        method: "GET",
+      }),
+      providesTags: [{ type: "ClockinLogs", id: "CURRENT_SUMMARY" }],
+    }),
   }),
 });
 
@@ -259,6 +238,8 @@ export const {
   useGetUserClockinLogsQuery,
   useGetClockinLogByIdQuery,
   useGetUserProfileClockInLogsQuery,
+  useGetAttendanceSummaryQuery,
+  useGetCurrentAttendanceSummaryQuery,
   useClockInMutation,
   useClockOutMutation,
 } = clockinLogApi;

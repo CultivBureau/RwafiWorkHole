@@ -157,7 +157,7 @@ const AttendanceAdmin = () => {
         
         return `${diffHours}h ${diffMinutes}m`;
       } catch (error) {
-        console.error('Error calculating work hours:', error);
+        // Error calculating work hours
         return '0h 0m';
       }
     }, [currentTime]);
