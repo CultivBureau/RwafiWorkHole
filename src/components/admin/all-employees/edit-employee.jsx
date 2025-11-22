@@ -322,6 +322,7 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 function PersonalInfoEdit({ formData, onChange }) {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
+    const [showPassword, setShowPassword] = useState(false);
 
     return (
         <div className="space-y-6">
@@ -368,6 +369,29 @@ function PersonalInfoEdit({ formData, onChange }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        {t("employees.editEmployee.password") || "Password"} <span className="text-[var(--sub-text-color)] text-xs">(Optional - leave blank to keep current)</span>
+                    </label>
+                    <div className="relative">
+                        <input
+                            className="form-input pr-10"
+                            placeholder={t("employees.editEmployee.passwordPlaceholder") || "Enter new password (optional)"}
+                            type={showPassword ? 'text' : 'password'}
+                            value={formData.password || ''}
+                            onChange={(e) => onChange('password', e.target.value)}
+                            autoComplete="new-password"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(s => !s)}
+                            className={`absolute ${isArabic ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--sub-text-color)]`}
+                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
                         {t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date"} <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
                     </label>
                     <input
@@ -409,6 +433,8 @@ function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, depart
     const handleRoleChange = (e) => {
         const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
         onChange('roles', selectedOptions);
+        // Also update single role field (API expects single role string)
+        onChange('role', selectedOptions[0] || '');
     };
 
     const handleTeamChange = (e) => {

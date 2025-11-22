@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import AvatarIcon from "../../../public/assets/navbar/Avatar.png";
+const AvatarIcon = "/assets/navbar/Avatar.png";
 import { removeAuthToken, getAuthToken } from "../../utils/page";
 import { useLang } from "../../contexts/LangContext";
 import { useMeQuery } from "../../services/apis/AuthApi";

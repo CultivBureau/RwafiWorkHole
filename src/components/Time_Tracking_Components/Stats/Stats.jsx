@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import Card from "./Card";
-import WorkedIcon from "../../../../public/assets/time_tracking/worked.svg";
-import BreakIcon from "../../../../public/assets/time_tracking/break-icon.svg";
-import OvertimeIcon from "../../../../public/assets/time_tracking/overtime.svg";
+const WorkedIcon = "/assets/time_tracking/worked.svg";
+const BreakIcon = "/assets/time_tracking/break-icon.svg";
+const OvertimeIcon = "/assets/time_tracking/overtime.svg";
 import { useTranslation } from "react-i18next";
 import TimerCard from "./TimerCard";
 import { useGetUserClockinLogsQuery } from "../../../services/apis/ClockinLogApi";
