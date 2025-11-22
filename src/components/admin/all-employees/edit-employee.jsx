@@ -49,23 +49,32 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     // Initialize form data when employee data changes
     useEffect(() => {
         if (employeeData) {
-            // Extract roles as array of role IDs or names
-            const employeeRoles = employeeData.roles?.map(r => r.id || r.roleId || r.name || r) || [];
+            // Extract roles as array of role IDs (prefer ID over name for API)
+            const employeeRoles = employeeData.roles?.map(r => {
+                // Prefer id, then roleId, then name (as fallback)
+                return r.id || r.roleId || r.name || r;
+            }).filter(Boolean) || [];
             
-            // Extract team IDs
-            const employeeTeamIds = employeeData.teams?.map(t => t.id || t.teamId) || [];
+            // Extract team IDs as array
+            const employeeTeamIds = employeeData.teams?.map(t => t.id || t.teamId).filter(Boolean) || [];
             
-            // Extract shift ID (single value)
-            const employeeShiftId = employeeData.shifts?.[0]?.id || employeeData.shiftId || '';
+            // Extract shift ID (single value, not array)
+            const employeeShiftId = employeeData.shifts?.[0]?.id || 
+                                   employeeData.shiftId || 
+                                   employeeData.shift?.id || 
+                                   '';
             
             // Extract department ID
-            const employeeDepartmentId = employeeData.departments?.[0]?.id || employeeData.departmentId || '';
+            const employeeDepartmentId = employeeData.departments?.[0]?.id || 
+                                        employeeData.departmentId || 
+                                        employeeData.department?.id || 
+                                        '';
 
-            // Extract leave balances
+            // Extract leave balances - ensure proper structure
             const employeeLeaveBalances = employeeData.leaveBalances?.map(lb => ({
-                leaveTypeId: lb.leaveTypeId || lb.leaveType?.id,
-                balanceDays: lb.balanceDays || lb.balance || 0
-            })) || [];
+                leaveTypeId: lb.leaveTypeId || lb.leaveType?.id || lb.leaveTypeId,
+                balanceDays: parseFloat(lb.balanceDays) || parseFloat(lb.balance) || 0
+            })).filter(lb => lb.leaveTypeId) || [];
 
             setFormData({
                 firstName: employeeData.firstName || '',
@@ -74,10 +83,10 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 password: '', // Password field (optional, only sent if provided)
                 hireDate: employeeData.hireDate ? new Date(employeeData.hireDate).toISOString().split('T')[0] : '',
                 employeeStatus: employeeData.employeeStatus !== undefined ? employeeData.employeeStatus : 0,
-                roles: employeeRoles,
-                role: employeeRoles[0] || '', // Single role for API (first selected role)
-                teamIds: employeeTeamIds,
-                shiftId: employeeShiftId,
+                roles: employeeRoles, // Array for multi-select UI
+                role: employeeRoles[0] || employeeData.role || '', // Single role string for API (first selected role)
+                teamIds: employeeTeamIds, // Array for multi-select UI
+                shiftId: employeeShiftId, // Single value
                 departmentId: employeeDepartmentId,
                 leaveBalances: employeeLeaveBalances,
             });
@@ -140,41 +149,71 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
         }
 
         try {
-            // Build update payload
+            // Build update payload matching API structure exactly
             const updatePayload = {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                jobTitle: formData.jobTitle,
+                firstName: formData.firstName.trim(),
+                lastName: formData.lastName.trim(),
+                jobTitle: formData.jobTitle.trim(),
                 employeeStatus: formData.employeeStatus !== undefined ? formData.employeeStatus : 0,
             };
 
-            // Add optional fields only if they have values
+            // Add optional password only if provided
             if (formData.password && formData.password.trim()) {
-                updatePayload.password = formData.password;
+                updatePayload.password = formData.password.trim();
             }
 
+            // Add hireDate if provided (convert to ISO string)
             if (formData.hireDate) {
                 const date = new Date(formData.hireDate);
-                updatePayload.hireDate = date.toISOString();
+                if (!isNaN(date.getTime())) {
+                    updatePayload.hireDate = date.toISOString();
+                }
             }
 
-            // API expects 'role' as a single string (use first selected role)
-            if (formData.roles && formData.roles.length > 0) {
-                updatePayload.role = formData.roles[0];
+            // API expects 'role' as a single string (role ID or name)
+            // Ensure it's always a string, not an array or object
+            let roleValue = null;
+            if (formData.roles && Array.isArray(formData.roles) && formData.roles.length > 0) {
+                // Get first role and ensure it's a string
+                roleValue = formData.roles[0];
             } else if (formData.role) {
-                updatePayload.role = formData.role;
+                roleValue = formData.role;
+            }
+            
+            // Convert to string and only add if not empty
+            if (roleValue) {
+                // Handle if roleValue is an object (extract id or name)
+                if (typeof roleValue === 'object' && roleValue !== null) {
+                    updatePayload.role = String(roleValue.id || roleValue.roleId || roleValue.name || '');
+                } else {
+                    updatePayload.role = String(roleValue);
+                }
+                
+                // Ensure it's not an empty string
+                if (!updatePayload.role || updatePayload.role.trim() === '') {
+                    delete updatePayload.role;
+                }
             }
 
-            if (formData.teamIds && formData.teamIds.length > 0) {
+            // Add teamIds as array (only if has items)
+            if (formData.teamIds && Array.isArray(formData.teamIds) && formData.teamIds.length > 0) {
                 updatePayload.teamIds = formData.teamIds;
             }
 
-            if (formData.shiftId) {
+            // Add shiftId as single GUID (not array)
+            if (formData.shiftId && formData.shiftId.trim()) {
                 updatePayload.shiftId = formData.shiftId;
             }
 
-            if (formData.leaveBalances && formData.leaveBalances.length > 0) {
-                updatePayload.leaveBalances = formData.leaveBalances;
+            // Add leaveBalances array (only if has items)
+            if (formData.leaveBalances && Array.isArray(formData.leaveBalances) && formData.leaveBalances.length > 0) {
+                // Filter out incomplete entries and ensure proper structure
+                updatePayload.leaveBalances = formData.leaveBalances
+                    .filter(lb => lb.leaveTypeId && lb.leaveTypeId.trim())
+                    .map(lb => ({
+                        leaveTypeId: lb.leaveTypeId,
+                        balanceDays: parseFloat(lb.balanceDays) || 0
+                    }));
             }
 
             toast.loading(t("employees.editEmployee.processing") || "Updating employee...");
@@ -356,7 +395,7 @@ function PersonalInfoEdit({ formData, onChange }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.personalInfo.jobTitle") || "Job Title"} <span className="text-red-500">*</span>
+                        job Title <span className="text-red-500">*</span>
                     </label>
                     <input
                         className="form-input"
@@ -369,7 +408,7 @@ function PersonalInfoEdit({ formData, onChange }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.editEmployee.password") || "Password"} <span className="text-[var(--sub-text-color)] text-xs">(Optional - leave blank to keep current)</span>
+                        password
                     </label>
                     <div className="relative">
                         <input
@@ -392,7 +431,7 @@ function PersonalInfoEdit({ formData, onChange }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date"} <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                        hireDate
                     </label>
                     <input
                         className="form-input"
@@ -404,7 +443,7 @@ function PersonalInfoEdit({ formData, onChange }) {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.editEmployee.employeeStatus") || "Employee Status"}
+                        Status
                     </label>
                     <select
                         className="form-input"

@@ -9,22 +9,12 @@ const MAX_REFRESH_ATTEMPTS = 2;
 
 // Custom base query with automatic token refresh for all APIs
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
-  console.log('[BASE QUERY] Making request:', {
-    url: args.url,
-    method: args.method || 'GET',
-    endpoint: api.endpoint,
-    baseUrl,
-  });
-  
   let result = await fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers, { getState, endpoint, type }) => {
       const token = getAuthToken();
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
-        console.log('[BASE QUERY] Authorization header set');
-      } else {
-        console.log('[BASE QUERY] No token found, request without Authorization header');
       }
       // Set Content-Type for JSON requests
       if (args.body && !(args.body instanceof FormData)) {
@@ -45,25 +35,9 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
     },
   })(args, api, extraOptions);
 
-  console.log('[BASE QUERY] Request result:', {
-    success: !result.error,
-    status: result.error?.status || result.data?.status,
-    hasError: !!result.error,
-    endpoint: api.endpoint,
-  });
-
-  if (result.error) {
-    console.error('[BASE QUERY] Request error:', {
-      status: result.error.status,
-      data: result.error.data,
-      error: result.error.error,
-    });
-  }
-
   // If the result is 401, check if we have cookie data first (for custom roles)
   // This prevents redirecting to login when token is valid but /me API fails
   if (result.error && result.error.status === 401) {
-    console.log('[BASE QUERY] 401 Unauthorized error, checking for refresh token...');
     const userInfoFromCookie = getUserInfo();
     
     // If we have cookie data (valid token decoded), don't redirect to login

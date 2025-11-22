@@ -101,7 +101,7 @@ export const getCompanyId = () => {
         return payload.companyId;
       }
     } catch (error) {
-      console.error("Error decoding token:", error);
+      // Error decoding token
     }
   }
   

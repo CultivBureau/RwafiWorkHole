@@ -14,7 +14,7 @@ export const PAGE_PERMISSIONS = {
   '/pages/admin/all-employees': 'User.View',
   '/pages/admin/new-employee': 'User.Create',
   '/pages/admin/shifts': 'Shift.View',
-  '/pages/admin/leaves': ['LeaveRequest.View', 'LeaveRequest.ViewTeams', 'LeaveRequest.Review', 'LeaveRequest.Confirm', 'LeaveRequest.Override'],
+  '/pages/admin/leaves': ['LeaveRequest.View', 'LeaveRequest.ViewTeams', 'LeaveRequest.Review', 'LeaveRequest.Confirm', 'LeaveRequest.Override', 'LeaveRequest.ViewCount', 'LeaveRequest.ViewStatistics', 'LeaveRequest.ViewLogs'],
   '/pages/admin/break': 'Break.View',
   '/pages/admin/attendance': 'ClockinLog.View',
   '/pages/admin/Roles&Permissions': 'Role.View',
@@ -26,7 +26,7 @@ export const PAGE_PERMISSIONS = {
   '/pages/User/time_tracking': ['ClockinLog.Clockin', 'ClockinLog.Clockout'],
   '/pages/User/attendance-logs': 'ClockinLog.View',
   '/pages/User/break-tracking': ['BreakLog.Create', 'BreakLog.EndBreak', 'BreakLog.View'],
-  '/pages/User/leaves': ['LeaveRequest.Submit', 'LeaveRequest.View'],
+  '/pages/User/leaves': ['LeaveRequest.Submit', 'LeaveRequest.UserView'],
   '/pages/User/profile': null, // No permission required (own profile)
 };
 
@@ -125,6 +125,10 @@ export const RESOURCE_ACTIONS = {
     confirm: 'LeaveRequest.Confirm',
     override: 'LeaveRequest.Override',
     cancel: 'LeaveRequest.Cancel',
+    userView: 'LeaveRequest.UserView',
+    viewCount: 'LeaveRequest.ViewCount',
+    viewStatistics: 'LeaveRequest.ViewStatistics',
+    viewLogs: 'LeaveRequest.ViewLogs',
   },
   LeaveType: {
     view: 'LeaveType.View',

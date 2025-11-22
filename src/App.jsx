@@ -112,9 +112,13 @@ function App() {
                       path="/pages/User/leaves"
                       element={
                         <ProtectedRoute>
-                          <Suspense fallback={<Loading />}>
-                            <Leaves />
-                          </Suspense>
+                          <PermissionGuard
+                            backendPermissions={["LeaveRequest.Submit", "LeaveRequest.UserView"]}
+                          >
+                            <Suspense fallback={<Loading />}>
+                              <Leaves />
+                            </Suspense>
+                          </PermissionGuard>
                         </ProtectedRoute>
                       }
                     />
@@ -142,9 +146,13 @@ function App() {
                       path="/pages/User/time_tracking"
                       element={
                         <ProtectedRoute>
-                          <Suspense fallback={<Loading />}>
-                            <TimeTracking />
-                          </Suspense>
+                          <PermissionGuard
+                            backendPermissions={["ClockinLog.Clockin", "ClockinLog.Clockout"]}
+                          >
+                            <Suspense fallback={<Loading />}>
+                              <TimeTracking />
+                            </Suspense>
+                          </PermissionGuard>
                         </ProtectedRoute>
                       }
                     />
@@ -152,9 +160,13 @@ function App() {
                       path="/pages/User/attendance-logs"
                       element={
                         <ProtectedRoute>
-                          <Suspense fallback={<Loading />}>
-                            <AttendanceLogs />
-                          </Suspense>
+                          <PermissionGuard
+                            backendPermissions={["ClockinLog.View"]}
+                          >
+                            <Suspense fallback={<Loading />}>
+                              <AttendanceLogs />
+                            </Suspense>
+                          </PermissionGuard>
                         </ProtectedRoute>
                       }
                     />
@@ -162,9 +174,13 @@ function App() {
                       path="/pages/User/break-tracking"
                       element={
                         <ProtectedRoute>
-                          <Suspense fallback={<Loading />}>
-                            <BreakTracking />
-                          </Suspense>
+                          <PermissionGuard
+                            backendPermissions={["BreakLog.Create", "BreakLog.EndBreak", "BreakLog.View"]}
+                          >
+                            <Suspense fallback={<Loading />}>
+                              <BreakTracking />
+                            </Suspense>
+                          </PermissionGuard>
                         </ProtectedRoute>
                       }
                     />
@@ -195,7 +211,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["viewAttendanceReports"]}
+                          backendPermissions={["ClockinLog.View"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <AttendanceAdmin />
@@ -209,7 +225,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["viewBreakCategories"]}
+                          backendPermissions={["Break.View"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <BreakAdmin />
@@ -223,7 +239,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["approveRejectLeaveRequests"]}
+                          backendPermissions={["LeaveRequest.View", "LeaveRequest.ViewTeams", "LeaveRequest.Review", "LeaveRequest.Confirm", "LeaveRequest.Override"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <LeavesAdmin />
@@ -237,7 +253,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["viewEmployeeProfiles"]}
+                          backendPermissions={["User.View"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <UsersAdmin />
@@ -251,7 +267,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["addEditEmployees"]}
+                          backendPermissions={["User.Create"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <NewEmployee />
@@ -264,9 +280,13 @@ function App() {
                     path="/pages/admin/company"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<Loading />}>
-                          <Company />
-                        </Suspense>
+                        <PermissionGuard
+                          backendPermissions={["Company.View"]}
+                        >
+                          <Suspense fallback={<Loading />}>
+                            <Company />
+                          </Suspense>
+                        </PermissionGuard>
                       </ProtectedRoute>
                     }
                   />
@@ -274,9 +294,13 @@ function App() {
                     path="/pages/admin/shifts"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<Loading />}>
-                          <AllShifts />
-                        </Suspense>
+                        <PermissionGuard
+                          backendPermissions={["Shift.View"]}
+                        >
+                          <Suspense fallback={<Loading />}>
+                            <AllShifts />
+                          </Suspense>
+                        </PermissionGuard>
                       </ProtectedRoute>
                     }
                   />
@@ -284,9 +308,13 @@ function App() {
                     path="/pages/admin/shifts/:shiftId/assignments"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<Loading />}>
-                          <ShiftAssignments />
-                        </Suspense>
+                        <PermissionGuard
+                          backendPermissions={["ShiftAssignment.View", "ShiftAssignment.AssignUser"]}
+                        >
+                          <Suspense fallback={<Loading />}>
+                            <ShiftAssignments />
+                          </Suspense>
+                        </PermissionGuard>
                       </ProtectedRoute>
                     }
                   />
@@ -295,7 +323,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["viewEmployeeProfiles"]}
+                          backendPermissions={["User.View"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <AllEmployees />
@@ -308,9 +336,13 @@ function App() {
                     path="/pages/admin/all-departments"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<Loading />}>
-                          <AllDepartments />
-                        </Suspense>
+                        <PermissionGuard
+                          backendPermissions={["Department.View"]}
+                        >
+                          <Suspense fallback={<Loading />}>
+                            <AllDepartments />
+                          </Suspense>
+                        </PermissionGuard>
                       </ProtectedRoute>
                     }
                   />
@@ -319,7 +351,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["editCompanySettings"]}
+                          backendPermissions={["Department.Create"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <NewDepartment />
@@ -333,7 +365,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["editCompanySettings"]}
+                          backendPermissions={["Department.Update"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <EditDepartment />
@@ -347,7 +379,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["viewTeams"]}
+                          backendPermissions={["Team.View"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <AllTeamsPage />
@@ -360,9 +392,13 @@ function App() {
                     path="/pages/admin/Roles&Permissions"
                     element={
                       <ProtectedRoute>
-                        <Suspense fallback={<Loading />}>
-                          <RolesAndPermissions />
-                        </Suspense>
+                        <PermissionGuard
+                          backendPermissions={["Role.View"]}
+                        >
+                          <Suspense fallback={<Loading />}>
+                            <RolesAndPermissions />
+                          </Suspense>
+                        </PermissionGuard>
                       </ProtectedRoute>
                     }
                   />
@@ -371,7 +407,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          permissions={["assignRoles"]}
+                          backendPermissions={["Role.Create"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <NewRole />

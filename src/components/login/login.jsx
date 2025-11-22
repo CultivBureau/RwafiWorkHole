@@ -60,30 +60,18 @@ const Login = () => {
     }
 
     try {
-      console.log('[LOGIN] Fetching companies for email:', email);
       const result = await getUserCompanies(email).unwrap();
-      console.log('[LOGIN] Companies API response:', result);
       
       const fetchedCompanies = result.value || [];
-      console.log('[LOGIN] Extracted companies:', fetchedCompanies);
       
       if (fetchedCompanies.length === 0) {
-        console.warn('[LOGIN] No companies found for email:', email);
         toast.error(t('login.noCompanies') || 'No companies found for this email');
         return;
       }
 
       setCompanies(fetchedCompanies);
       setStep(2); // Move to company/password step
-      console.log('[LOGIN] Moving to step 2 (company/password)');
     } catch (err) {
-      console.error('[LOGIN] Error fetching companies:', {
-        error: err,
-        status: err?.status,
-        data: err?.data,
-        message: err?.message,
-      });
-      
       const errorMessage = err?.data?.errorMessage || err?.data?.message || err?.message || 'Failed to fetch companies';
       toast.error(errorMessage);
     }
@@ -104,74 +92,38 @@ const Login = () => {
         companyId: selectedCompany.companyId,
       };
 
-      console.log('[LOGIN] Starting login attempt...', {
-        email: email,
-        companyId: selectedCompany.companyId,
-        hasPassword: !!formData.password,
-      });
-
       const res = await login(loginPayload).unwrap();
-      console.log('[LOGIN] Login API response received:', res);
 
       toast.success(t('login.loginSuccess') || 'Login successful!');
 
       // Handle new API response structure with 'value' wrapper
       const responseValue = res.value || res;
-      console.log('[LOGIN] Extracted responseValue:', responseValue);
 
       // Get accessToken from new API structure (accessToken instead of token)
       const accessToken = responseValue?.accessToken || responseValue?.token || res.value?.value?.token;
       const refreshToken = responseValue?.refreshToken;
-      console.log('[LOGIN] Tokens extracted:', {
-        hasAccessToken: !!accessToken,
-        hasRefreshToken: !!refreshToken,
-      });
       
       if (accessToken) {
         try {
           // Tokens are already saved by AuthApi onQueryStarted handler
           // Decode accessToken to extract user info and roles
           const decoded = jwtDecode(accessToken);
-          console.log('[LOGIN] AccessToken decoded successfully:', {
-            sub: decoded.sub,
-            roles: decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"],
-            hasPermissions: !!decoded.permissions,
-          });
           
           // Save decoded user info in cookies (must be done before navigation)
           Cookies.set('user_info', JSON.stringify(decoded), { expires: 2 });
-          console.log('[LOGIN] User info saved to cookies');
           
           // Extract and save permissions from accessToken
           const permissions = setPermissionsFromToken(accessToken);
-          console.log('[LOGIN] Permissions extracted:', permissions);
           
           // Store refreshToken expiry if available
           if (responseValue?.refreshTokenExpiresAt) {
             Cookies.set("refresh_token_expires_at", responseValue.refreshTokenExpiresAt, { expires: 20 });
-            console.log('[LOGIN] RefreshToken expiry saved:', responseValue.refreshTokenExpiresAt);
           }
-          
-          // Verify cookies are set before proceeding
-          const verifyUserInfo = Cookies.get('user_info');
-          const verifyToken = getAuthToken();
-          console.log('[LOGIN] Cookie verification:', {
-            hasUserInfo: !!verifyUserInfo,
-            hasToken: !!verifyToken,
-          });
           
           // Check for roles in MS identity claim
           const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
           let roles = decoded[msRoleKey] || [];
           const rolesArray = Array.isArray(roles) ? roles : [roles];
-          console.log('[LOGIN] Role detection:', {
-            msRoleKey,
-            rawRole: roles,
-            roleType: typeof roles,
-            isArray: Array.isArray(roles),
-            rolesArray,
-            allDecodedKeys: Object.keys(decoded),
-          });
           
           // Helper function to normalize role - handle both object format {id, name} and string format
           const normalizeRole = (role) => {
@@ -183,35 +135,24 @@ const Login = () => {
           
           const normalizedRoles = rolesArray.map(normalizeRole).filter(Boolean);
           const isAdmin = normalizedRoles.some(r => r === 'admin');
-          console.log('[LOGIN] Role processing:', {
-            normalizedRoles,
-            isAdmin,
-            checkResult: normalizedRoles.some(r => r === 'admin'),
-          });
           
           // Determine dashboard path based on role
           const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
-          console.log('[LOGIN] Navigating to:', dashboardPath);
           
           // Ensure cookies are saved before navigation
           // Small delay to ensure cookies are persisted
           await new Promise(resolve => setTimeout(resolve, 100));
-          
-          console.log('[LOGIN] Navigating to dashboard:', dashboardPath);
           // Navigate to dashboard - React Router will handle the rest
           // No page reload needed - cookies are already set and ProtectedRoute will allow access
           navigate(dashboardPath, { replace: true });
         } catch (decodeError) {
-          console.error('[LOGIN] Error decoding token:', decodeError);
           toast.error('Failed to decode authentication token');
           return;
         }
       } else {
-        console.warn('[LOGIN] No accessToken found in response, using fallback logic');
         // fallback to old logic if no token found
         const isAdmin = responseValue?.isAdmin || false;
         const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
-        console.log('[LOGIN] Fallback navigation to:', dashboardPath);
         
         // Ensure cookies are saved before navigation
         await new Promise(resolve => setTimeout(resolve, 100));
@@ -220,24 +161,6 @@ const Login = () => {
       }
 
     } catch (err) {
-      console.error('[LOGIN] Login error occurred:', {
-        error: err,
-        status: err?.status,
-        data: err?.data,
-        message: err?.message,
-        stack: err?.stack,
-      });
-      
-      // Log detailed error information
-      if (err?.data) {
-        console.error('[LOGIN] Error data:', {
-          errorMessage: err.data.errorMessage,
-          message: err.data.message,
-          errors: err.data.errors,
-          Errors: err.data.Errors,
-        });
-      }
-      
       const errorMessage = err?.data?.errorMessage || err?.data?.message || err?.message || t('login.loginFailed');
       toast.error(errorMessage);
     }

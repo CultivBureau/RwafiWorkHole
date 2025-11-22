@@ -85,35 +85,14 @@ export const PermissionGuard = ({
         })
       : [];
     
-    // Debug logging (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[PermissionGuard] Checking permissions:', {
-        required: backendPermissions,
-        userHasRaw: userBackendPermissions,
-        userHasCodes: extractedUserCodes,
-        hasDepartmentView: extractedUserCodes.includes('Department.View'),
-        hasRoleView: extractedUserCodes.includes('Role.View'),
-        hasCompanyView: extractedUserCodes.includes('Company.View'),
-        hasCompanyUpdate: extractedUserCodes.includes('Company.Update'),
-        isLoading: isLoading,
-        permissionsChecked: permissionsChecked
-      });
-    }
-    
     // Only deny access if we've checked permissions and they're confirmed empty
     // Don't deny if we're still waiting for permissions to load
     if (Array.isArray(userBackendPermissions) && userBackendPermissions.length === 0 && permissionsChecked && !isLoading) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[PermissionGuard] Permissions array is empty after checking - denying access');
-      }
       return fallback !== null ? fallback : <Unauthorized />;
     }
     
     // If we don't have permissions yet but we're not loading, wait a bit more
     if (userBackendPermissions.length === 0 && !isLoading && !permissionsChecked) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PermissionGuard] Waiting for permissions to load...');
-      }
       return loadingFallback;
     }
     
@@ -123,30 +102,10 @@ export const PermissionGuard = ({
       // Only deny if we've actually checked and confirmed no permissions
       // Wait longer if permissions haven't been checked yet or if we're still loading
       if (permissionsChecked && userBackendPermissions.length > 0) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('[PermissionGuard] Access denied - user does not have required permissions', {
-            required: backendPermissions,
-            userHasCodes: extractedUserCodes,
-            hasRequired: backendPermissions.map(req => extractedUserCodes.includes(req)),
-            permissionsChecked: permissionsChecked,
-            userPermissionsCount: userBackendPermissions.length
-          });
-        }
         return fallback !== null ? fallback : <Unauthorized />;
       }
       // Otherwise, wait for permissions to load (don't deny access prematurely)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[PermissionGuard] Waiting for permissions to load before denying access...', {
-          permissionsChecked,
-          userPermissionsCount: userBackendPermissions.length,
-          isLoading
-        });
-      }
       return loadingFallback;
-    }
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[PermissionGuard] Access granted for:', backendPermissions);
     }
     
     return children;
@@ -155,9 +114,6 @@ export const PermissionGuard = ({
   // SECURITY: If no permission specified, deny access by default
   // This prevents accidental exposure of protected content
   if (!permission && !permissions && !backendPermissions) {
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('[PermissionGuard] No permissions specified - denying access by default for security');
-    }
     return fallback !== null ? fallback : <Unauthorized />;
   }
 
