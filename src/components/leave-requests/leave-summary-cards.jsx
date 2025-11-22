@@ -1,22 +1,27 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useGetEmployeeLeaveSummaryQuery } from "../../services/apis/DashboardApi";
+
+// Static leave stats data
+const staticLeaveStats = {
+  statusCounts: {
+    rejectedLeaves: 2,
+    pendingLeaves: 3,
+    approvedLeaves: 18
+  },
+  availableLeaves: 15
+};
 
 const CompactLeaveSummaryCards = () => {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  // Fetch leave summary from API
-  const { data, isLoading, error } = useGetEmployeeLeaveSummaryQuery();
+  // Use static data instead of API call
+  const stats = staticLeaveStats;
+  const isLoading = false;
   
-  // Extract data from API response (response has a 'value' wrapper)
-  const apiData = data?.value || {};
-  const availableLeaves = apiData?.annualLeaveBalance ?? 0;
-  const statusCounts = {
-    rejectedLeaves: apiData?.rejectedRequests ?? 0,
-    pendingLeaves: apiData?.pendingRequests ?? 0,
-    approvedLeaves: apiData?.approvedRequests ?? 0,
-  };
+  // Static values
+  const statusCounts = stats?.statusCounts || {};
+  const availableLeaves = stats?.availableLeaves ?? 0;
 
   const summaryCardsData = [
     {

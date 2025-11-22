@@ -249,15 +249,6 @@ export const clockinLogApi = createApi({
         ];
       },
     }),
-
-    // Get clock-in logs summary
-    getClockinLogsSummary: builder.query({
-      query: () => ({
-        url: "/api/ClockinLogs/summary",
-        method: "GET",
-      }),
-      providesTags: [{ type: "ClockinLogs", id: "SUMMARY" }],
-    }),
   }),
 });
 
@@ -268,7 +259,6 @@ export const {
   useGetUserClockinLogsQuery,
   useGetClockinLogByIdQuery,
   useGetUserProfileClockInLogsQuery,
-  useGetClockinLogsSummaryQuery,
   useClockInMutation,
   useClockOutMutation,
 } = clockinLogApi;

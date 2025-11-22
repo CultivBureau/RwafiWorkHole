@@ -215,11 +215,7 @@
       "totalEmployees": "Total Employees",
       "presentToday": "Present Today",
       "absentToday": "Absent Today",
-      "lateArrivals": "Late Arrivals",
-      "mostFrequentAbsentees": "Most Frequent Absentees (Top 3)",
-      "mostActiveDepartment": "Most Active Department",
-      "leastActiveDepartment": "Least Active Department",
-      "noData": "No data"
+      "lateArrivals": "Late Arrivals"
     },
     "table": {
       "sortBy": "Sort By",
