@@ -5,8 +5,8 @@ import { jwtDecode } from "jwt-decode";
 import { getUserInfo, getCompanyId } from "../../../utils/page";
 import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
 import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
-import { useGetAllShiftsQuery, useAssignUserShiftMutation } from "../../../services/apis/ShiftApi";
-import { useGetTeamsByDepartmentQuery, useAssignUserToTeamMutation } from "../../../services/apis/TeamApi";
+import { useGetAllShiftsQuery } from "../../../services/apis/ShiftApi";
+import { useGetTeamsByDepartmentQuery } from "../../../services/apis/TeamApi";
 import { useRegisterMutation } from "../../../services/apis/AuthApi";
 import toast from "react-hot-toast";
 
@@ -28,13 +28,11 @@ export default function NewEmployeeForm() {
         companyId: getCompanyId() || "",
         roleId: "",
         departmentId: "",
-        teamId: "",
-        shiftId: "",
+        teamIds: [],
+        shiftIds: [],
     });
 
     const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
-    const [assignUserToTeam, { isLoading: isAssigningTeam }] = useAssignUserToTeamMutation();
-    const [assignUserShift, { isLoading: isAssigningShift }] = useAssignUserShiftMutation();
 
     const handleFieldChange = (name, value) => {
         setEmployeeData(prev => ({ ...prev, [name]: value }));
@@ -60,7 +58,6 @@ export default function NewEmployeeForm() {
     const teams = teamsRes?.value || teamsRes?.items || teamsRes || [];
 
     const handleSubmitAll = async () => {
-        // Final submit: register then assign team then assign shift
         try {
             // Get companyId from token/cookie
             const companyId = getCompanyId();
@@ -89,7 +86,7 @@ export default function NewEmployeeForm() {
                 return;
             }
 
-            // Step 1: Register user with all required data including roleId
+            // Build registration payload with all fields
             const registerPayload = {
                 userName: employeeData.userName,
                 email: employeeData.email,
@@ -98,82 +95,28 @@ export default function NewEmployeeForm() {
                 firstName: employeeData.firstName,
                 lastName: employeeData.lastName,
                 jobTitle: employeeData.jobTitle,
-                hireDate: employeeData.hireDate || new Date().toISOString(),
                 companyId,
                 roleId: employeeData.roleId,
             };
 
+            // Add optional fields only if they have values
+            if (employeeData.hireDate) {
+                // Convert date to ISO format
+                const date = new Date(employeeData.hireDate);
+                registerPayload.hireDate = date.toISOString();
+            }
+
+            if (employeeData.teamIds && employeeData.teamIds.length > 0) {
+                registerPayload.teamIds = employeeData.teamIds;
+            }
+
+            if (employeeData.shiftIds && employeeData.shiftIds.length > 0) {
+                registerPayload.shiftIds = employeeData.shiftIds;
+            }
+
             toast.loading(t("employees.newEmployeeForm.processing.register") || "Registering user...");
-            const regRes = await registerUser(registerPayload).unwrap();
+            await registerUser(registerPayload).unwrap();
             toast.dismiss();
-            
-            // Extract userId from response - API returns token, need to decode it
-            const token = regRes?.value?.token || regRes?.token;
-            if (!token) {
-                toast.error(t("employees.newEmployeeForm.errors.tokenNotFound") || "Could not find token in register response");
-                return;
-            }
-
-            // Decode JWT token to extract userId
-            let userId = null;
-            try {
-                const decoded = jwtDecode(token);
-                // Extract userId from 'sub' claim (subject) - this is the standard JWT claim for user ID
-                // Based on backend API, userId is stored in 'sub' claim
-                userId = decoded?.sub;
-                
-                if (!userId) {
-                    // Fallback to other possible claims (though 'sub' should always be present)
-                    userId = decoded?.userId || decoded?.id || decoded?.user?.id || decoded?.nameid || decoded?.UserId;
-                }
-            } catch (decodeError) {
-                toast.error(t("employees.newEmployeeForm.errors.tokenDecodeFailed") || "Failed to decode authentication token");
-                return;
-            }
-            
-            if (!userId) {
-                toast.error(t("employees.newEmployeeForm.errors.userIdNotFound") || "Could not extract user ID from token 'sub' claim.");
-                return;
-            }
-
-            // Step 2: Assign to team (if team was selected)
-            if (employeeData.teamId) {
-                toast.loading(t("employees.newEmployeeForm.processing.assignTeam") || "Assigning user to team...");
-                try {
-                    await assignUserToTeam({ 
-                        teamId: employeeData.teamId, 
-                        userId 
-                    }).unwrap();
-                    toast.dismiss();
-                    toast.success(t("employees.newEmployeeForm.success.teamAssigned") || "User assigned to team successfully");
-                } catch (teamErr) {
-                    toast.dismiss();
-                    const teamErrorMsg = teamErr?.data?.errorMessage || teamErr?.data?.message || teamErr?.message || t("employees.newEmployeeForm.errors.teamAssignmentFailed") || "Failed to assign user to team";
-                    toast.error(teamErrorMsg);
-                    // Continue even if team assignment fails
-                }
-            }
-
-            // Step 3: Assign shift (if shift was selected)
-            if (employeeData.shiftId) {
-                toast.loading(t("employees.newEmployeeForm.processing.assignShift") || "Assigning user to shift...");
-                const now = new Date().toISOString();
-                try {
-                    await assignUserShift({
-                        userId,
-                        shiftId: employeeData.shiftId,
-                        effectiveFrom: now,
-                        effectiveTo: now,
-                    }).unwrap();
-                    toast.dismiss();
-                    toast.success(t("employees.newEmployeeForm.success.shiftAssigned") || "User assigned to shift successfully");
-                } catch (shiftErr) {
-                    toast.dismiss();
-                    const shiftErrorMsg = shiftErr?.data?.errorMessage || shiftErr?.data?.message || shiftErr?.message || t("employees.newEmployeeForm.errors.shiftAssignmentFailed") || "Failed to assign user to shift";
-                    toast.error(shiftErrorMsg);
-                    // Continue even if shift assignment fails
-                }
-            }
 
             // Show success toast
             toast.success(t("employees.newEmployeeForm.success.title") || "Employee created successfully!");
@@ -191,8 +134,8 @@ export default function NewEmployeeForm() {
                 companyId: getCompanyId() || "",
                 roleId: "",
                 departmentId: "",
-                teamId: "",
-                shiftId: "",
+                teamIds: [],
+                shiftIds: [],
             });
             setStep(0);
         } catch (err) {
@@ -270,7 +213,7 @@ export default function NewEmployeeForm() {
                     <DocumentsStep
                         onNext={handleSubmitAll}
                         onBack={() => setStep(1)}
-                        loading={isRegistering || isAssigningTeam || isAssigningShift}
+                        loading={isRegistering}
                     />
                 )}
             </div>
@@ -609,6 +552,18 @@ function PersonalInfoStep({ onNext, onChange, data }) {
                         <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validJobTitle') || 'Valid job title'}</p>
                     )}
                 </div>
+                <div>
+                    <input
+                        className="form-input"
+                        placeholder={t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date (Optional)"}
+                        type="date"
+                        value={data.hireDate || ""}
+                        onChange={e => handleFieldChange('hireDate', e.target.value)}
+                    />
+                    <p className="text-xs text-[var(--sub-text-color)] mt-1">
+                        {t("employees.newEmployeeForm.personalInfo.hireDateOptional") || "Optional"}
+                    </p>
+                </div>
                 {/* companyId is derived from token and saved in state; not shown as input */}
             </div>
 
@@ -643,6 +598,18 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
         onNext();
     };
 
+    const handleTeamChange = (e) => {
+        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+        onChange('teamIds', selectedOptions);
+        setError("");
+    };
+
+    const handleShiftChange = (e) => {
+        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+        onChange('shiftIds', selectedOptions);
+        setError("");
+    };
+
     return (
         <div className="space-y-6">
             {error && (
@@ -657,7 +624,7 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
                     value={data.departmentId}
                     onChange={e => {
                         onChange('departmentId', e.target.value);
-                        onChange('teamId', '');
+                        onChange('teamIds', []);
                         setError("");
                     }}
                 >
@@ -674,6 +641,7 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
                         onChange('roleId', e.target.value);
                         setError("");
                     }}
+                    required
                 >
                     <option value="">{t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole")}</option>
                     {roleOptions.map((r) => (
@@ -683,34 +651,50 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
                     ))}
                 </select>
 
-                <select
-                    className="form-input"
-                    value={data.shiftId}
-                    onChange={e => {
-                        onChange('shiftId', e.target.value);
-                        setError("");
-                    }}
-                >
-                    <option value="">{t("employees.newEmployeeForm.professionalInfo.selectShift") || "Select shift"}</option>
-                    {shiftOptions.map((s) => (
-                        <option key={s.id || s.shiftId} value={s.id || s.shiftId}>{s.name || s.shiftName}</option>
-                    ))}
-                </select>
+                <div>
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        {t("employees.newEmployeeForm.professionalInfo.selectShift") || "Select shift(s)"} <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                    </label>
+                    <select
+                        className="form-input"
+                        multiple
+                        size={4}
+                        value={data.shiftIds || []}
+                        onChange={handleShiftChange}
+                    >
+                        {shiftOptions.map((s) => (
+                            <option key={s.id || s.shiftId} value={s.id || s.shiftId}>{s.name || s.shiftName}</option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-[var(--sub-text-color)] mt-1">
+                        {t("employees.newEmployeeForm.professionalInfo.holdCtrl") || "Hold Ctrl/Cmd to select multiple"}
+                    </p>
+                </div>
 
-                <select
-                    className="form-input"
-                    value={data.teamId}
-                    onChange={e => {
-                        onChange('teamId', e.target.value);
-                        setError("");
-                    }}
-                    disabled={!data.departmentId}
-                >
-                    <option value="">{data.departmentId ? (t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Select team") : (t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select department first")}</option>
-                    {teamOptions.map((tm) => (
-                        <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>{tm.name || tm.teamName}</option>
-                    ))}
-                </select>
+                <div>
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        {t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Select team(s)"} <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                    </label>
+                    <select
+                        className="form-input"
+                        multiple
+                        size={4}
+                        value={data.teamIds || []}
+                        onChange={handleTeamChange}
+                        disabled={!data.departmentId}
+                    >
+                        {data.departmentId ? (
+                            teamOptions.map((tm) => (
+                                <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>{tm.name || tm.teamName}</option>
+                            ))
+                        ) : (
+                            <option disabled>{t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select department first"}</option>
+                        )}
+                    </select>
+                    <p className="text-xs text-[var(--sub-text-color)] mt-1">
+                        {t("employees.newEmployeeForm.professionalInfo.holdCtrl") || "Hold Ctrl/Cmd to select multiple"}
+                    </p>
+                </div>
             </div>
 
             {/* Action Buttons */}
