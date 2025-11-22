@@ -58,10 +58,30 @@ export const breakApi = createApi({
       invalidatesTags: ["Break"],
     }),
 
-    // Get break logs for a specific user
-    getUserBreakLogs: builder.query({
-      query: ({ userId, pageNumber = 1, pageSize = 10 }) => ({
-        url: `/api/BreakLog/user/${userId}`,
+    // Restore a deleted break
+    restoreBreak: builder.mutation({
+      query: (id) => ({
+        url: `/api/v1/Break/Restore/${id}/restore`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Break"],
+    }),
+
+    // ==================== BreakLog Endpoints ====================
+    
+    // Get break log by ID
+    getBreakLogById: builder.query({
+      query: (id) => ({
+        url: `/api/v1/BreakLog/GetById/${id}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "Break", id: `log-${id}` }],
+    }),
+
+    // Get all break logs for company
+    getAllBreakLogs: builder.query({
+      query: ({ pageNumber = 1, pageSize = 10 } = {}) => ({
+        url: "/api/v1/BreakLog/GetAll/company",
         method: "GET",
         params: {
           pageNumber,
@@ -71,13 +91,29 @@ export const breakApi = createApi({
       providesTags: ["Break"],
     }),
 
+    // Get break logs for a specific user
+    getUserBreakLogs: builder.query({
+      query: ({ userId, pageNumber = 1, pageSize = 10 }) => ({
+        url: `/api/v1/BreakLog/GetAllByUserId/user/${userId}`,
+        method: "GET",
+        params: {
+          pageNumber,
+          pageSize,
+        },
+      }),
+      providesTags: (result, error, { userId }) => [
+        { type: "Break", id: `user-${userId}` },
+        "Break",
+      ],
+    }),
+
     // Start a break for the current user
     startBreak: builder.mutation({
       query: ({ breakId, utcDateTime }) => {
         // Ensure UTC time is sent
         const utcTime = utcDateTime || getCurrentUtcTime();
         return {
-          url: "/api/BreakLog/start",
+          url: "/api/v1/BreakLog/StartBreak/start",
           method: "POST",
           body: {
             breakId,
@@ -94,7 +130,7 @@ export const breakApi = createApi({
         // Ensure UTC time is sent
         const utcTime = utcDateTime || getCurrentUtcTime();
         return {
-          url: "/api/BreakLog/end",
+          url: "/api/v1/BreakLog/EndBreak/end",
           method: "PUT",
           body: {
             utcDateTime: utcTime,
@@ -102,6 +138,15 @@ export const breakApi = createApi({
         };
       },
       invalidatesTags: ["Break"],
+    }),
+
+    // Get current user break summary
+    getCurrentUserBreakSummary: builder.query({
+      query: () => ({
+        url: "/api/v1/BreakLog/GetCurrentUserBreakSummary/summary/current",
+        method: "GET",
+      }),
+      providesTags: [{ type: "Break", id: "CURRENT_SUMMARY" }],
     }),
   }),
 });
@@ -112,8 +157,12 @@ export const {
   useCreateBreakMutation,
   useUpdateBreakMutation,
   useDeleteBreakMutation,
+  useRestoreBreakMutation,
+  useGetBreakLogByIdQuery,
+  useGetAllBreakLogsQuery,
   useGetUserBreakLogsQuery,
   useStartBreakMutation,
   useEndBreakMutation,
+  useGetCurrentUserBreakSummaryQuery,
 } = breakApi;
 
