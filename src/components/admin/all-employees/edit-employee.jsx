@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, User, Briefcase, FileText, Eye, EyeOff } from "lucide-react";
+import { X, User, Briefcase, FileText, Eye, EyeOff, Save, ArrowRight, ArrowLeft, Calendar, Lock, Users, Clock, Building2 } from "lucide-react";
 import { useUpdateUserMutation, useGetUserProfileByIdQuery } from "../../../services/apis/UserApi";
 import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
 import { useGetAllShiftsQuery } from "../../../services/apis/ShiftApi";
@@ -51,7 +51,6 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
         if (employeeData) {
             // Extract roles as array of role IDs (prefer ID over name for API)
             const employeeRoles = employeeData.roles?.map(r => {
-                // Prefer id, then roleId, then name (as fallback)
                 return r.id || r.roleId || r.name || r;
             }).filter(Boolean) || [];
             
@@ -83,9 +82,10 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 password: '', // Password field (optional, only sent if provided)
                 hireDate: employeeData.hireDate ? new Date(employeeData.hireDate).toISOString().split('T')[0] : '',
                 employeeStatus: employeeData.employeeStatus !== undefined ? employeeData.employeeStatus : 0,
-                roles: employeeRoles, // Array for multi-select UI
-                role: employeeRoles[0] || employeeData.role || '', // Single role string for API (first selected role)
-                teamIds: employeeTeamIds, // Array for multi-select UI
+                roles: employeeRoles, // Keep array for backward compatibility
+                role: employeeRoles[0] || employeeData.role || '', // Single role for dropdown
+                teamIds: employeeTeamIds, // Keep array for backward compatibility
+                teamId: employeeTeamIds[0] || '', // Single team for dropdown
                 shiftId: employeeShiftId, // Single value
                 departmentId: employeeDepartmentId,
                 leaveBalances: employeeLeaveBalances,
@@ -103,11 +103,11 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 
     if (isLoadingProfile) {
         return (
-            <div className="fixed inset-0 bg-black/20 backdrop-blur-lg flex items-center justify-center z-50 p-4">
-                <div className="bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)] p-8">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] p-8 shadow-2xl">
                     <div className="text-center">
-                        <div className="w-8 h-8 border-2 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                        <p className="text-[var(--text-color)]">{t("common.loading") || "Loading..."}</p>
+                        <div className="w-12 h-12 border-4 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                        <p className="text-[var(--text-color)] font-medium">{t("common.loading") || "Loading..."}</p>
                     </div>
                 </div>
             </div>
@@ -115,10 +115,9 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     }
 
     const steps = [
-        { label: t("employees.newEmployeeForm.steps.personalInfo"), icon: User },
-        { label: t("employees.newEmployeeForm.steps.professionalInfo"), icon: Briefcase },
+        { label: t("employees.newEmployeeForm.steps.personalInfo") || "Personal Information", icon: User },
+        { label: t("employees.newEmployeeForm.steps.professionalInfo") || "Professional Information", icon: Briefcase },
         { label: t("employees.editEmployee.leaveBalances") || "Leave Balances", icon: FileText },
-        { label: t("employees.newEmployeeForm.steps.documents"), icon: FileText },
     ];
 
     const handleInputChange = (field, value) => {
@@ -171,33 +170,34 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             }
 
             // API expects 'role' as a single string (role ID or name)
-            // Ensure it's always a string, not an array or object
+            // Prefer single role value from dropdown, fallback to first item in array
             let roleValue = null;
-            if (formData.roles && Array.isArray(formData.roles) && formData.roles.length > 0) {
-                // Get first role and ensure it's a string
-                roleValue = formData.roles[0];
-            } else if (formData.role) {
+            if (formData.role) {
                 roleValue = formData.role;
+            } else if (formData.roles && Array.isArray(formData.roles) && formData.roles.length > 0) {
+                roleValue = formData.roles[0];
             }
             
-            // Convert to string and only add if not empty
             if (roleValue) {
-                // Handle if roleValue is an object (extract id or name)
                 if (typeof roleValue === 'object' && roleValue !== null) {
                     updatePayload.role = String(roleValue.id || roleValue.roleId || roleValue.name || '');
                 } else {
                     updatePayload.role = String(roleValue);
                 }
                 
-                // Ensure it's not an empty string
                 if (!updatePayload.role || updatePayload.role.trim() === '') {
                     delete updatePayload.role;
                 }
             }
 
             // Add teamIds as array (only if has items)
-            if (formData.teamIds && Array.isArray(formData.teamIds) && formData.teamIds.length > 0) {
-                updatePayload.teamIds = formData.teamIds;
+            // Support both single teamId and array teamIds
+            const teamIdsToSend = formData.teamId 
+                ? [formData.teamId] 
+                : (formData.teamIds && Array.isArray(formData.teamIds) && formData.teamIds.length > 0 ? formData.teamIds : []);
+            
+            if (teamIdsToSend.length > 0) {
+                updatePayload.teamIds = teamIdsToSend;
             }
 
             // Add shiftId as single GUID (not array)
@@ -207,7 +207,6 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 
             // Add leaveBalances array (only if has items)
             if (formData.leaveBalances && Array.isArray(formData.leaveBalances) && formData.leaveBalances.length > 0) {
-                // Filter out incomplete entries and ensure proper structure
                 updatePayload.leaveBalances = formData.leaveBalances
                     .filter(lb => lb.leaveTypeId && lb.leaveTypeId.trim())
                     .map(lb => ({
@@ -235,122 +234,152 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     };
 
     return (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-lg flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div
-                className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)] p-8"
+                className="w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] shadow-2xl"
                 dir={isArabic ? "rtl" : "ltr"}
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header */}
-                <div className={`flex items-center justify-between mb-6 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    <h2 className="text-xl font-semibold text-[var(--text-color)]">
-                        {t("employees.editEmployee.title", "Edit Employee")}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-colors"
-                    >
-                        <X className="w-5 h-5 text-[var(--sub-text-color)]" />
-                    </button>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mb-8">
-                    <div className="relative mb-4">
-                        <div className="w-full h-1 bg-[var(--border-color)] rounded" />
-                        <div
-                            className={`absolute top-0 h-1 gradient-bg rounded transition-all duration-300 ${isArabic ? 'right-0' : 'left-0'}`}
-                            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-                        />
-                    </div>
-
-                    <div className="hidden sm:flex justify-between">
-                        {steps.map((stepItem, idx) => {
-                            const IconComponent = stepItem.icon;
-                            const isActive = idx === step;
-                            const isCompleted = idx < step;
-
-                            return (
-                                <button
-                                    key={stepItem.label}
-                                    onClick={() => setStep(idx)}
-                                    className="flex items-center cursor-pointer"
-                                >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isArabic ? 'ml-2' : 'mr-2'} ${isActive || isCompleted
-                                            ? 'gradient-bg text-white'
-                                            : 'bg-[var(--container-color)] text-[var(--sub-text-color)]'
-                                        }`}>
-                                        <IconComponent size={16} />
-                                    </div>
-                                    <span className={`text-sm font-medium ${isActive || isCompleted
-                                            ? 'gradient-text'
-                                            : 'text-[var(--sub-text-color)]'
-                                        }`}>
-                                        {stepItem.label}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Step Content */}
-                <div className="mt-8">
-                    {step === 0 && <PersonalInfoEdit formData={formData} onChange={handleInputChange} />}
-                    {step === 1 && (
-                        <ProfessionalInfoEdit 
-                            formData={formData} 
-                            onChange={handleInputChange}
-                            roles={roles}
-                            shifts={shifts}
-                            teams={teams}
-                            departments={departments}
-                        />
-                    )}
-                    {step === 2 && <LeaveBalancesEdit formData={formData} onChange={handleInputChange} leaveTypes={leaveTypes} />}
-                    {step === 3 && <DocumentsEdit formData={formData} onChange={handleInputChange} />}
-                </div>
-
-                {/* Navigation */}
-                <div className={`flex justify-between mt-8 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    <div className="flex gap-3">
+                {/* Header with gradient */}
+                <div className="sticky top-0 z-10 bg-[var(--bg-color)] border-b border-[var(--border-color)] rounded-t-2xl shadow-sm">
+                    <div className={`h-1 ${isArabic ? 'bg-gradient-to-l' : 'bg-gradient-to-r'} from-[#15919B] to-[#09D1C7]`} />
+                    <div className={`flex items-center justify-between px-6 py-5 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#15919B] to-[#09D1C7] shadow-md">
+                                <User className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl font-bold text-[var(--text-color)]">
+                                    {t("employees.editEmployee.title") || "Edit Employee"}
+                                </h2>
+                            </div>
+                        </div>
                         <button
-                            onClick={() => setStep(Math.max(0, step - 1))}
-                            disabled={step === 0}
-                            className="btn-secondary disabled:opacity-50"
+                            onClick={onClose}
+                            className={`p-2 hover:bg-[var(--hover-color)] rounded-lg transition-all duration-200 hover:scale-110 ${isArabic ? 'mr-auto' : 'ml-auto'}`}
+                            aria-label={t("common.close") || "Close"}
                         >
-                            {t("employees.newEmployeeForm.buttons.back")}
+                            <X className="w-5 h-5 text-[var(--sub-text-color)]" />
                         </button>
-                        {step < steps.length - 1 ? (
-                            <button
-                                onClick={() => setStep(Math.min(3, step + 1))}
-                                className="btn-primary"
-                            >
-                                {t("employees.newEmployeeForm.buttons.next")}
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleSave}
-                                className="btn-primary flex items-center gap-2"
-                                disabled={isUpdating}
-                            >
-                                {isUpdating ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        <span>{t("common.loading") || "Saving..."}</span>
-                                    </>
-                                ) : (
-                                    t("employees.editEmployee.save", "Save Changes")
-                                )}
-                            </button>
-                        )}
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="btn-secondary"
-                    >
-                        {t("employees.newEmployeeForm.buttons.cancel")}
-                    </button>
+                </div>
+
+                <div className="p-6">
+                    {/* Progress Bar */}
+                    <div className="mb-8">
+                        <div className="relative mb-6">
+                            <div className="w-full h-2.5 bg-[var(--container-color)] rounded-full shadow-inner" />
+                            <div
+                                className={`absolute top-0 h-2.5 rounded-full transition-all duration-500 shadow-md ${isArabic ? 'right-0 bg-gradient-to-l' : 'left-0 bg-gradient-to-r'} from-[#15919B] to-[#09D1C7]`}
+                                style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                            />
+                        </div>
+
+                        <div className={`flex justify-between items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            {steps.map((stepItem, idx) => {
+                                const IconComponent = stepItem.icon;
+                                const isActive = idx === step;
+                                const isCompleted = idx < step;
+
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => setStep(idx)}
+                                        className={`flex items-center gap-3 cursor-pointer transition-all group ${isArabic ? 'flex-row-reverse' : ''}`}
+                                    >
+                                        <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
+                                            isActive || isCompleted
+                                                ? 'bg-gradient-to-br from-[#15919B] to-[#09D1C7] text-white shadow-lg scale-110 ring-4 ring-[#15919B]/20'
+                                                : 'bg-[var(--container-color)] text-[var(--sub-text-color)] hover:bg-[var(--hover-color)] hover:scale-105'
+                                        }`}>
+                                            <IconComponent size={20} />
+                                            {(isActive || isCompleted) && (
+                                                <div className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
+                                            )}
+                                        </div>
+                                        <span className={`text-sm font-semibold hidden sm:block transition-colors ${
+                                            isActive || isCompleted
+                                                ? 'text-[var(--accent-color)]'
+                                                : 'text-[var(--sub-text-color)] group-hover:text-[var(--text-color)]'
+                                        }`}>
+                                            {stepItem.label}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Step Content */}
+                    <div className="mt-8 min-h-[400px] flex items-center justify-center">
+                        <div className="w-full max-w-4xl">
+                            {step === 0 && <PersonalInfoEdit formData={formData} onChange={handleInputChange} isArabic={isArabic} t={t} />}
+                            {step === 1 && (
+                                <ProfessionalInfoEdit 
+                                    formData={formData} 
+                                    onChange={handleInputChange}
+                                    roles={roles}
+                                    shifts={shifts}
+                                    teams={teams}
+                                    departments={departments}
+                                    isArabic={isArabic}
+                                    t={t}
+                                />
+                            )}
+                            {step === 2 && <LeaveBalancesEdit formData={formData} onChange={handleInputChange} leaveTypes={leaveTypes} isArabic={isArabic} t={t} />}
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <div className={`flex justify-between items-center mt-8 pt-6 border-t border-[var(--border-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <button
+                                onClick={() => setStep(Math.max(0, step - 1))}
+                                disabled={step === 0}
+                                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    step === 0
+                                        ? 'bg-[var(--container-color)] text-[var(--sub-text-color)]'
+                                        : 'bg-[var(--container-color)] text-[var(--text-color)] hover:bg-[var(--hover-color)]'
+                                }`}
+                            >
+                                {isArabic ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
+                                {t("employees.newEmployeeForm.buttons.back") || "Back"}
+                            </button>
+                            {step < steps.length - 1 ? (
+                                <button
+                                    onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all"
+                                >
+                                    {t("employees.newEmployeeForm.buttons.next") || "Next"}
+                                    {isArabic ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={handleSave}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50"
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <span>{t("common.loading") || "Saving..."}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save size={18} />
+                                            <span>{t("employees.editEmployee.save") || "Save Changes"}</span>
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-3 rounded-xl font-semibold bg-[var(--container-color)] text-[var(--text-color)] hover:bg-[var(--hover-color)] transition-all"
+                        >
+                            {t("employees.newEmployeeForm.buttons.cancel") || "Cancel"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -358,97 +387,121 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 }
 
 // Personal Information Edit
-function PersonalInfoEdit({ formData, onChange }) {
-    const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === "ar";
+function PersonalInfoEdit({ formData, onChange, isArabic, t }) {
     const [showPassword, setShowPassword] = useState(false);
 
     return (
-        <div className="space-y-6">
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.personalInfo.firstName")} <span className="text-red-500">*</span>
+        <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
+            <div className="mb-6">
+                <h3 className={`text-xl font-bold text-[var(--text-color)] flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <User className="w-5 h-5 text-[var(--accent-color)]" />
+                    {t("employees.newEmployeeForm.steps.personalInfo") || "Personal Information"}
+                </h3>
+                <p className={`text-sm text-[var(--sub-text-color)] mt-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                    {t("employees.editEmployee.personalInfoDescription") || "Update employee's personal details"}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
+                        {t("employees.newEmployeeForm.personalInfo.firstName") || "First Name"} <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
-                        className="form-input"
-                        placeholder={t("employees.newEmployeeForm.personalInfo.firstName")}
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
+                        placeholder={t("employees.newEmployeeForm.personalInfo.firstName") || "Enter first name"}
                         type="text"
                         value={formData.firstName || ''}
                         onChange={(e) => onChange('firstName', e.target.value)}
                         required
+                        dir={isArabic ? "rtl" : "ltr"}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.personalInfo.lastName")} <span className="text-red-500">*</span>
+
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
+                        {t("employees.newEmployeeForm.personalInfo.lastName") || "Last Name"} <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
-                        className="form-input"
-                        placeholder={t("employees.newEmployeeForm.personalInfo.lastName")}
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
+                        placeholder={t("employees.newEmployeeForm.personalInfo.lastName") || "Enter last name"}
                         type="text"
                         value={formData.lastName || ''}
                         onChange={(e) => onChange('lastName', e.target.value)}
                         required
+                        dir={isArabic ? "rtl" : "ltr"}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        job Title <span className="text-red-500">*</span>
+
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Briefcase className="w-4 h-4 text-[var(--accent-color)]" />
+                        {t("employees.newEmployeeForm.personalInfo.jobTitle") || "Job Title"} <span className="text-red-500 font-bold">*</span>
                     </label>
                     <input
-                        className="form-input"
-                        placeholder={t("employees.newEmployeeForm.personalInfo.jobTitle") || "Job Title"}
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
+                        placeholder={t("employees.newEmployeeForm.personalInfo.jobTitle") || "Enter job title"}
                         type="text"
                         value={formData.jobTitle || ''}
                         onChange={(e) => onChange('jobTitle', e.target.value)}
                         required
+                        dir={isArabic ? "rtl" : "ltr"}
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        password
+
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Calendar className="w-4 h-4 text-[var(--accent-color)]" />
+                        {t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date"}
+                    </label>
+                    <input
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
+                        type="date"
+                        value={formData.hireDate || ''}
+                        onChange={(e) => onChange('hireDate', e.target.value)}
+                        dir={isArabic ? "rtl" : "ltr"}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Lock className="w-4 h-4 text-[var(--accent-color)]" />
+                        {t("employees.editEmployee.password") || "Password"}
+                        <span className="text-xs text-[var(--sub-text-color)] font-normal">({t("common.optional") || "Optional"})</span>
                     </label>
                     <div className="relative">
                         <input
-                            className="form-input pr-10"
+                            className={`w-full px-4 py-3.5 ${isArabic ? 'pl-12' : 'pr-12'} rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
                             placeholder={t("employees.editEmployee.passwordPlaceholder") || "Enter new password (optional)"}
                             type={showPassword ? 'text' : 'password'}
                             value={formData.password || ''}
                             onChange={(e) => onChange('password', e.target.value)}
                             autoComplete="new-password"
+                            dir={isArabic ? "rtl" : "ltr"}
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(s => !s)}
-                            className={`absolute ${isArabic ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--sub-text-color)]`}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            className={`absolute ${isArabic ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--sub-text-color)] hover:text-[var(--accent-color)] transition-colors p-1 rounded hover:bg-[var(--hover-color)]`}
+                            aria-label={showPassword ? (t("common.hidePassword") || "Hide password") : (t("common.showPassword") || "Show password")}
                         >
-                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                         </button>
                     </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        hireDate
-                    </label>
-                    <input
-                        className="form-input"
-                        placeholder={t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date"}
-                        type="date"
-                        value={formData.hireDate || ''}
-                        onChange={(e) => onChange('hireDate', e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        Status
+
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
+                        {t("employees.editEmployee.status") || "Status"}
                     </label>
                     <select
-                        className="form-input"
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
                         value={formData.employeeStatus !== undefined ? formData.employeeStatus : 0}
                         onChange={(e) => onChange('employeeStatus', parseInt(e.target.value))}
+                        dir={isArabic ? "rtl" : "ltr"}
                     >
                         <option value={0}>{t("employees.editEmployee.statusActive") || "Active"}</option>
                         <option value={1}>{t("employees.editEmployee.statusInactive") || "Inactive"}</option>
@@ -460,43 +513,53 @@ function PersonalInfoEdit({ formData, onChange }) {
 }
 
 // Professional Information Edit
-function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, departments }) {
-    const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === "ar";
-
+function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, departments, isArabic, t }) {
     const roleOptions = Array.isArray(roles) ? roles : [];
     const shiftOptions = Array.isArray(shifts) ? shifts : [];
     const teamOptions = Array.isArray(teams) ? teams : [];
     const deptOptions = Array.isArray(departments) ? departments : [];
 
     const handleRoleChange = (e) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-        onChange('roles', selectedOptions);
-        // Also update single role field (API expects single role string)
-        onChange('role', selectedOptions[0] || '');
+        const selectedValue = e.target.value;
+        onChange('role', selectedValue);
+        onChange('roles', selectedValue ? [selectedValue] : []);
     };
 
     const handleTeamChange = (e) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-        onChange('teamIds', selectedOptions);
+        const selectedValue = e.target.value;
+        onChange('teamId', selectedValue);
+        onChange('teamIds', selectedValue ? [selectedValue] : []);
     };
 
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+        <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
+            <div className="mb-6">
+                <h3 className={`text-xl font-bold text-[var(--text-color)] flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <Briefcase className="w-5 h-5 text-[var(--accent-color)]" />
+                    {t("employees.newEmployeeForm.steps.professionalInfo") || "Professional Information"}
+                </h3>
+                <p className={`text-sm text-[var(--sub-text-color)] mt-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                    {t("employees.editEmployee.professionalInfoDescription") || "Update employee's professional details and assignments"}
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Building2 className="w-4 h-4 text-[var(--accent-color)]" />
                         {t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Department"}
                     </label>
                     <select
-                        className="form-input"
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
                         value={formData.departmentId || ''}
                         onChange={e => {
                             onChange('departmentId', e.target.value);
                             onChange('teamIds', []);
+                            onChange('teamId', '');
                         }}
+                        dir={isArabic ? "rtl" : "ltr"}
                     >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectDepartment")}</option>
+                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select Department"}</option>
                         {deptOptions.map((d) => (
                             <option key={d.id || d.departmentId} value={d.id || d.departmentId}>
                                 {d.name || d.departmentName}
@@ -505,38 +568,38 @@ function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, depart
                     </select>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Roles"}
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <User className="w-4 h-4 text-[var(--accent-color)]" />
+                        {t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Role"}
                     </label>
                     <select
-                        className="form-input"
-                        multiple
-                        size={4}
-                        value={formData.roles || []}
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
+                        value={formData.role || formData.roles?.[0] || ''}
                         onChange={handleRoleChange}
+                        dir={isArabic ? "rtl" : "ltr"}
                     >
+                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Select Role"}</option>
                         {roleOptions.map((r) => (
                             <option key={r.id || r.roleId} value={r.id || r.roleId}>
                                 {r.name || r.roleName || r.code}
                             </option>
                         ))}
                     </select>
-                    <p className="text-xs text-[var(--sub-text-color)] mt-1">
-                        {t("employees.newEmployeeForm.professionalInfo.holdCtrl") || "Hold Ctrl/Cmd to select multiple"}
-                    </p>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Clock className="w-4 h-4 text-[var(--accent-color)]" />
                         {t("employees.newEmployeeForm.professionalInfo.selectShift") || "Shift"}
                     </label>
                     <select
-                        className="form-input"
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
                         value={formData.shiftId || ''}
                         onChange={e => onChange('shiftId', e.target.value)}
+                        dir={isArabic ? "rtl" : "ltr"}
                     >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectShift") || "Select shift"}</option>
+                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectShift") || "Select Shift"}</option>
                         {shiftOptions.map((s) => (
                             <option key={s.id || s.shiftId} value={s.id || s.shiftId}>
                                 {s.name || s.shiftName}
@@ -545,31 +608,26 @@ function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, depart
                     </select>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Teams"} <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                <div className="space-y-2">
+                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <Users className="w-4 h-4 text-[var(--accent-color)]" />
+                        {t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Team"}
+                        <span className="text-xs text-[var(--sub-text-color)] font-normal">({t("common.optional") || "Optional"})</span>
                     </label>
                     <select
-                        className="form-input"
-                        multiple
-                        size={4}
-                        value={formData.teamIds || []}
+                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
+                        value={formData.teamId || formData.teamIds?.[0] || ''}
                         onChange={handleTeamChange}
                         disabled={!formData.departmentId}
+                        dir={isArabic ? "rtl" : "ltr"}
                     >
-                        {formData.departmentId ? (
-                            teamOptions.map((tm) => (
-                                <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>
-                                    {tm.name || tm.teamName}
-                                </option>
-                            ))
-                        ) : (
-                            <option disabled>{t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select department first"}</option>
-                        )}
+                        <option value="">{formData.departmentId ? (t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Select Team") : (t("employees.newEmployeeForm.professionalInfo.selectDepartmentFirst") || "Select department first")}</option>
+                        {formData.departmentId && teamOptions.map((tm) => (
+                            <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>
+                                {tm.name || tm.teamName}
+                            </option>
+                        ))}
                     </select>
-                    <p className="text-xs text-[var(--sub-text-color)] mt-1">
-                        {t("employees.newEmployeeForm.professionalInfo.holdCtrl") || "Hold Ctrl/Cmd to select multiple"}
-                    </p>
                 </div>
             </div>
         </div>
@@ -577,10 +635,7 @@ function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, depart
 }
 
 // Leave Balances Edit
-function LeaveBalancesEdit({ formData, onChange, leaveTypes }) {
-    const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === "ar";
-
+function LeaveBalancesEdit({ formData, onChange, leaveTypes, isArabic, t }) {
     const leaveBalances = formData.leaveBalances || [];
 
     const handleLeaveBalanceChange = (index, field, value) => {
@@ -602,36 +657,51 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes }) {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-[var(--text-color)]">
+        <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
+            <div className="mb-6 text-center">
+                <h3 className={`text-xl font-bold text-[var(--text-color)] flex items-center justify-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <FileText className="w-5 h-5 text-[var(--accent-color)]" />
                     {t("employees.editEmployee.leaveBalances") || "Leave Balances"}
                 </h3>
+                <p className={`text-sm text-[var(--sub-text-color)] mt-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                    {t("employees.editEmployee.leaveBalancesDescription") || "Manage employee's leave balances"}
+                </p>
+            </div>
+
+            <div className="flex items-center justify-center mb-4">
                 <button
                     type="button"
                     onClick={addLeaveBalance}
-                    className="btn-primary text-sm"
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all ${isArabic ? 'flex-row-reverse' : ''}`}
                 >
-                    {t("employees.editEmployee.addLeaveBalance") || "+ Add Leave Balance"}
+                    <span>+</span>
+                    {t("employees.editEmployee.addLeaveBalance") || "Add Leave Balance"}
                 </button>
             </div>
 
             {leaveBalances.length === 0 ? (
-                <div className="text-center py-8 text-[var(--sub-text-color)]">
-                    {t("employees.editEmployee.noLeaveBalances") || "No leave balances added. Click 'Add Leave Balance' to add one."}
+                <div className="text-center py-16 border-2 border-dashed border-[var(--border-color)] rounded-xl bg-[var(--container-color)] max-w-2xl mx-auto">
+                    <div className="p-4 rounded-full bg-[var(--bg-color)] w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                        <FileText className="w-8 h-8 text-[var(--sub-text-color)]" />
+                    </div>
+                    <p className="text-[var(--sub-text-color)] text-sm font-medium">
+                        {t("employees.editEmployee.noLeaveBalances") || "No leave balances added. Click 'Add Leave Balance' to add one."}
+                    </p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 max-w-4xl mx-auto">
                     {leaveBalances.map((balance, index) => (
-                        <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border border-[var(--border-color)] rounded-lg">
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        <div key={index} className={`grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-5 border-2 border-[var(--border-color)] rounded-xl bg-[var(--container-color)] hover:border-[var(--accent-color)] hover:shadow-md transition-all ${isArabic ? 'text-right' : 'text-left'}`}>
+                            <div className="space-y-2">
+                                <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
                                     {t("employees.editEmployee.leaveType") || "Leave Type"}
                                 </label>
                                 <select
-                                    className="form-input"
+                                    className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
                                     value={balance.leaveTypeId || ''}
                                     onChange={(e) => handleLeaveBalanceChange(index, 'leaveTypeId', e.target.value)}
+                                    dir={isArabic ? "rtl" : "ltr"}
                                 >
                                     <option value="">{t("employees.editEmployee.selectLeaveType") || "Select leave type"}</option>
                                     {leaveTypes.map((lt) => (
@@ -641,24 +711,26 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes }) {
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                            <div className="space-y-2">
+                                <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
                                     {t("employees.editEmployee.balanceDays") || "Balance Days"}
                                 </label>
                                 <input
-                                    className="form-input"
+                                    className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
                                     type="number"
                                     min="0"
                                     step="0.5"
                                     value={balance.balanceDays || 0}
                                     onChange={(e) => handleLeaveBalanceChange(index, 'balanceDays', e.target.value)}
+                                    dir={isArabic ? "rtl" : "ltr"}
                                 />
                             </div>
                             <div>
                                 <button
                                     type="button"
                                     onClick={() => removeLeaveBalance(index)}
-                                    className="btn-secondary w-full"
+                                    className="w-full px-4 py-3.5 rounded-xl font-semibold bg-[var(--container-color)] text-[var(--text-color)] border-2 border-[var(--border-color)] hover:border-red-500 hover:text-red-500 hover:bg-red-50 transition-all"
                                 >
                                     {t("common.remove") || "Remove"}
                                 </button>
@@ -667,22 +739,6 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes }) {
                     ))}
                 </div>
             )}
-        </div>
-    );
-}
-
-// Documents Edit (simplified for this example)
-function DocumentsEdit({ formData, onChange }) {
-    const { t } = useTranslation();
-
-    return (
-        <div className="space-y-6">
-            <div className="text-center py-8">
-                <FileText className="w-16 h-16 mx-auto mb-4 text-[var(--sub-text-color)]" />
-                <p className="text-[var(--sub-text-color)]">
-                    {t("employees.editEmployee.documentsNote", "Document management will be available in a future update")}
-                </p>
-            </div>
         </div>
     );
 }

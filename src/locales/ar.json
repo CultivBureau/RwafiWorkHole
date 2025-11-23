@@ -702,6 +702,8 @@
       "personalInfo": {
         "firstName": "الاسم الأول",
         "lastName": "اسم العائلة",
+        "jobTitle": "المسمى الوظيفي",
+        "hireDate": "تاريخ التوظيف",
         "mobileNumber": "رقم الهاتف المحمول",
         "emailAddress": "البريد الإلكتروني",
         "dateOfBirth": "تاريخ الميلاد",
@@ -723,8 +725,10 @@
         "userName": "اسم المستخدم",
         "selectEmployeeRole": "اختر دور الموظف",
         "selectDepartment": "اختر القسم",
+        "selectDepartmentFirst": "اختر القسم أولاً",
         "selectTeam": "اختر الفريق",
         "selectShift": "اختر الوردية",
+        "holdCtrl": "اضغط Ctrl/Cmd لتحديد متعدد",
         "managerSupervisor": "أدخل المدير / المشرف",
         "selectWorkingDays": "اختر أيام العمل",
         "selectEmploymentType": "اختر نوع التوظيف",
@@ -802,6 +806,33 @@
         "teamAssignmentFailed": "فشل تعيين المستخدم للفريق",
         "shiftAssignmentFailed": "فشل تعيين المستخدم للوردية",
         "createFailed": "فشل إنشاء الموظف"
+      }
+    },
+    "editEmployee": {
+      "title": "تعديل الموظف",
+      "save": "حفظ التغييرات",
+      "processing": "جاري تحديث الموظف...",
+      "success": "تم تحديث الموظف بنجاح!",
+      "password": "كلمة المرور",
+      "passwordPlaceholder": "أدخل كلمة مرور جديدة (اختياري)",
+      "status": "الحالة",
+      "statusActive": "نشط",
+      "statusInactive": "غير نشط",
+      "leaveBalances": "رصيد الإجازات",
+      "leaveBalancesDescription": "إدارة رصيد إجازات الموظف",
+      "addLeaveBalance": "إضافة رصيد إجازة",
+      "noLeaveBalances": "لم يتم إضافة رصيد إجازات. انقر على 'إضافة رصيد إجازة' لإضافة واحد.",
+      "leaveType": "نوع الإجازة",
+      "selectLeaveType": "اختر نوع الإجازة",
+      "balanceDays": "أيام الرصيد",
+      "personalInfoDescription": "تحديث التفاصيل الشخصية للموظف",
+      "professionalInfoDescription": "تحديث التفاصيل المهنية وتعيينات الموظف",
+      "errors": {
+        "noEmployeeId": "لم يتم العثور على معرف الموظف",
+        "firstNameRequired": "الاسم الأول مطلوب",
+        "lastNameRequired": "اسم العائلة مطلوب",
+        "jobTitleRequired": "المسمى الوظيفي مطلوب",
+        "updateFailed": "فشل تحديث الموظف"
       }
     }
   },
@@ -1540,7 +1571,12 @@
   "common": {
     "loading": "جاري التحميل...",
     "saving": "جاري الحفظ...",
-    "back": "رجوع"
+    "back": "رجوع",
+    "optional": "اختياري",
+    "remove": "إزالة",
+    "showPassword": "إظهار كلمة المرور",
+    "hidePassword": "إخفاء كلمة المرور",
+    "close": "إغلاق"
   },
   "performance": {
     "statusCards": {
