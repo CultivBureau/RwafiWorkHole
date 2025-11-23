@@ -77,14 +77,7 @@ export const utcToLocalTime = (utcIsoString, locale = 'en-US', options = {}) => 
   // Debug logging in development
   if (typeof window !== 'undefined' && import.meta.env?.DEV) {
     const normalized = normalizeUtcIsoString(utcIsoString);
-    console.log('UTC to Local Time Conversion:', {
-      input: utcIsoString,
-      processed: normalized || utcIsoString,
-      localTime: date.toLocaleTimeString(locale, defaultOptions),
-      utcHours: date.getUTCHours(),
-      localHours: date.getHours(),
-      timezoneOffset: date.getTimezoneOffset(),
-    });
+
   }
   
   return date.toLocaleTimeString(locale, defaultOptions);

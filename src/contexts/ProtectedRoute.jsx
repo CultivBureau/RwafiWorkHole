@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { getAuthToken, getUserInfo, getRefreshToken, isTokenExpired, isRefreshTokenExpired } from "../utils/page";
+import { getAuthToken, getUserInfo, getRefreshToken, isTokenExpired, isRefreshTokenExpired, getPermissions } from "../utils/page";
 import { useMeQuery } from "../services/apis/AuthApi";
+import { hasBackendPermission } from "../utils/permissionMapping";
 
 // Helper function to check if user is admin
 const isAdminUser = (userData, userInfoFromCookie) => {
@@ -32,6 +33,12 @@ const isAdminUser = (userData, userInfoFromCookie) => {
   return false;
 };
 
+// Helper function to check if user has Dashboard.View permission
+const hasDashboardViewPermission = () => {
+  const userPermissions = getPermissions() || [];
+  return hasBackendPermission(userPermissions, 'Dashboard.View');
+};
+
 const ProtectedRoute = ({ children }) => {
   const location = useLocation();
   
@@ -61,20 +68,21 @@ const ProtectedRoute = ({ children }) => {
     skip: !token && !refreshToken && !userInfoFromCookie,
   });
   
-  // Check if user is admin (use cookie data as primary source for immediate check)
-  const isAdmin = isAdminUser(user?.value || user, userInfoFromCookie);
+  // Check if user has Dashboard.View permission from cookies
+  const hasDashboardView = hasDashboardViewPermission();
   const currentPath = location.pathname;
   
-  // Role-based routing: Redirect if user tries to access wrong dashboard
+  // Dashboard routing: Strict permission-based routing
+  // ONLY check Dashboard.View permission - no role fallbacks
   // Check this BEFORE allowing access to prevent wrong dashboard access
   if (userInfoFromCookie || (!isLoading && user)) {
-    // If admin tries to access user dashboard, redirect to admin dashboard
-    if (isAdmin && currentPath === '/pages/User/dashboard') {
+    // If user has Dashboard.View permission, they MUST access admin dashboard
+    if (hasDashboardView && currentPath === '/pages/User/dashboard') {
       return <Navigate to="/pages/admin/dashboard" replace />;
     }
     
-    // If non-admin tries to access admin dashboard, redirect to user dashboard
-    if (!isAdmin && currentPath === '/pages/admin/dashboard') {
+    // If user doesn't have Dashboard.View permission, they MUST access user dashboard
+    if (!hasDashboardView && currentPath === '/pages/admin/dashboard') {
       return <Navigate to="/pages/User/dashboard" replace />;
     }
   }

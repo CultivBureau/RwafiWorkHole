@@ -7,6 +7,7 @@
 
 export const PAGE_PERMISSIONS = {
   // Admin Pages
+  '/pages/admin/dashboard': 'Dashboard.View', // Admin dashboard requires Dashboard.View permission
   '/pages/admin/all-departments': 'Department.View',
   '/pages/admin/new-department': 'Department.Create',
   '/pages/admin/edit-department': 'Department.Update',

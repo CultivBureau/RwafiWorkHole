@@ -22,7 +22,8 @@ import {
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Cookies from "js-cookie";
-import { setPermissionsFromToken, getAuthToken, getUserInfo, getRefreshToken } from "../../utils/page";
+import { setPermissionsFromToken, getAuthToken, getUserInfo, getRefreshToken, getPermissions } from "../../utils/page";
+import { hasBackendPermission } from "../../utils/permissionMapping";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,11 +54,13 @@ const Login = () => {
     
     // If user is already authenticated, redirect to dashboard
     if (token || refreshToken || userInfoFromCookie) {
-      // Determine dashboard based on role
-      const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-      const role = userInfoFromCookie?.[msRoleKey] || userInfoFromCookie?.role;
-      const isAdmin = role && role.toLowerCase() === 'admin';
-      const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
+      // Determine dashboard based on Dashboard.View permission
+      const userPermissions = getPermissions() || [];
+      const hasDashboardView = hasBackendPermission(userPermissions, 'Dashboard.View');
+      
+      // If user has Dashboard.View permission, redirect to admin dashboard
+      // Otherwise, redirect to user dashboard
+      const dashboardPath = hasDashboardView ? "/pages/admin/dashboard" : "/pages/User/dashboard";
       navigate(dashboardPath, { replace: true });
     }
   }, [navigate]);
@@ -137,24 +140,17 @@ const Login = () => {
             Cookies.set("refresh_token_expires_at", responseValue.refreshTokenExpiresAt, { expires: 20 });
           }
           
-          // Check for roles in MS identity claim
-          const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-          let roles = decoded[msRoleKey] || [];
-          const rolesArray = Array.isArray(roles) ? roles : [roles];
+          // Check for Dashboard.View permission to determine dashboard path
+          // STRICT: Only check Dashboard.View permission - no role fallbacks
+          const userPermissions = getPermissions() || [];
+          const hasDashboardView = hasBackendPermission(userPermissions, 'Dashboard.View');
           
-          // Helper function to normalize role - handle both object format {id, name} and string format
-          const normalizeRole = (role) => {
-            if (!role) return null;
-            if (typeof role === 'string') return role.toLowerCase();
-            if (typeof role === 'object' && role?.name) return role.name.toLowerCase();
-            return null;
-          };
-          
-          const normalizedRoles = rolesArray.map(normalizeRole).filter(Boolean);
-          const isAdmin = normalizedRoles.some(r => r === 'admin');
-          
-          // Determine dashboard path based on role
-          const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
+          // Determine dashboard path based ONLY on Dashboard.View permission
+          // If user has Dashboard.View permission → admin dashboard
+          // If user doesn't have Dashboard.View permission → user dashboard
+          const dashboardPath = hasDashboardView 
+            ? "/pages/admin/dashboard" 
+            : "/pages/User/dashboard";
           
           // Ensure cookies are saved before navigation
           // Small delay to ensure cookies are persisted
@@ -167,9 +163,15 @@ const Login = () => {
           return;
         }
       } else {
-        // fallback to old logic if no token found
-        const isAdmin = responseValue?.isAdmin || false;
-        const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
+        // Fallback: If no token found, check Dashboard.View permission
+        // STRICT: Only check Dashboard.View permission - no role fallbacks
+        const userPermissions = getPermissions() || [];
+        const hasDashboardView = hasBackendPermission(userPermissions, 'Dashboard.View');
+        
+        // Determine dashboard path based ONLY on Dashboard.View permission
+        const dashboardPath = hasDashboardView 
+          ? "/pages/admin/dashboard" 
+          : "/pages/User/dashboard";
         
         // Ensure cookies are saved before navigation
         await new Promise(resolve => setTimeout(resolve, 100));
