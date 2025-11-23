@@ -1217,11 +1217,14 @@
         "breakManagement": "Break Management",
         "breakLogs": "Break Logs",
         "company": "Company",
+        "dashboard": "Dashboard",
         "department": "Department",
         "leaveBalance": "Leave Balance",
         "leaveType": "Leave Type",
         "permission": "Permission",
         "roles": "Roles",
+        "shift": "Shift",
+        "shiftAssignment": "Shift Assignment",
         "team": "Team"
       },
       "permissions": {

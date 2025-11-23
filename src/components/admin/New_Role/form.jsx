@@ -56,13 +56,16 @@ const NewRoleForm = () => {
         'BreakLog': t('roles.editRole.categories.breakLogs'),
         'ClockinLog': t('roles.editRole.categories.timeAndAttendance'),
         'Company': t('roles.editRole.categories.company'),
+        'Dashboard': t('roles.editRole.categories.dashboard'),
         'Department': t('roles.editRole.categories.department'),
         'LeaveBalance': t('roles.editRole.categories.leaveBalance'),
         'LeaveRequest': t('roles.editRole.categories.leaveManagement'),
         'LeaveType': t('roles.editRole.categories.leaveType'),
-        'Role': t('roles.editRole.categories.roles'),
-        'Team': t('roles.editRole.categories.team'),
         'Permission': t('roles.editRole.categories.permission'),
+        'Role': t('roles.editRole.categories.roles'),
+        'Shift': t('roles.editRole.categories.shift'),
+        'ShiftAssignment': t('roles.editRole.categories.shiftAssignment'),
+        'Team': t('roles.editRole.categories.team'),
     };
 
     const handleInputChange = (e) => {
@@ -359,7 +362,37 @@ const NewRoleForm = () => {
 
                     {canViewPermissions && !permissionsLoading && !permissionsError && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                            {Object.keys(groupedPermissions).map(category => (
+                            {Object.keys(groupedPermissions)
+                                .sort((a, b) => {
+                                    // Define a preferred order for categories
+                                    const categoryOrder = [
+                                        'Dashboard',
+                                        'User',
+                                        'Company',
+                                        'Department',
+                                        'Team',
+                                        'Role',
+                                        'Permission',
+                                        'Shift',
+                                        'ShiftAssignment',
+                                        'Break',
+                                        'BreakLog',
+                                        'ClockinLog',
+                                        'LeaveBalance',
+                                        'LeaveRequest',
+                                        'LeaveType',
+                                    ];
+                                    const indexA = categoryOrder.indexOf(a);
+                                    const indexB = categoryOrder.indexOf(b);
+                                    // If both are in the order list, sort by their position
+                                    if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                    // If only one is in the list, prioritize it
+                                    if (indexA !== -1) return -1;
+                                    if (indexB !== -1) return 1;
+                                    // If neither is in the list, sort alphabetically
+                                    return a.localeCompare(b);
+                                })
+                                .map(category => (
                                 <div 
                                     key={category}
                                     className="rounded-xl p-4 border transition-all hover:shadow-md"
@@ -396,27 +429,109 @@ const NewRoleForm = () => {
                                         </label>
                                     </div>
                                     <div className="space-y-2">
-                                        {groupedPermissions[category].map(permission => (
-                                            <label 
-                                                key={permission.id} 
-                                                className={`flex items-center cursor-pointer p-2 rounded-lg hover:bg-[var(--hover-color)] transition-colors group ${isArabic ? 'flex-row-reverse' : ''}`}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.selectedPermissionIds.includes(permission.id)}
-                                                    onChange={() => handlePermissionToggle(permission.id)}
-                                                    className={`w-4 h-4 rounded border-2 border-[var(--border-color)] cursor-pointer ${isArabic ? 'mr-2' : 'mr-2'}`}
-                                                    style={{ accentColor: 'var(--accent-color)' }}
-                                                />
-                                                <span 
-                                                    className={`text-sm text-[var(--text-color)] flex-1 group-hover:text-[var(--accent-color)] transition-colors ${isArabic ? 'text-right' : 'text-left'}`}
-                                                    dir={isArabic ? 'rtl' : 'ltr'}
-                                                    title={permission.description}
+                                        {groupedPermissions[category].map(permission => {
+                                            // Format permission display: use description if available, otherwise format the code
+                                            const getPermissionDisplay = (perm) => {
+                                                if (perm.description && perm.description.trim()) {
+                                                    return perm.description;
+                                                }
+                                                // Format code: "User.Create" -> "Create User" or "User.Profile.ViewAll" -> "View All User Profile"
+                                                const parts = perm.code.split('.');
+                                                
+                                                // Handle 3-part codes like "User.Profile.ViewAll"
+                                                if (parts.length === 3) {
+                                                    const [resource, subResource, action] = parts;
+                                                    const formattedResource = resource.charAt(0).toUpperCase() + resource.slice(1).toLowerCase();
+                                                    const formattedSubResource = subResource.charAt(0).toUpperCase() + subResource.slice(1).toLowerCase();
+                                                    
+                                                    // Format action: "ViewAll" -> "View All"
+                                                    let formattedAction = action.replace(/([A-Z])/g, ' $1').trim();
+                                                    formattedAction = formattedAction.charAt(0).toUpperCase() + formattedAction.slice(1).toLowerCase();
+                                                    
+                                                    return `${formattedAction} ${formattedResource} ${formattedSubResource}`;
+                                                }
+                                                
+                                                // Handle 2-part codes like "User.Create" or "Dashboard.View"
+                                                if (parts.length === 2) {
+                                                    const [resource, action] = parts;
+                                                    
+                                                    // Handle special cases for actions
+                                                    const actionMap = {
+                                                        'View': 'View',
+                                                        'Create': 'Create',
+                                                        'Update': 'Update',
+                                                        'Delete': 'Delete',
+                                                        'Restore': 'Restore',
+                                                        'GetUsers': 'Get Users',
+                                                        'GetUser': 'Get User',
+                                                        'GetSupervisor': 'Get Supervisor',
+                                                        'EndBreak': 'End Break',
+                                                        'Clockin': 'Clock In',
+                                                        'Clockout': 'Clock Out',
+                                                        'AssignUser': 'Assign User',
+                                                        'RemoveUser': 'Remove User',
+                                                        'AssignSupervisor': 'Assign Supervisor',
+                                                        'RemoveSupervisor': 'Remove Supervisor',
+                                                        'AddMember': 'Add Member',
+                                                        'RemoveMember': 'Remove Member',
+                                                        'UpdateMember': 'Update Member',
+                                                        'ViewMembers': 'View Members',
+                                                        'ViewPermissions': 'View Permissions',
+                                                        'ViewUsers': 'View Users',
+                                                        'ViewTeams': 'View Teams',
+                                                        'ViewCount': 'View Count',
+                                                        'ViewLogs': 'View Logs',
+                                                        'ViewStatistics': 'View Statistics',
+                                                        'UserView': 'User View',
+                                                        'BulkAssign': 'Bulk Assign',
+                                                    };
+                                                    
+                                                    let formattedAction = actionMap[action];
+                                                    if (!formattedAction) {
+                                                        // Format camelCase actions: "AssignUser" -> "Assign User"
+                                                        formattedAction = action.charAt(0).toUpperCase() + action.slice(1).replace(/([A-Z])/g, ' $1').trim();
+                                                    }
+                                                    
+                                                    const formattedResource = resource.charAt(0).toUpperCase() + resource.slice(1).toLowerCase();
+                                                    
+                                                    // Special handling for certain actions
+                                                    if (action === 'GetUsers' || action === 'GetUser') {
+                                                        return `${formattedAction} in ${formattedResource}`;
+                                                    }
+                                                    
+                                                    // For View actions, put action first: "View Dashboard"
+                                                    // For other actions, put action first: "Create User"
+                                                    return `${formattedAction} ${formattedResource}`;
+                                                }
+                                                
+                                                // Fallback: return the code as-is if it doesn't match expected patterns
+                                                return perm.code;
+                                            };
+                                            
+                                            const displayText = getPermissionDisplay(permission);
+                                            
+                                            return (
+                                                <label 
+                                                    key={permission.id} 
+                                                    className={`flex items-center cursor-pointer p-2 rounded-lg hover:bg-[var(--hover-color)] transition-colors group ${isArabic ? 'flex-row-reverse' : ''}`}
                                                 >
-                                                    {permission.description}
-                                                </span>
-                                            </label>
-                                        ))}
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.selectedPermissionIds.includes(permission.id)}
+                                                        onChange={() => handlePermissionToggle(permission.id)}
+                                                        className={`w-4 h-4 rounded border-2 border-[var(--border-color)] cursor-pointer ${isArabic ? 'mr-2' : 'mr-2'}`}
+                                                        style={{ accentColor: 'var(--accent-color)' }}
+                                                    />
+                                                    <span 
+                                                        className={`text-sm text-[var(--text-color)] flex-1 group-hover:text-[var(--accent-color)] transition-colors ${isArabic ? 'text-right' : 'text-left'}`}
+                                                        dir={isArabic ? 'rtl' : 'ltr'}
+                                                        title={permission.description || permission.code}
+                                                    >
+                                                        {displayText}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
