@@ -431,14 +431,14 @@ const TeamLeadLeavesTable = () => {
 									<option value="all">
 										{t("adminLeaves.table.status.all", "All Status")}
 									</option>
-									<option value="pending">
-										{t("adminLeaves.table.status.pending", "Pending")}
-									</option>
 									<option value="approved">
 										{t("adminLeaves.table.status.approved", "Approved")}
 									</option>
 									<option value="rejected">
 										{t("adminLeaves.table.status.rejected", "Rejected")}
+									</option>
+									<option value="pending">
+										{t("adminLeaves.table.status.pending", "Pending")}
 									</option>
 								</select>
 							</div>

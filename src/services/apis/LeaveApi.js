@@ -37,7 +37,8 @@ export const leaveApi = createApi({
       ],
     }),
 
-    // Get all HR leave requests (paginated) - Only shows approved requests
+    // Get all HR leave requests (paginated) - Only shows requests approved by team lead
+    // Rejected and pending requests are filtered out (both backend and frontend)
     getAllHrRequests: builder.query({
       query: ({ pageNumber = 1, pageSize = 20 } = {}) => ({
         url: "/api/v1/LeaveRequest/GetAllHr/hr",

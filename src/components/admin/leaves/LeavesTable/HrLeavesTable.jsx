@@ -91,12 +91,51 @@ const HrLeavesTable = () => {
 	}, [data])
 
 	// Format leave request for display
-	// Filter out rejected requests - HR should only see approved/pending requests
+	// HR should only see requests that have been APPROVED by the team lead
+	// This includes: approved requests (team lead approved), confirmed requests (both team lead and HR confirmed),
+	// and cancelled/rejected requests that were previously approved by team lead
+	// Filter out: pending requests (not yet reviewed by team lead)
 	const formattedLeaves = useMemo(() => {
-		// Filter out rejected requests before formatting
+		// Filter to show requests approved by team lead (including confirmed and cancelled ones)
 		const filteredRequests = leaveRequests.filter(request => {
-			const status = (request.requestStatus || "").toLowerCase()
-			return !status.includes("rejected")
+			const status = (request.requestStatus || "").toLowerCase().trim()
+			
+			// Exclude pending requests (not yet reviewed by team lead)
+			if (status === "pending" || status.includes("pending")) {
+				return false
+			}
+			
+			// Include requests that are approved by team lead OR confirmed by both team lead and HR
+			// Check if status indicates approval or confirmation
+			const isApproved = status === "approved" || 
+			                   status.includes("approved") || 
+			                   status === "teamleadapproved" ||
+			                   status.includes("teamleadapproved")
+			
+			const isConfirmed = status === "confirmed" || 
+			                    status.includes("confirmed") ||
+			                    status === "hrconfirmed" ||
+			                    status.includes("hrconfirmed")
+			
+			// Include rejected requests that have team lead approval (HR rejected after team lead approved)
+			const isRejected = status.includes("rejected") || 
+			                   status === "rejected"
+			
+			// Also check if team lead has taken action (indicates review has happened)
+			// For confirmed/rejected requests, team lead action is required (must be approved first)
+			const hasTeamLeadAction = request.teamLeadActionDate || 
+			                          request.teamLeadName || 
+			                          request.teamLeadApprover
+			
+			// Show if (approved by team lead) OR (confirmed by both) OR (rejected but had team lead approval)
+			// All require team lead action
+			if (isRejected) {
+				// For rejected, only show if it had team lead approval first
+				return hasTeamLeadAction
+			}
+			
+			// For approved/confirmed, require team lead action
+			return (isApproved || isConfirmed) && hasTeamLeadAction
 		})
 		
 		return filteredRequests.map(request => {
@@ -156,7 +195,27 @@ const HrLeavesTable = () => {
 		// Apply filters
 		if (statusFilter !== "all") {
 			filtered = filtered.filter(leave => {
-				return leave.status?.toLowerCase() === statusFilter.toLowerCase()
+				const status = leave.status?.toLowerCase() || ""
+				const isConfirmed = status.includes("confirmed") || 
+				                   status === "confirmed" ||
+				                   leave.hrActionDate || 
+				                   leave.hrApproverName
+				const isRejected = status.includes("rejected") || 
+				                  status === "rejected"
+				
+				if (statusFilter === "approved") {
+					// Show approved by team lead but NOT yet confirmed by HR
+					return !isConfirmed && !isRejected && (status.includes("approved") || status === "approved")
+				} else if (statusFilter === "confirmed") {
+					// Show confirmed by both team lead and HR
+					return isConfirmed
+				} else if (statusFilter === "rejected") {
+					// Show rejected
+					return isRejected
+				}
+				
+				// Fallback to exact match for other statuses
+				return status === statusFilter.toLowerCase()
 			})
 		}
 
@@ -343,10 +402,13 @@ const HrLeavesTable = () => {
 										{t("adminLeaves.table.status.all", "All Status")}
 									</option>
 									<option value="approved">
-										{t("adminLeaves.table.status.approved", "Approved")}
+										{t("adminLeaves.table.status.approvedFromTeamLead", "Approved from Team Lead")}
 									</option>
 									<option value="confirmed">
 										{t("adminLeaves.table.status.confirmed", "Confirmed")}
+									</option>
+									<option value="rejected">
+										{t("adminLeaves.table.status.rejected", "Rejected")}
 									</option>
 								</select>
 							</div>
