@@ -1,26 +1,50 @@
 import { TrendingUp, TrendingDown } from "lucide-react"
 import Card from "../Time_Tracking_Components/Stats/Card"
 import { useTranslation } from "react-i18next"
+import { useGetCurrentAttendanceSummaryQuery } from "../../services/apis/ClockinLogApi"
 
-// Static attendance stats data
-const staticStats = {
-  totalDaysPresent: 22,
-  totalDaysAbsent: 1,
-  lateArrivals: 2,
-  avgClockIn: "09:05 AM"
+// Helper function to format time string like "11:25:54.8350000" to "11:25 AM"
+const formatTimeString = (timeString) => {
+  if (!timeString || timeString === "--") return "--";
+  
+  try {
+    // Parse time string like "11:25:54.8350000"
+    const [hours, minutes] = timeString.split(':').map(Number);
+    if (isNaN(hours) || isNaN(minutes)) return timeString;
+    
+    // Create a date object with today's date and the parsed time
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    
+    // Format to 12-hour format
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    return timeString; // Fallback to original if conversion fails
+  }
 };
 
 const AttendanceStats = () => {
   const { t } = useTranslation()
-
-  // Use static data instead of API call
-  const stats = staticStats;
-  const isLoading = false;
+  
+  // Fetch current attendance summary from API
+  const { data: attendanceSummary, isLoading } = useGetCurrentAttendanceSummaryQuery();
+  
+  // Format the stats data
+  const stats = {
+    totalDaysPresent: attendanceSummary?.totalDaysPresent ?? 0,
+    totalDaysAbsent: attendanceSummary?.totalDaysAbsent ?? 0,
+    lateArrivals: attendanceSummary?.lateArrivals ?? 0,
+    avgClockIn: formatTimeString(attendanceSummary?.averageClockInTime) ?? "--"
+  };
 
   const statsData = [
     {
       header: t("attendanceStats.totalDaysPresent"),
-      title: stats?.totalDaysPresent ?? 0,
+      title: isLoading ? "..." : (stats?.totalDaysPresent ?? 0),
       subTitle: t("attendanceStats.hoursWorked"),
       rightIcon: <img src="/assets/attendance_logs/logs.svg" alt="present" className="w-8 h-8" />,
       trend: {
@@ -31,7 +55,7 @@ const AttendanceStats = () => {
     },
     {
       header: t("attendanceStats.totalDaysAbsent"),
-      title: stats?.totalDaysAbsent ?? 0,
+      title: isLoading ? "..." : (stats?.totalDaysAbsent ?? 0),
       subTitle: t("attendanceStats.breakToday"),
       rightIcon: <img src="/assets/attendance_logs/absent.svg" alt="absent" className="w-8 h-8" />,
       trend: {
@@ -42,7 +66,7 @@ const AttendanceStats = () => {
     },
     {
       header: t("attendanceStats.lateArrivals"),
-      title: stats?.lateArrivals ?? 0,
+      title: isLoading ? "..." : (stats?.lateArrivals ?? 0),
       subTitle: t("attendanceStats.lateThisMonth"),
       rightIcon: <img src="/assets/attendance_logs/late.svg" alt="late" className="w-8 h-8" />,
       trend: {
@@ -53,7 +77,7 @@ const AttendanceStats = () => {
     },
     {
       header: t("attendanceStats.averageClockIn"),
-      title: stats?.avgClockIn ?? "--",
+      title: isLoading ? "..." : (stats?.avgClockIn ?? "--"),
       subTitle: t("attendanceStats.basedOnMonth"),
       rightIcon: <img src="/assets/attendance_logs/avg.svg" alt="average" className="w-8 h-8" />,
       trend: {

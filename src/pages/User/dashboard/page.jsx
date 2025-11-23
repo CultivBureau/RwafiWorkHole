@@ -13,6 +13,7 @@ import {
   useEndBreakMutation,
   useGetAllBreaksQuery,
 } from "../../../services/apis/BreakApi";
+import { useGetEmployeeDashboardCardsQuery } from "../../../services/apis/DashboardApi";
 import { toast } from "react-hot-toast";
 import { getCurrentUtcTime, calculateDurationFromUtc, utcToLocalDate, utcToLocalTime, getDeviceLocale } from "../../../utils/timeUtils";
 
@@ -182,11 +183,44 @@ const Dashboard = () => {
     }
   };
 
-  // Use static data for other dashboard components
-  const dashboardData = staticDashboardData;
-  const isLoading = false;
-  const error = null;
-  const refetch = () => {}; // Empty function for compatibility
+  // Fetch employee dashboard cards from API
+  const { data: dashboardCardsData, isLoading: isLoadingDashboardCards, isError: isDashboardCardsError, refetch: refetchDashboardCards } = useGetEmployeeDashboardCardsQuery();
+
+  // Helper function to format hours to "xh ym" format
+  const formatHoursToTimeString = (hours) => {
+    if (!hours || hours === 0) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
+  // Merge API data with static data
+  const dashboardData = useMemo(() => {
+    const baseData = { ...staticDashboardData };
+    
+    if (dashboardCardsData) {
+      // Update status based on isClockedIn
+      baseData.currentStatus = dashboardCardsData.isClockedIn 
+        ? "Clocked In" 
+        : "Not clocked in";
+      
+      // Add hours worked today
+      baseData.hoursWorkedToday = dashboardCardsData.hoursWorkedToday || 0;
+      
+      // Update leave status with total leave requests
+      baseData.leaveStatus = dashboardCardsData.totalLeaveRequests?.toString() || "0";
+      baseData.totalLeaveRequests = dashboardCardsData.totalLeaveRequests || 0;
+      
+      // Add attendance streak days
+      baseData.attendanceStreakDays = dashboardCardsData.attendanceStreakDays || 0;
+    }
+    
+    return baseData;
+  }, [dashboardCardsData]);
+
+  const isLoading = isLoadingDashboardCards;
+  const error = isDashboardCardsError;
+  const refetch = refetchDashboardCards;
 
   return (
     <div

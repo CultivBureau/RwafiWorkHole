@@ -4,55 +4,52 @@ import { useTranslation } from "react-i18next";
 const AttendanceStats = ({ stats, isLoading = false }) => {
   const { t } = useTranslation();
 
-  const todaysBreakTime = stats?.todaysBreakTime ?? "--";
-  const mostUsedBreakType = stats?.mostUsedBreak ?? "--";
-  const avgBreakPerDay = stats?.avgBreakPerDay ?? "--";
-  const breaksOverLimit = stats?.breaksOverLimit ?? "--";
+  const breaksTakenToday = stats?.breaksTakenToday ?? 0;
+  const totalBreakTimeToday = stats?.totalBreakTimeToday ?? "--";
+  const remainingBreakAllowance = stats?.remainingBreakAllowance ?? "--";
+  const averageBreakDurationThisWeek = stats?.averageBreakDurationThisWeek ?? "--";
 
   const statsData = [
     {
-      header: t("breakStats.todaysBreakTime"),
-      title: todaysBreakTime,
-      subTitle: t("breakStats.timeTakenToday"),
+      header: t("breakStats.breaksTakenToday", "Breaks Taken Today"),
+      title: isLoading ? "..." : breaksTakenToday,
+      subTitle: t("breakStats.breaksToday", "Number of breaks today"),
       rightIcon: (
         <img
           src="/assets/break_tracking/break-time.svg"
-          alt="present"
+          alt="breaks taken"
           className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 drop-shadow-lg transition-transform duration-200 hover:scale-110"
         />
       ),
     },
     {
-      header: t("breakStats.mostUsedBreak"),
-      title: t(`breakTime.reasons.${mostUsedBreakType}`, mostUsedBreakType),
-      subTitle: t("breakStats.mostCommonThisWeek", "Most common this week"),
+      header: t("breakStats.totalBreakTimeToday", "Total Break Time Today"),
+      title: isLoading ? "..." : totalBreakTimeToday,
+      subTitle: t("breakStats.timeTakenToday", "Time taken today"),
       rightIcon: (
         <img
           src="/assets/break_tracking/most-break.svg"
-          alt="absent"
+          alt="break time"
           className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 drop-shadow-lg transition-transform duration-200 hover:scale-110"
         />
       ),
     },
     {
-      header: t("breakStats.avgBreakPerDay", "Avg. Break per Day"),
-      title: avgBreakPerDay,
-      subTitle: t("breakStats.basedOnLast7Days", "Based on last 7 days"),
+      header: t("breakStats.remainingBreakAllowance", "Remaining Break Allowance"),
+      title: isLoading ? "..." : remainingBreakAllowance,
+      subTitle: t("breakStats.remainingTime", "Remaining time available"),
       rightIcon: (
         <img
           src="/assets/break_tracking/avg-break.svg"
-          alt="late"
+          alt="remaining"
           className="w-5 h-5 sm:w-6 sm:h-6 lg:w-5 lg:h-5 xl:w-6 xl:h-6 2xl:w-8 2xl:h-8 drop-shadow-lg transition-transform duration-200 hover:scale-110"
         />
       ),
     },
     {
-      header: t("breakStats.breaksOverLimit", "Breaks Over Limit"),
-      title: breaksOverLimit,
-      subTitle: t(
-        "breakStats.exceededLimit",
-        "You exceeded 30m limit this week"
-      ),
+      header: t("breakStats.averageBreakDurationThisWeek", "Avg Break Duration This Week"),
+      title: isLoading ? "..." : averageBreakDurationThisWeek,
+      subTitle: t("breakStats.averageThisWeek", "Average this week"),
       rightIcon: (
         <img
           src="/assets/break_tracking/overlimit.svg"

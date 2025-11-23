@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import NavBarAdmin from "../../../components/admin/NavBarAdmin";
 import SideBarAdmin from "../../../components/admin/SideBarAdmin";
 import ClockinAdmin from "../../../components/admin/clockinAdmin";
@@ -25,6 +25,7 @@ import toast from 'react-hot-toast';
 import { useLang } from "../../../contexts/LangContext";
 import Table from "../../../components/admin/attendance/AttendanceTable/Table";
 import Loading from "../../../components/Loading/Loading";
+import { useGetAttendanceSummaryQuery } from "../../../services/apis/ClockinLogApi";
 
 const AttendanceAdmin = () => {
   const { lang, isRtl } = useLang();
@@ -38,28 +39,32 @@ const AttendanceAdmin = () => {
     }
   }, [i18n]);
 
-  const cardData = [
+  // Fetch attendance summary from API
+  const { data: attendanceSummary, isLoading: isLoadingSummary, isError: isSummaryError } = useGetAttendanceSummaryQuery();
+
+  // Build card data from API response
+  const cardData = useMemo(() => [
     {
       title: t("adminAttendance.cards.totalEmployees", "Total Employees"),
-      value: 120,
+      value: (attendanceSummary?.totalPresent || 0) + (attendanceSummary?.totalAbsent || 0) || 0,
       icon: <img src="/assets/AdminAttendance/total.svg" alt="employees" />
     },
     {
       title: t("adminAttendance.cards.presentToday", "Present Today"),
-      value: 80,
+      value: attendanceSummary?.totalPresent || 0,
       icon: <img src="/assets/AdminDashboard/today.svg" alt="attendance" />
     },
     {
       title: t("adminAttendance.cards.absentToday", "Absent Today"),
-      value: 22,
+      value: attendanceSummary?.totalAbsent || 0,
       icon: <img src="/assets/AdminDashboard/leavee.svg" alt="absent" />
     },
     {
-      title: t("adminAttendance.cards.lateArrivals", "Late Arrivals"),
-      value: 18,
-      icon: <img src="/assets/AdminDashboard/task.svg" alt="late" />
+      title: t("adminAttendance.cards.totalClockins", "Total Clock-ins"),
+      value: attendanceSummary?.totalClockinsToday || 0,
+      icon: <img src="/assets/AdminDashboard/task.svg" alt="clockins" />
     },
-  ]
+  ], [attendanceSummary, t])
 
   const getLocationIcon = (location) => {
     return location === 'office' ? 
@@ -231,10 +236,10 @@ const AttendanceAdmin = () => {
           <div className="w-full h-max grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 mb-4 sm:mb-5">
             {cardData.map((card, index) => (
               <Card
-                    key={index}
+                key={index}
                 header={card.title}
                 rightIcon={card.icon}
-                title={card.value}
+                title={isLoadingSummary ? "..." : card.value}
               />
             ))}
           </div>

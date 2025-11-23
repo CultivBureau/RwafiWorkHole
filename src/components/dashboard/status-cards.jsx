@@ -1,19 +1,39 @@
 "use client"
 import { useTranslation } from "react-i18next";
 import Card from "../Time_Tracking_Components/Stats/Card";
-import { ChartColumn, Clock, TrendingUp, Activity } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { ChartColumn, Clock, Activity } from "lucide-react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function StatusCards({ dashboardData, isLoading, error }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  // Helper function to format hours to "xh ym" format
+  const formatHoursToTimeString = (hours) => {
+    if (!hours || hours === 0) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
   // Use API response fields with proper fallbacks
   const status = dashboardData?.currentStatus || t("dashboard.statusCards.notClockedIn");
-  const leaveStatus = dashboardData?.leaveStatus || t("dashboard.statusCards.pending");
-  const dailyShift = dashboardData?.dailyShift || "0h 0m";
-  const performance = dashboardData?.performance || t("dashboard.statusCards.comingSoon");
+  const isLive = status === "Clocked In" || status === t("dashboard.statusCards.clockedIn");
+  
+  const leaveStatus = dashboardData?.totalLeaveRequests !== undefined 
+    ? dashboardData.totalLeaveRequests.toString() 
+    : (dashboardData?.leaveStatus || t("dashboard.statusCards.pending"));
+  
+  // Hours Worked Today from API
+  const hoursWorkedToday = dashboardData?.hoursWorkedToday !== undefined
+    ? formatHoursToTimeString(dashboardData.hoursWorkedToday)
+    : "0h 0m";
+  
+  // Attendance Streak Days from API
+  const attendanceStreakDays = dashboardData?.attendanceStreakDays !== undefined
+    ? dashboardData.attendanceStreakDays
+    : 0;
 
   // Enhanced SVGs with better styling
   const CalendarIcon = (
@@ -60,39 +80,10 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
     </button>
   );
 
+  // Calculate bar percentage for hours worked today (assuming 8 hours is full)
   const shiftHours = dashboardData?.shiftHours || 8;
-  const dailyShiftHours = dashboardData?.dailyShiftHours || 0;
-  const dailyShiftBar = Math.min(Math.round((dailyShiftHours / shiftHours) * 100), 100);
-
-  // Dynamic daily shift calculation with enhanced animation
-  const [dynamicShift, setDynamicShift] = useState(dashboardData?.dailyShift || "0h 0m");
-  const [isLive, setIsLive] = useState(false);
-
-  useEffect(() => {
-    let interval;
-    if (
-      dashboardData?.currentStatus === "Clocked In" &&
-      dashboardData?.clockIn
-    ) {
-      setIsLive(true);
-      const updateShift = () => {
-        const now = new Date();
-        const [h, m] = dashboardData.clockIn.split(":").map(Number);
-        const clockInDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
-        let diff = Math.floor((now - clockInDate) / 60000);
-        if (diff < 0) diff = 0;
-        const hours = Math.floor(diff / 60);
-        const mins = diff % 60;
-        setDynamicShift(hours > 0 ? `${hours}h ${mins}m` : `${mins}m`);
-      };
-      updateShift();
-      interval = setInterval(updateShift, 60000);
-    } else {
-      setIsLive(false);
-      setDynamicShift(dashboardData?.dailyShift || "0h 0m");
-    }
-    return () => clearInterval(interval);
-  }, [dashboardData]);
+  const hoursWorkedTodayDecimal = dashboardData?.hoursWorkedToday || 0;
+  const hoursWorkedTodayBar = Math.min(Math.round((hoursWorkedTodayDecimal / shiftHours) * 100), 100);
 
   // Enhanced loading state
   if (isLoading) {
@@ -190,26 +181,29 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
         />
         
         <Card
-          header={t("dashboard.statusCards.dailyShift")}
+          header={t("dashboard.statusCards.hoursWorkedToday", "Hours Worked Today")}
           title={
             <span className="transition-all duration-300 flex items-center gap-2">
-              <span className="text-sm sm:text-base lg:text-sm xl:text-base">{dynamicShift}</span>
-              {isLive && <TrendingUp size={14} className="sm:w-4 sm:h-4 lg:w-3.5 lg:h-3.5 xl:w-4 xl:h-4 text-green-500 animate-pulse" />}
+              <span className="text-sm sm:text-base lg:text-sm xl:text-base">{hoursWorkedToday}</span>
             </span>
           }
           rightIcon={ClockIcon}
-          bar={dailyShiftBar}
-          percentage={dailyShiftBar}
+          bar={hoursWorkedTodayBar}
+          percentage={hoursWorkedTodayBar}
           footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />
         
         <Card
-          header={t("dashboard.statusCards.performance")}
-          title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{performance}</span>}
+          header={t("dashboard.statusCards.attendanceStreakDays", "Attendance Streak Days")}
+          title={
+            <span className="text-sm sm:text-base lg:text-sm xl:text-base">
+              {attendanceStreakDays} {attendanceStreakDays === 1 ? t("dashboard.statusCards.day", "day") : t("dashboard.statusCards.days", "days")}
+            </span>
+          }
           rightIcon={PerformanceIcon}
-          bar={dashboardData?.performanceBar || 75}
-          percentage={dashboardData?.performanceBar || 75}
+          bar={Math.min(attendanceStreakDays * 10, 100)}
+          percentage={Math.min(attendanceStreakDays * 10, 100)}
           footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />

@@ -6,6 +6,7 @@ const OvertimeIcon = "/assets/time_tracking/overtime.svg";
 import { useTranslation } from "react-i18next";
 import TimerCard from "./TimerCard";
 import { useGetUserClockinLogsQuery } from "../../../services/apis/ClockinLogApi";
+import { useGetTimeTrackingSummaryQuery } from "../../../services/apis/DashboardApi";
 import { getAuthToken } from "../../../utils/page";
 
 // Helper function to get user ID from token
@@ -58,6 +59,9 @@ const Stats = () => {
     { userId, pageNumber: 1, pageSize: 50 },
     { skip: !userId }
   )
+
+  // Fetch time tracking summary from API
+  const { data: timeTrackingSummary, isLoading: isLoadingSummary } = useGetTimeTrackingSummaryQuery()
 
   const [activeWorkSeconds, setActiveWorkSeconds] = useState(0);
   const timerRef = useRef(null);
@@ -227,35 +231,56 @@ const Stats = () => {
     return hours * 60 + minutes;
   }
 
-  // احسب thisWeek ديناميكي (أضف وقت اليوم الحالي لو المستخدم Clocked In)
-  const weekMinutes = (() => {
-    const weekBase = parseTimeString(stats.thisWeek);
-    const todayMinutes = stats.currentStatus === "Clocked In" && clockInTime
-      ? Math.floor(activeWorkSeconds / 60)
-      : 0;
-    return weekBase + todayMinutes;
-  })();
-  const dynamicThisWeek = `${Math.floor(weekMinutes / 60)}h ${weekMinutes % 60}m`;
+  // Helper function to convert hours (decimal) to "xh ym" format
+  const formatHoursToTimeString = (hours) => {
+    if (!hours || hours === 0) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
+  // Helper function to convert minutes to "xh ym" format
+  const formatMinutesToTimeString = (minutes) => {
+    if (!minutes || minutes === 0) return "0h 0m";
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m}m`;
+  };
+
+  // Use API data for average working hours per day
+  const apiAverageHoursPerDay = timeTrackingSummary?.averageWorkingHoursPerDay
+    ? formatHoursToTimeString(timeTrackingSummary.averageWorkingHoursPerDay)
+    : "0h 0m";
+
+  // Use API data for total hours worked this week
+  const apiTotalHoursThisWeek = timeTrackingSummary?.totalHoursWorkedThisWeek 
+    ? formatHoursToTimeString(timeTrackingSummary.totalHoursWorkedThisWeek)
+    : "0h 0m";
+
+  // Use API data for overtime hours this week
+  const apiOvertimeHoursThisWeek = timeTrackingSummary?.overtimeHoursThisWeek
+    ? formatHoursToTimeString(timeTrackingSummary.overtimeHoursThisWeek)
+    : "0h 0m";
 
   const Card_Data = [
     {
-      header: t("stats.thisWeek"),
-      title: dynamicThisWeek,
-      subTitle: t("stats.totalHoursWorked"),
-      rightIcon: <img src={WorkedIcon} alt="Worked" />,
+      header: t("stats.averageWorkingHoursPerDay", "Average Working Hours Per Day"),
+      title: isLoadingSummary ? "..." : apiAverageHoursPerDay,
+      subTitle: t("stats.averagePerDay", "Average per day"),
+      rightIcon: <img src={WorkedIcon} alt="Average Hours" />,
       bar: 75,
     },
     {
-      header: t("stats.breaksTaken"),
-      title: stats.breaksTaken,
-      subTitle: t("breakTime.breakSummary"),
-      rightIcon: <img src={BreakIcon} alt="Break" />,
-      bar: 30,
+      header: t("stats.totalHoursWorkedThisWeek", "Total Hours Worked This Week"),
+      title: isLoadingSummary ? "..." : apiTotalHoursThisWeek,
+      subTitle: t("stats.totalHoursWorked", "Total hours worked"),
+      rightIcon: <img src={WorkedIcon} alt="Total Hours" />,
+      bar: 75,
     },
     {
-      header: t("stats.totalOvertime"),
-      title: stats.totalOvertime,
-      subTitle: t("stats.extraHoursThisMonth"),
+      header: t("stats.overtimeHoursThisWeek", "Overtime Hours This Week"),
+      title: isLoadingSummary ? "..." : apiOvertimeHoursThisWeek,
+      subTitle: t("stats.extraHoursThisWeek", "Extra hours this week"),
       rightIcon: <img src={OvertimeIcon} alt="Overtime" />,
       bar: 60,
       percentage: 1.3,
