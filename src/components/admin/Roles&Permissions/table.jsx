@@ -9,7 +9,7 @@ import { useGetAllRolesQuery, useDeleteRoleMutation } from "../../../services/ap
 import toast from "react-hot-toast"
 import { useHasPermission } from "../../../hooks/useHasPermission"
 
-const RolesTable = ({ onRoleSelect }) => {
+const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
     const navigate = useNavigate();
@@ -86,11 +86,16 @@ const RolesTable = ({ onRoleSelect }) => {
         return () => window.removeEventListener('resize', calculateItemsPerPage);
     }, [isEditOpen]); // Recalculate when edit panel opens/closes
 
-    // Filter the data based on selected filters
+    // Filter the data based on selected filters and search
     const filteredData = useMemo(() => {
         if (!rolesData.length) return [];
         
         return rolesData.filter(role => {
+            // Search filter - case-insensitive search on role name
+            const searchMatches = !searchValue || 
+                role.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+                role.role?.toLowerCase().includes(searchValue.toLowerCase());
+
             // Role filter - check if roleType is the default filter text or matches the role name
             const defaultRoleFilter = t('roles.filters.roleType');
             const roleMatches = roleType === defaultRoleFilter || role.name === roleType || role.role === roleType;
@@ -99,9 +104,9 @@ const RolesTable = ({ onRoleSelect }) => {
             const defaultStatusFilter = t('roles.filters.allStatus');
             const statusMatches = status === defaultStatusFilter || role.status === status;
 
-            return roleMatches && statusMatches;
+            return searchMatches && roleMatches && statusMatches;
         });
-    }, [rolesData, roleType, status, t]);
+    }, [rolesData, roleType, status, searchValue, t]);
 
     // Calculate pagination info
     const totalItems = filteredData.length;
@@ -110,10 +115,10 @@ const RolesTable = ({ onRoleSelect }) => {
     const endIndex = startIndex + itemsPerPage;
     const currentPageData = filteredData.slice(startIndex, endIndex);
 
-    // Reset to first page when filters change
+    // Reset to first page when filters or search change
     useEffect(() => {
         setCurrentPage(1);
-    }, [roleType, status]);
+    }, [roleType, status, searchValue]);
 
     const handleEditRole = (role) => {
         setSelectedRole(role);
