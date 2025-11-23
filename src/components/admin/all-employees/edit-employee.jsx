@@ -15,6 +15,7 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     const isArabic = i18n.language === "ar";
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState({});
+    const [originalFormData, setOriginalFormData] = useState({}); // Store original data to detect changes
     const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
     const [createLeaveBalance, { isLoading: isCreatingLeaveBalance }] = useCreateLeaveBalanceMutation();
     const [updateLeaveBalance, { isLoading: isUpdatingLeaveBalance }] = useUpdateLeaveBalanceMutation();
@@ -65,7 +66,7 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                                         employeeData.department?.id || 
                                         '';
 
-            setFormData({
+            const initialFormData = {
                 firstName: employeeData.firstName || '',
                 lastName: employeeData.lastName || '',
                 jobTitle: employeeData.jobTitle || '',
@@ -78,7 +79,9 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 shiftId: employeeShiftId, // Single value
                 departmentId: employeeDepartmentId,
                 leaveBalances: [], // Will be populated from API when step 1 is accessed
-            });
+            };
+            setFormData(initialFormData);
+            setOriginalFormData(JSON.parse(JSON.stringify(initialFormData))); // Deep copy for comparison
         }
     }, [employeeData]);
 
@@ -87,6 +90,37 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             setStep(0);
         }
     }, [isOpen, employee]);
+
+    // Update originalFormData when leave balances are loaded (for change detection)
+    useEffect(() => {
+        if (formData.leaveBalances && Array.isArray(formData.leaveBalances) && formData.leaveBalances.length > 0) {
+            // Check if we have valid leave balances with IDs (meaning they were loaded from API)
+            const hasLoadedBalances = formData.leaveBalances.some(lb => 
+                (lb.leaveBalanceId || lb.id) && lb.leaveTypeId
+            );
+            
+            // Only update if originalFormData doesn't have leaveBalances yet or if they're different
+            const originalBalances = originalFormData?.leaveBalances || [];
+            const currentBalances = formData.leaveBalances || [];
+            
+            // If original is empty but current has loaded balances, update original
+            if (hasLoadedBalances && (originalBalances.length === 0 || 
+                originalBalances.length !== currentBalances.length)) {
+                setOriginalFormData(prev => ({
+                    ...prev,
+                    leaveBalances: JSON.parse(JSON.stringify(currentBalances)) // Deep copy
+                }));
+            }
+        } else if (formData.leaveBalances && Array.isArray(formData.leaveBalances) && 
+                   formData.leaveBalances.length === 0 && 
+                   (!originalFormData.leaveBalances || originalFormData.leaveBalances.length > 0)) {
+            // If current is empty but original has balances, update original to empty
+            setOriginalFormData(prev => ({
+                ...prev,
+                leaveBalances: []
+            }));
+        }
+    }, [formData.leaveBalances]);
 
     if (!isOpen || !employee) return null;
 
@@ -113,6 +147,85 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             ...prev,
             [field]: value
         }));
+    };
+
+    // Check if personal info (step 0) has changed
+    const hasPersonalInfoChanges = () => {
+        if (!originalFormData || Object.keys(originalFormData).length === 0) return false;
+        
+        const original = originalFormData;
+        const current = formData;
+        
+        return (
+            (original.firstName || '') !== (current.firstName || '') ||
+            (original.lastName || '') !== (current.lastName || '') ||
+            (original.jobTitle || '') !== (current.jobTitle || '') ||
+            (original.hireDate || '') !== (current.hireDate || '') ||
+            (original.employeeStatus !== undefined ? original.employeeStatus : 0) !== (current.employeeStatus !== undefined ? current.employeeStatus : 0)
+        );
+    };
+
+    // Check if leave balances (step 1) have changed
+    const hasLeaveBalanceChanges = () => {
+        const originalBalances = originalFormData?.leaveBalances || [];
+        const currentBalances = formData?.leaveBalances || [];
+        
+        // If original doesn't have leaveBalances, check if current has any valid balances
+        if (originalBalances.length === 0) {
+            return currentBalances.some(lb => 
+                lb.leaveTypeId && lb.leaveTypeId.trim() && (parseFloat(lb.balanceDays) || 0) > 0
+            );
+        }
+        
+        // If counts differ, there are changes
+        if (originalBalances.length !== currentBalances.length) return true;
+        
+        // Create maps for easier comparison by leaveTypeId
+        const originalMap = new Map();
+        originalBalances.forEach(lb => {
+            const key = lb.leaveTypeId || '';
+            if (key) {
+                originalMap.set(key, {
+                    id: lb.leaveBalanceId || lb.id,
+                    balanceDays: parseFloat(lb.originalBalanceDays || lb.balanceDays) || 0
+                });
+            }
+        });
+        
+        const currentMap = new Map();
+        currentBalances.forEach(lb => {
+            const key = lb.leaveTypeId || '';
+            if (key) {
+                currentMap.set(key, {
+                    id: lb.leaveBalanceId || lb.id,
+                    balanceDays: parseFloat(lb.balanceDays) || 0
+                });
+            }
+        });
+        
+        // Check for new balances (in current but not in original)
+        for (const [leaveTypeId, currentData] of currentMap.entries()) {
+            if (!originalMap.has(leaveTypeId)) {
+                // New balance added
+                if (currentData.balanceDays > 0) return true;
+            } else {
+                // Existing balance - check if it changed
+                const originalData = originalMap.get(leaveTypeId);
+                // If ID changed (shouldn't happen, but check anyway)
+                if (currentData.id !== originalData.id) return true;
+                // If balanceDays changed
+                if (Math.abs(currentData.balanceDays - originalData.balanceDays) > 0.01) return true;
+            }
+        }
+        
+        // Check for removed balances (in original but not in current)
+        for (const [leaveTypeId] of originalMap.entries()) {
+            if (!currentMap.has(leaveTypeId)) {
+                return true; // Balance was removed
+            }
+        }
+        
+        return false;
     };
 
     // Handle saving personal info (step 0) using PUT /api/v1/User/Update/{id}
@@ -157,6 +270,16 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             await updateUser({ id: employeeId, ...updatePayload }).unwrap();
             toast.dismiss();
             toast.success(t("employees.editEmployee.success") || "Employee updated successfully!");
+            
+            // Update originalFormData to reflect the saved state
+            setOriginalFormData(prev => ({
+                ...prev,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
+                jobTitle: formData.jobTitle,
+                hireDate: formData.hireDate,
+                employeeStatus: formData.employeeStatus
+            }));
             
             if (onSave) {
                 onSave(updatePayload);
@@ -311,6 +434,12 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             toast.dismiss();
             toast.success(t("employees.editEmployee.success") || "Leave balances saved successfully!");
             
+            // Update originalFormData to reflect the saved state
+            setOriginalFormData(prev => ({
+                ...prev,
+                leaveBalances: JSON.parse(JSON.stringify(formData.leaveBalances)) // Deep copy
+            }));
+            
             if (onSave) {
                 onSave({ leaveBalances: formData.leaveBalances });
             }
@@ -438,8 +567,8 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                                     {/* Save button for step 0 */}
                                     <button
                                         onClick={handleSavePersonalInfo}
-                                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50"
-                                        disabled={isUpdating}
+                                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={isUpdating || !hasPersonalInfoChanges()}
                                     >
                                         {isUpdating ? (
                                             <>
@@ -473,8 +602,8 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                             ) : (
                                 <button
                                     onClick={handleSaveLeaveBalancesStep}
-                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50"
-                                    disabled={isSavingLeaveBalances}
+                                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isSavingLeaveBalances || !hasLeaveBalanceChanges()}
                                 >
                                     {isSavingLeaveBalances ? (
                                         <>
@@ -762,7 +891,7 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes, employeeId, isArabi
                                     className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
                                     type="number"
                                     min="0"
-                                    step="0.5"
+                                    step="1"
                                     value={balance.balanceDays || 0}
                                     onChange={(e) => handleLeaveBalanceChange(index, 'balanceDays', e.target.value)}
                                     dir={isArabic ? "rtl" : "ltr"}
