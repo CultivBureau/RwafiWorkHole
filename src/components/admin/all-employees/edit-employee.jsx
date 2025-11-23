@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, User, Briefcase, FileText, Eye, EyeOff, Save, ArrowRight, ArrowLeft, Calendar, Lock, Users, Clock, Building2 } from "lucide-react";
+import { X, User, FileText, Save, ArrowRight, ArrowLeft, Calendar, Briefcase } from "lucide-react";
 import { useUpdateUserMutation, useGetUserProfileByIdQuery } from "../../../services/apis/UserApi";
-import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
-import { useGetAllShiftsQuery } from "../../../services/apis/ShiftApi";
-import { useGetTeamsByDepartmentQuery } from "../../../services/apis/TeamApi";
-import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
 import { useGetAllLeaveTypesQuery } from "../../../services/apis/LeaveTypeApi";
+import { 
+    useGetUserLeaveBalancesQuery, 
+    useCreateLeaveBalanceMutation, 
+    useUpdateLeaveBalanceMutation 
+} from "../../../services/apis/LeaveBalanceApi";
 import toast from "react-hot-toast";
 
 export default function EditEmployeePopup({ employee, isOpen, onClose, onSave }) {
@@ -15,6 +16,10 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     const [step, setStep] = useState(0);
     const [formData, setFormData] = useState({});
     const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+    const [createLeaveBalance, { isLoading: isCreatingLeaveBalance }] = useCreateLeaveBalanceMutation();
+    const [updateLeaveBalance, { isLoading: isUpdatingLeaveBalance }] = useUpdateLeaveBalanceMutation();
+    
+    const isSavingLeaveBalances = isCreatingLeaveBalance || isUpdatingLeaveBalance;
 
     // Get employee ID from employee object
     const employeeId = employee?.id || employee?.userId || employee?.rawData?.id;
@@ -27,24 +32,15 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
     const employeeData = employeeProfileResponse?.value || employee;
 
     // Fetch dropdown data
-    const { data: rolesRes } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 100 });
-    const roles = rolesRes?.value || rolesRes?.items || rolesRes || [];
-
-    const { data: shiftsRes } = useGetAllShiftsQuery({ pageNumber: 1, pageSize: 100 });
-    const shifts = shiftsRes?.value || shiftsRes?.items || shiftsRes || [];
-
-    const { data: departmentsRes } = useGetAllDepartmentsQuery({ pageNumber: 1, pageSize: 100 });
-    const departments = departmentsRes?.value || departmentsRes?.items || departmentsRes || [];
-
     const { data: leaveTypesRes } = useGetAllLeaveTypesQuery({ pageNumber: 1, pageSize: 100, status: 0 });
     const leaveTypes = leaveTypesRes?.value || leaveTypesRes?.items || leaveTypesRes || [];
 
-    // Get teams based on selected department
-    const { data: teamsRes } = useGetTeamsByDepartmentQuery(
-        formData.departmentId || employeeData?.departments?.[0]?.id,
-        { skip: !formData.departmentId && !employeeData?.departments?.[0]?.id }
+    // Fetch current leave balances for conflict checking (used in handleSaveLeaveBalances)
+    const { data: currentLeaveBalancesResponse, refetch: refetchLeaveBalances } = useGetUserLeaveBalancesQuery(
+        employeeId,
+        { skip: !isOpen || !employeeId }
     );
-    const teams = teamsRes?.value || teamsRes?.items || teamsRes || [];
+    const currentLeaveBalances = currentLeaveBalancesResponse?.value || [];
 
     // Initialize form data when employee data changes
     useEffect(() => {
@@ -69,17 +65,10 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                                         employeeData.department?.id || 
                                         '';
 
-            // Extract leave balances - ensure proper structure
-            const employeeLeaveBalances = employeeData.leaveBalances?.map(lb => ({
-                leaveTypeId: lb.leaveTypeId || lb.leaveType?.id || lb.leaveTypeId,
-                balanceDays: parseFloat(lb.balanceDays) || parseFloat(lb.balance) || 0
-            })).filter(lb => lb.leaveTypeId) || [];
-
             setFormData({
                 firstName: employeeData.firstName || '',
                 lastName: employeeData.lastName || '',
                 jobTitle: employeeData.jobTitle || '',
-                password: '', // Password field (optional, only sent if provided)
                 hireDate: employeeData.hireDate ? new Date(employeeData.hireDate).toISOString().split('T')[0] : '',
                 employeeStatus: employeeData.employeeStatus !== undefined ? employeeData.employeeStatus : 0,
                 roles: employeeRoles, // Keep array for backward compatibility
@@ -88,7 +77,7 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 teamId: employeeTeamIds[0] || '', // Single team for dropdown
                 shiftId: employeeShiftId, // Single value
                 departmentId: employeeDepartmentId,
-                leaveBalances: employeeLeaveBalances,
+                leaveBalances: [], // Will be populated from API when step 1 is accessed
             });
         }
     }, [employeeData]);
@@ -116,7 +105,6 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 
     const steps = [
         { label: t("employees.newEmployeeForm.steps.personalInfo") || "Personal Information", icon: User },
-        { label: t("employees.newEmployeeForm.steps.professionalInfo") || "Professional Information", icon: Briefcase },
         { label: t("employees.editEmployee.leaveBalances") || "Leave Balances", icon: FileText },
     ];
 
@@ -127,7 +115,8 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
         }));
     };
 
-    const handleSave = async () => {
+    // Handle saving personal info (step 0) using PUT /api/v1/User/Update/{id}
+    const handleSavePersonalInfo = async () => {
         if (!employeeId) {
             toast.error(t("employees.editEmployee.errors.noEmployeeId") || "Employee ID not found");
             return;
@@ -156,11 +145,6 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 employeeStatus: formData.employeeStatus !== undefined ? formData.employeeStatus : 0,
             };
 
-            // Add optional password only if provided
-            if (formData.password && formData.password.trim()) {
-                updatePayload.password = formData.password.trim();
-            }
-
             // Add hireDate if provided (convert to ISO string)
             if (formData.hireDate) {
                 const date = new Date(formData.hireDate);
@@ -169,57 +153,11 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                 }
             }
 
-            // API expects 'role' as a single string (role ID or name)
-            // Prefer single role value from dropdown, fallback to first item in array
-            let roleValue = null;
-            if (formData.role) {
-                roleValue = formData.role;
-            } else if (formData.roles && Array.isArray(formData.roles) && formData.roles.length > 0) {
-                roleValue = formData.roles[0];
-            }
-            
-            if (roleValue) {
-                if (typeof roleValue === 'object' && roleValue !== null) {
-                    updatePayload.role = String(roleValue.id || roleValue.roleId || roleValue.name || '');
-                } else {
-                    updatePayload.role = String(roleValue);
-                }
-                
-                if (!updatePayload.role || updatePayload.role.trim() === '') {
-                    delete updatePayload.role;
-                }
-            }
-
-            // Add teamIds as array (only if has items)
-            // Support both single teamId and array teamIds
-            const teamIdsToSend = formData.teamId 
-                ? [formData.teamId] 
-                : (formData.teamIds && Array.isArray(formData.teamIds) && formData.teamIds.length > 0 ? formData.teamIds : []);
-            
-            if (teamIdsToSend.length > 0) {
-                updatePayload.teamIds = teamIdsToSend;
-            }
-
-            // Add shiftId as single GUID (not array)
-            if (formData.shiftId && formData.shiftId.trim()) {
-                updatePayload.shiftId = formData.shiftId;
-            }
-
-            // Add leaveBalances array (only if has items)
-            if (formData.leaveBalances && Array.isArray(formData.leaveBalances) && formData.leaveBalances.length > 0) {
-                updatePayload.leaveBalances = formData.leaveBalances
-                    .filter(lb => lb.leaveTypeId && lb.leaveTypeId.trim())
-                    .map(lb => ({
-                        leaveTypeId: lb.leaveTypeId,
-                        balanceDays: parseFloat(lb.balanceDays) || 0
-                    }));
-            }
-
             toast.loading(t("employees.editEmployee.processing") || "Updating employee...");
             await updateUser({ id: employeeId, ...updatePayload }).unwrap();
             toast.dismiss();
             toast.success(t("employees.editEmployee.success") || "Employee updated successfully!");
-
+            
             if (onSave) {
                 onSave(updatePayload);
             }
@@ -229,6 +167,146 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             const apiErrors = err?.data?.errors || err?.data?.Errors;
             const modelState = apiErrors && typeof apiErrors === 'object' ? Object.values(apiErrors).flat().join(' | ') : null;
             const message = modelState || err?.data?.errorMessage || err?.data?.message || err?.message || t("employees.editEmployee.errors.updateFailed") || "Failed to update employee";
+            toast.error(message);
+        }
+    };
+
+    // Handle saving leave balances (create new or update existing)
+    const handleSaveLeaveBalances = async (fetchedLeaveBalances = []) => {
+        if (!employeeId || !formData.leaveBalances || !Array.isArray(formData.leaveBalances)) {
+            return;
+        }
+
+        const errors = [];
+        const validBalances = formData.leaveBalances.filter(lb => lb.leaveTypeId && lb.leaveTypeId.trim());
+        const updatedBalances = [...formData.leaveBalances]; // Create a mutable copy to track IDs
+
+        for (const balance of validBalances) {
+            try {
+                const balanceDays = parseFloat(balance.balanceDays) || 0;
+                
+                if (balance.id) {
+                    // Update existing leave balance using PUT /api/v1/LeaveBalance/Update/{id}
+                    // Calculate adjustmentAmount: new balance - old balance
+                    const oldBalance = parseFloat(balance.originalBalanceDays) || 0;
+                    const adjustmentAmount = balanceDays - oldBalance;
+                    
+                    if (Math.abs(adjustmentAmount) > 0.01) { // Only update if there's a meaningful change
+                        await updateLeaveBalance({
+                            id: balance.id,
+                            adjustmentAmount: adjustmentAmount
+                        }).unwrap();
+                        
+                        // Update the originalBalanceDays to the new value after successful update
+                        const balanceIndex = updatedBalances.findIndex(lb => lb.id === balance.id);
+                        if (balanceIndex !== -1) {
+                            updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
+                        }
+                    }
+                } else {
+                    // Check if a leave balance already exists for this leaveTypeId in the fetched balances
+                    const existingBalance = fetchedLeaveBalances.find(lb => 
+                        (lb.leaveTypeId || lb.leaveType?.id) === balance.leaveTypeId
+                    );
+                    
+                    if (existingBalance) {
+                        // Leave balance already exists - use PUT instead of CREATE
+                        const existingId = existingBalance.id || existingBalance.leaveBalanceId;
+                        const existingBalanceDays = parseFloat(existingBalance.balanceDays) || 0;
+                        const adjustmentAmount = balanceDays - existingBalanceDays;
+                        
+                        if (Math.abs(adjustmentAmount) > 0.01) { // Only update if there's a meaningful change
+                            await updateLeaveBalance({
+                                id: existingId,
+                                adjustmentAmount: adjustmentAmount
+                            }).unwrap();
+                            
+                            // Update the balance in updatedBalances with the ID so it's tracked properly
+                            const balanceIndex = updatedBalances.findIndex(lb => 
+                                !lb.id && lb.leaveTypeId === balance.leaveTypeId
+                            );
+                            if (balanceIndex !== -1) {
+                                updatedBalances[balanceIndex].id = existingId;
+                                updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
+                            }
+                        }
+                    } else {
+                        // Truly a new leave balance - use POST /api/v1/LeaveBalance/Create
+                        if (balance.leaveTypeId && balanceDays > 0) {
+                            const createResult = await createLeaveBalance({
+                                userId: employeeId,
+                                leaveTypeId: balance.leaveTypeId,
+                                balanceDays: balanceDays
+                            }).unwrap();
+                            
+                            // Extract ID from response: { value: { id: "uuid" } }
+                            const newId = createResult?.value?.id || createResult?.id || null;
+                            
+                            if (newId) {
+                                // Find the balance in updatedBalances and update it with the new ID
+                                const balanceIndex = updatedBalances.findIndex(lb => 
+                                    !lb.id && 
+                                    lb.leaveTypeId === balance.leaveTypeId &&
+                                    Math.abs(parseFloat(lb.balanceDays) - balanceDays) < 0.01
+                                );
+                                
+                                if (balanceIndex !== -1) {
+                                    updatedBalances[balanceIndex].id = newId;
+                                    updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                const errorMsg = err?.data?.errorMessage || err?.data?.message || err?.message || "Failed to save leave balance";
+                const leaveTypeName = balance.leaveTypeName || leaveTypes.find(lt => (lt.id || lt.leaveTypeId) === balance.leaveTypeId)?.name || balance.leaveTypeId;
+                errors.push(`${leaveTypeName}: ${errorMsg}`);
+            }
+        }
+        
+        // Update formData with the new IDs if any were created or existing ones were assigned
+        const hasNewIds = updatedBalances.some((lb, idx) => {
+            const oldBalance = formData.leaveBalances[idx];
+            return (oldBalance && !oldBalance.id && lb.id) || (oldBalance && oldBalance.id && oldBalance.originalBalanceDays !== lb.originalBalanceDays);
+        });
+        
+        if (hasNewIds) {
+            onChange('leaveBalances', updatedBalances);
+        }
+
+        if (errors.length > 0) {
+            toast.error(errors.join(' | '));
+            throw new Error(errors.join(' | '));
+        }
+    };
+
+    // Handle saving leave balances (step 1)
+    const handleSaveLeaveBalancesStep = async () => {
+        if (!employeeId) {
+            toast.error(t("employees.editEmployee.errors.noEmployeeId") || "Employee ID not found");
+            return;
+        }
+
+        try {
+            // Refetch current leave balances to get the latest data before saving
+            const refetchResult = await refetchLeaveBalances();
+            const fetchedLeaveBalances = refetchResult?.data?.value || currentLeaveBalances || [];
+
+            toast.loading(t("employees.editEmployee.processing") || "Saving leave balances...");
+            await handleSaveLeaveBalances(fetchedLeaveBalances);
+            toast.dismiss();
+            toast.success(t("employees.editEmployee.success") || "Leave balances saved successfully!");
+            
+            if (onSave) {
+                onSave({ leaveBalances: formData.leaveBalances });
+            }
+            onClose();
+        } catch (err) {
+            toast.dismiss();
+            const apiErrors = err?.data?.errors || err?.data?.Errors;
+            const modelState = apiErrors && typeof apiErrors === 'object' ? Object.values(apiErrors).flat().join(' | ') : null;
+            const message = modelState || err?.data?.errorMessage || err?.data?.message || err?.message || t("employees.editEmployee.errors.updateFailed") || "Failed to save leave balances";
             toast.error(message);
         }
     };
@@ -315,18 +393,15 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                         <div className="w-full max-w-4xl">
                             {step === 0 && <PersonalInfoEdit formData={formData} onChange={handleInputChange} isArabic={isArabic} t={t} />}
                             {step === 1 && (
-                                <ProfessionalInfoEdit 
+                                <LeaveBalancesEdit 
                                     formData={formData} 
-                                    onChange={handleInputChange}
-                                    roles={roles}
-                                    shifts={shifts}
-                                    teams={teams}
-                                    departments={departments}
-                                    isArabic={isArabic}
-                                    t={t}
+                                    onChange={handleInputChange} 
+                                    leaveTypes={leaveTypes}
+                                    employeeId={employeeId}
+                                    isArabic={isArabic} 
+                                    t={t} 
                                 />
                             )}
-                            {step === 2 && <LeaveBalancesEdit formData={formData} onChange={handleInputChange} leaveTypes={leaveTypes} isArabic={isArabic} t={t} />}
                         </div>
                     </div>
 
@@ -345,7 +420,36 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                                 {isArabic ? <ArrowRight size={18} /> : <ArrowLeft size={18} />}
                                 {t("employees.newEmployeeForm.buttons.back") || "Back"}
                             </button>
-                            {step < steps.length - 1 ? (
+                            {step === 0 ? (
+                                <>
+                                    {/* Save button for step 0 */}
+                                    <button
+                                        onClick={handleSavePersonalInfo}
+                                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50"
+                                        disabled={isUpdating}
+                                    >
+                                        {isUpdating ? (
+                                            <>
+                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                <span>{t("common.loading") || "Saving..."}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Save size={18} />
+                                                <span>{t("employees.editEmployee.save") || "Save"}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                    {/* Next button for step 0 */}
+                                    <button
+                                        onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
+                                        className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all"
+                                    >
+                                        {t("employees.newEmployeeForm.buttons.next") || "Next"}
+                                        {isArabic ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
+                                    </button>
+                                </>
+                            ) : step < steps.length - 1 ? (
                                 <button
                                     onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
                                     className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all"
@@ -355,11 +459,11 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                                 </button>
                             ) : (
                                 <button
-                                    onClick={handleSave}
+                                    onClick={handleSaveLeaveBalancesStep}
                                     className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-[#15919B] to-[#09D1C7] hover:shadow-lg transition-all disabled:opacity-50"
-                                    disabled={isUpdating}
+                                    disabled={isSavingLeaveBalances}
                                 >
-                                    {isUpdating ? (
+                                    {isSavingLeaveBalances ? (
                                         <>
                                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                             <span>{t("common.loading") || "Saving..."}</span>
@@ -388,8 +492,6 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
 
 // Personal Information Edit
 function PersonalInfoEdit({ formData, onChange, isArabic, t }) {
-    const [showPassword, setShowPassword] = useState(false);
-
     return (
         <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
             <div className="mb-6">
@@ -467,33 +569,6 @@ function PersonalInfoEdit({ formData, onChange, isArabic, t }) {
 
                 <div className="space-y-2">
                     <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <Lock className="w-4 h-4 text-[var(--accent-color)]" />
-                        {t("employees.editEmployee.password") || "Password"}
-                        <span className="text-xs text-[var(--sub-text-color)] font-normal">({t("common.optional") || "Optional"})</span>
-                    </label>
-                    <div className="relative">
-                        <input
-                            className={`w-full px-4 py-3.5 ${isArabic ? 'pl-12' : 'pr-12'} rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 ${isArabic ? 'text-right' : 'text-left'}`}
-                            placeholder={t("employees.editEmployee.passwordPlaceholder") || "Enter new password (optional)"}
-                            type={showPassword ? 'text' : 'password'}
-                            value={formData.password || ''}
-                            onChange={(e) => onChange('password', e.target.value)}
-                            autoComplete="new-password"
-                            dir={isArabic ? "rtl" : "ltr"}
-                        />
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword(s => !s)}
-                            className={`absolute ${isArabic ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--sub-text-color)] hover:text-[var(--accent-color)] transition-colors p-1 rounded hover:bg-[var(--hover-color)]`}
-                            aria-label={showPassword ? (t("common.hidePassword") || "Hide password") : (t("common.showPassword") || "Show password")}
-                        >
-                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
                         <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
                         {t("employees.editEmployee.status") || "Status"}
                     </label>
@@ -512,149 +587,97 @@ function PersonalInfoEdit({ formData, onChange, isArabic, t }) {
     );
 }
 
-// Professional Information Edit
-function ProfessionalInfoEdit({ formData, onChange, roles, shifts, teams, departments, isArabic, t }) {
-    const roleOptions = Array.isArray(roles) ? roles : [];
-    const shiftOptions = Array.isArray(shifts) ? shifts : [];
-    const teamOptions = Array.isArray(teams) ? teams : [];
-    const deptOptions = Array.isArray(departments) ? departments : [];
-
-    const handleRoleChange = (e) => {
-        const selectedValue = e.target.value;
-        onChange('role', selectedValue);
-        onChange('roles', selectedValue ? [selectedValue] : []);
-    };
-
-    const handleTeamChange = (e) => {
-        const selectedValue = e.target.value;
-        onChange('teamId', selectedValue);
-        onChange('teamIds', selectedValue ? [selectedValue] : []);
-    };
-
-    return (
-        <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
-            <div className="mb-6">
-                <h3 className={`text-xl font-bold text-[var(--text-color)] flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    <Briefcase className="w-5 h-5 text-[var(--accent-color)]" />
-                    {t("employees.newEmployeeForm.steps.professionalInfo") || "Professional Information"}
-                </h3>
-                <p className={`text-sm text-[var(--sub-text-color)] mt-1 ${isArabic ? 'text-right' : 'text-left'}`}>
-                    {t("employees.editEmployee.professionalInfoDescription") || "Update employee's professional details and assignments"}
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <Building2 className="w-4 h-4 text-[var(--accent-color)]" />
-                        {t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Department"}
-                    </label>
-                    <select
-                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
-                        value={formData.departmentId || ''}
-                        onChange={e => {
-                            onChange('departmentId', e.target.value);
-                            onChange('teamIds', []);
-                            onChange('teamId', '');
-                        }}
-                        dir={isArabic ? "rtl" : "ltr"}
-                    >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select Department"}</option>
-                        {deptOptions.map((d) => (
-                            <option key={d.id || d.departmentId} value={d.id || d.departmentId}>
-                                {d.name || d.departmentName}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <User className="w-4 h-4 text-[var(--accent-color)]" />
-                        {t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Role"}
-                    </label>
-                    <select
-                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
-                        value={formData.role || formData.roles?.[0] || ''}
-                        onChange={handleRoleChange}
-                        dir={isArabic ? "rtl" : "ltr"}
-                    >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Select Role"}</option>
-                        {roleOptions.map((r) => (
-                            <option key={r.id || r.roleId} value={r.id || r.roleId}>
-                                {r.name || r.roleName || r.code}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <Clock className="w-4 h-4 text-[var(--accent-color)]" />
-                        {t("employees.newEmployeeForm.professionalInfo.selectShift") || "Shift"}
-                    </label>
-                    <select
-                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
-                        value={formData.shiftId || ''}
-                        onChange={e => onChange('shiftId', e.target.value)}
-                        dir={isArabic ? "rtl" : "ltr"}
-                    >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectShift") || "Select Shift"}</option>
-                        {shiftOptions.map((s) => (
-                            <option key={s.id || s.shiftId} value={s.id || s.shiftId}>
-                                {s.name || s.shiftName}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <Users className="w-4 h-4 text-[var(--accent-color)]" />
-                        {t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Team"}
-                        <span className="text-xs text-[var(--sub-text-color)] font-normal">({t("common.optional") || "Optional"})</span>
-                    </label>
-                    <select
-                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
-                        value={formData.teamId || formData.teamIds?.[0] || ''}
-                        onChange={handleTeamChange}
-                        disabled={!formData.departmentId}
-                        dir={isArabic ? "rtl" : "ltr"}
-                    >
-                        <option value="">{formData.departmentId ? (t("employees.newEmployeeForm.professionalInfo.selectTeam") || "Select Team") : (t("employees.newEmployeeForm.professionalInfo.selectDepartmentFirst") || "Select department first")}</option>
-                        {formData.departmentId && teamOptions.map((tm) => (
-                            <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>
-                                {tm.name || tm.teamName}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 // Leave Balances Edit
-function LeaveBalancesEdit({ formData, onChange, leaveTypes, isArabic, t }) {
+function LeaveBalancesEdit({ formData, onChange, leaveTypes, employeeId, isArabic, t }) {
+    // Fetch user's leave balances
+    const { data: leaveBalancesResponse, isLoading: isLoadingBalances, refetch: refetchBalances } = useGetUserLeaveBalancesQuery(
+        employeeId,
+        { skip: !employeeId }
+    );
+    
+    const fetchedLeaveBalances = leaveBalancesResponse?.value || [];
     const leaveBalances = formData.leaveBalances || [];
+
+    // Initialize leave balances from API when they're fetched
+    useEffect(() => {
+        if (fetchedLeaveBalances.length > 0) {
+            // Only update if we haven't loaded balances yet or if the fetched data changed
+            const mappedBalances = fetchedLeaveBalances.map(lb => ({
+                id: lb.id || lb.leaveBalanceId || null, // Store ID if exists (for updates)
+                leaveTypeId: lb.leaveTypeId || '',
+                leaveTypeName: lb.leaveTypeName || '',
+                balanceDays: parseFloat(lb.balanceDays) || 0,
+                originalBalanceDays: parseFloat(lb.balanceDays) || 0, // Store original for adjustment calculation
+            }));
+            
+            // Only update if formData doesn't have balances yet or if IDs don't match
+            const currentIds = leaveBalances.map(lb => lb.id).filter(Boolean).sort().join(',');
+            const fetchedIds = mappedBalances.map(lb => lb.id).filter(Boolean).sort().join(',');
+            
+            if (leaveBalances.length === 0 || currentIds !== fetchedIds) {
+                onChange('leaveBalances', mappedBalances);
+            }
+        } else if (fetchedLeaveBalances.length === 0 && leaveBalances.length === 0 && !isLoadingBalances) {
+            // No leave balances exist yet - user can add new ones
+            // Only set empty array if we're done loading
+            onChange('leaveBalances', []);
+        }
+    }, [fetchedLeaveBalances, isLoadingBalances]);
 
     const handleLeaveBalanceChange = (index, field, value) => {
         const updated = [...leaveBalances];
         if (!updated[index]) {
-            updated[index] = { leaveTypeId: '', balanceDays: 0 };
+            updated[index] = { leaveTypeId: '', balanceDays: 0, originalBalanceDays: 0 };
         }
-        updated[index][field] = field === 'balanceDays' ? parseFloat(value) || 0 : value;
+        
+        if (field === 'leaveTypeId') {
+            updated[index].leaveTypeId = value;
+            // Find leave type name from leaveTypes array
+            const leaveType = leaveTypes.find(lt => (lt.id || lt.leaveTypeId) === value);
+            if (leaveType) {
+                updated[index].leaveTypeName = leaveType.name || leaveType.leaveTypeName || '';
+            }
+            // If this is a new leave balance (no ID), reset originalBalanceDays
+            if (!updated[index].id) {
+                updated[index].originalBalanceDays = 0;
+            }
+        } else if (field === 'balanceDays') {
+            const newBalance = parseFloat(value) || 0;
+            updated[index].balanceDays = newBalance;
+            // Preserve original balance if it exists and hasn't been set yet
+            if (updated[index].id && !updated[index].originalBalanceDays && updated[index].originalBalanceDays !== 0) {
+                // Find the original balance from fetched data
+                const fetchedBalance = fetchedLeaveBalances.find(lb => lb.id === updated[index].id);
+                if (fetchedBalance) {
+                    updated[index].originalBalanceDays = parseFloat(fetchedBalance.balanceDays) || 0;
+                }
+            }
+        } else {
+            updated[index][field] = value;
+        }
+        
         onChange('leaveBalances', updated);
     };
 
     const addLeaveBalance = () => {
-        onChange('leaveBalances', [...leaveBalances, { leaveTypeId: '', balanceDays: 0 }]);
+        onChange('leaveBalances', [...leaveBalances, { leaveTypeId: '', balanceDays: 0, originalBalanceDays: 0 }]);
     };
 
     const removeLeaveBalance = (index) => {
         const updated = leaveBalances.filter((_, i) => i !== index);
         onChange('leaveBalances', updated);
     };
+
+    if (isLoadingBalances) {
+        return (
+            <div className="flex items-center justify-center py-16">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-[var(--accent-color)] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-[var(--sub-text-color)] font-medium">{t("common.loading") || "Loading leave balances..."}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6" dir={isArabic ? "rtl" : "ltr"}>
