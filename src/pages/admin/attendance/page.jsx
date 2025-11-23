@@ -43,28 +43,33 @@ const AttendanceAdmin = () => {
   const { data: attendanceSummary, isLoading: isLoadingSummary, isError: isSummaryError } = useGetAttendanceSummaryQuery();
 
   // Build card data from API response
-  const cardData = useMemo(() => [
-    {
-      title: t("adminAttendance.cards.totalEmployees", "Total Employees"),
-      value: (attendanceSummary?.totalPresent || 0) + (attendanceSummary?.totalAbsent || 0) || 0,
-      icon: <img src="/assets/AdminAttendance/total.svg" alt="employees" />
-    },
-    {
-      title: t("adminAttendance.cards.presentToday", "Present Today"),
-      value: attendanceSummary?.totalPresent || 0,
-      icon: <img src="/assets/AdminDashboard/today.svg" alt="attendance" />
-    },
-    {
-      title: t("adminAttendance.cards.absentToday", "Absent Today"),
-      value: attendanceSummary?.totalAbsent || 0,
-      icon: <img src="/assets/AdminDashboard/leavee.svg" alt="absent" />
-    },
-    {
-      title: t("adminAttendance.cards.totalClockins", "Total Clock-ins"),
-      value: attendanceSummary?.totalClockinsToday || 0,
-      icon: <img src="/assets/AdminDashboard/task.svg" alt="clockins" />
-    },
-  ], [attendanceSummary, t])
+  const cardData = useMemo(() => {
+    const mostFrequentAbsentees = attendanceSummary?.mostFrequentAbsentees || [];
+    
+    return [
+      {
+        title: t("adminAttendance.cards.presentToday", "Present Today"),
+        value: attendanceSummary?.totalPresentToday || 0,
+        icon: <img src="/assets/AdminDashboard/today.svg" alt="attendance" />
+      },
+      {
+        title: t("adminAttendance.cards.absentToday", "Absent Today"),
+        value: attendanceSummary?.totalAbsentToday || 0,
+        icon: <img src="/assets/AdminDashboard/leavee.svg" alt="absent" />
+      },
+      {
+        title: t("adminAttendance.cards.lateArrivalsToday", "Late Arrivals Today"),
+        value: attendanceSummary?.lateArrivalsToday || 0,
+        icon: <img src="/assets/AdminDashboard/task.svg" alt="late arrivals" />
+      },
+      {
+        title: t("adminAttendance.cards.mostFrequentAbsentees", "Most Frequent Absentees"),
+        value: mostFrequentAbsentees.length,
+        icon: <img src="/assets/AdminAttendance/total.svg" alt="absentees" />,
+        absentees: mostFrequentAbsentees.slice(0, 3) // Get first 3
+      },
+    ];
+  }, [attendanceSummary, t])
 
   const getLocationIcon = (location) => {
     return location === 'office' ? 
@@ -239,7 +244,33 @@ const AttendanceAdmin = () => {
                 key={index}
                 header={card.title}
                 rightIcon={card.icon}
-                title={isLoadingSummary ? "..." : card.value}
+                title={
+                  index === 3 && card.absentees ? (
+                    isLoadingSummary ? (
+                      "..."
+                    ) : (
+                      <div className="space-y-1 mt-2">
+                        {card.absentees.length > 0 ? (
+                          card.absentees.map((absentee, idx) => (
+                            <div 
+                              key={absentee.userId || idx} 
+                              className="text-xs text-[var(--sub-text-color)]"
+                            >
+                              <span className="mr-2">•</span>
+                              {absentee.fullName || t("adminAttendance.cards.unknownEmployee", "Unknown Employee")}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-[var(--sub-text-color)]">
+                            {t("adminAttendance.cards.noAbsentees", "No absentees data")}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    isLoadingSummary ? "..." : card.value
+                  )
+                }
               />
             ))}
           </div>

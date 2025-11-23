@@ -269,7 +269,7 @@ const Dashboard = () => {
               </div>
 
               {/* Activity Heatmap - Full width and responsive */}
-              <div className="w-full">
+              {/* <div className="w-full">
                 <ActivityHeatmap 
                   dashboardData={dashboardData} 
                   isLoading={isLoading} 
@@ -278,7 +278,7 @@ const Dashboard = () => {
                   selectedMonth={selectedMonth}
                   onMonthChange={setSelectedMonth}
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </main>
