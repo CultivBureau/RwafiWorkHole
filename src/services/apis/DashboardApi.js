@@ -59,6 +59,24 @@ export const dashboardApi = createApi({
       },
       providesTags: [{ type: "Dashboard", id: "ADMIN_STATISTICS" }],
     }),
+
+    // Get employee leave summary
+    getEmployeeLeaveSummary: builder.query({
+      query: () => ({
+        url: "/api/v1/Dashboard/GetEmployeeLeaveSummary/employee-leave-summary",
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        // API returns { value: {...}, statusCode: 200, ... }
+        // Extract the value object which contains the leave summary data
+        if (response?.value) {
+          return response.value;
+        }
+        // Fallback if response structure is different
+        return response;
+      },
+      providesTags: [{ type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" }],
+    }),
   }),
 });
 
@@ -66,5 +84,6 @@ export const {
   useGetTimeTrackingSummaryQuery,
   useGetEmployeeDashboardCardsQuery,
   useGetAdminStatisticsQuery,
+  useGetEmployeeLeaveSummaryQuery,
 } = dashboardApi;
 

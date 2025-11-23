@@ -16,7 +16,7 @@ export const leaveApi = createApi({
           pageSize,
         },
       }),
-      providesTags: (result) => [
+      providesTags: () => [
         { type: "LeaveRequests", id: "TEAM_LEAD_LIST" },
       ],
     }),
@@ -34,6 +34,7 @@ export const leaveApi = createApi({
       invalidatesTags: [
         { type: "LeaveRequests", id: "TEAM_LEAD_LIST" },
         { type: "LeaveRequests", id: "HR_LIST" },
+        { type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" },
       ],
     }),
 
@@ -48,7 +49,7 @@ export const leaveApi = createApi({
           pageSize,
         },
       }),
-      providesTags: (result) => [
+      providesTags: () => [
         { type: "LeaveRequests", id: "HR_LIST" },
       ],
     }),
@@ -66,6 +67,7 @@ export const leaveApi = createApi({
       invalidatesTags: [
         { type: "LeaveRequests", id: "HR_LIST" },
         { type: "LeaveRequests", id: "TEAM_LEAD_LIST" },
+        { type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" },
       ],
     }),
 
@@ -91,7 +93,7 @@ export const leaveApi = createApi({
         url: "/api/v1/LeaveRequest/GetMy/my",
         method: "GET",
       }),
-      providesTags: (result) => [
+      providesTags: () => [
         { type: "LeaveRequests", id: "MY_LIST" },
       ],
     }),
@@ -111,6 +113,7 @@ export const leaveApi = createApi({
       invalidatesTags: [
         { type: "LeaveRequests", id: "MY_LIST" },
         { type: "LeaveRequests", id: "TEAM_LEAD_LIST" },
+        { type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" },
       ],
     }),
 

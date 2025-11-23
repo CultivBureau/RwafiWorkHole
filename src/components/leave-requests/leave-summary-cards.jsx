@@ -1,27 +1,19 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-
-// Static leave stats data
-const staticLeaveStats = {
-  statusCounts: {
-    rejectedLeaves: 2,
-    pendingLeaves: 3,
-    approvedLeaves: 18
-  },
-  availableLeaves: 15
-};
+import { useGetEmployeeLeaveSummaryQuery } from "../../services/apis/DashboardApi";
 
 const CompactLeaveSummaryCards = () => {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
 
-  // Use static data instead of API call
-  const stats = staticLeaveStats;
-  const isLoading = false;
+  // Fetch employee leave summary from API
+  const { data: leaveSummary, isLoading } = useGetEmployeeLeaveSummaryQuery();
   
-  // Static values
-  const statusCounts = stats?.statusCounts || {};
-  const availableLeaves = stats?.availableLeaves ?? 0;
+  // Map API data to component values
+  const availableLeaves = leaveSummary?.annualLeaveBalance ?? 0;
+  const rejectedLeaves = leaveSummary?.rejectedRequests ?? 0;
+  const pendingLeaves = leaveSummary?.pendingRequests ?? 0;
+  const approvedLeaves = leaveSummary?.approvedRequests ?? 0;
 
   const summaryCardsData = [
     {
@@ -32,19 +24,19 @@ const CompactLeaveSummaryCards = () => {
     },
     {
       id: 2,
-      count: isLoading ? "..." : (statusCounts.rejectedLeaves ?? 0),
+      count: isLoading ? "..." : rejectedLeaves,
       title: t("leaves.summaryCards.rejectedLeaves"),
       boxClass: "rejected-leave-box",
     },
     {
       id: 3,
-      count: isLoading ? "..." : (statusCounts.pendingLeaves ?? 0),
+      count: isLoading ? "..." : pendingLeaves,
       title: t("leaves.summaryCards.pendingLeaves"),
       boxClass: "pending-leave-box",
     },
     {
       id: 4,
-      count: isLoading ? "..." : (statusCounts.approvedLeaves ?? 0),
+      count: isLoading ? "..." : approvedLeaves,
       title: t("leaves.summaryCards.approvedLeaves"),
       boxClass: "approved-leave-box",
     },
