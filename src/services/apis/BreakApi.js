@@ -146,6 +146,15 @@ export const breakApi = createApi({
         url: "/api/v1/BreakLog/GetCurrentUserBreakSummary/summary/current",
         method: "GET",
       }),
+      transformResponse: (response) => {
+        // API returns { value: {...}, statusCode: 200, ... }
+        // Extract the value object which contains the summary data
+        if (response?.value) {
+          return response.value;
+        }
+        // Fallback if response structure is different
+        return response;
+      },
       providesTags: [{ type: "Break", id: "CURRENT_SUMMARY" }],
     }),
   }),

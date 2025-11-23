@@ -13,6 +13,7 @@ import {
   useStartBreakMutation,
   useEndBreakMutation,
   useGetAllBreaksQuery,
+  useGetCurrentUserBreakSummaryQuery,
 } from "../../../services/apis/BreakApi";
 import {
   getCurrentUtcTime,
@@ -54,6 +55,9 @@ const BreakTrackingPage = () => {
     data: breakDefinitionsResponse,
     isLoading: isBreakDefinitionsLoading,
   } = useGetAllBreaksQuery({ pageNumber: 1, pageSize: 100 });
+
+  // Fetch current user break summary from API
+  const { data: breakSummary, isLoading: isLoadingSummary } = useGetCurrentUserBreakSummaryQuery();
 
   const [startBreakMutation, { isLoading: isStarting } ] = useStartBreakMutation();
   const [endBreakMutation, { isLoading: isEnding }] = useEndBreakMutation();
@@ -127,65 +131,70 @@ const BreakTrackingPage = () => {
     [breakLogsRaw]
   );
 
+  // Helper function to format hours (decimal) to "xh ym" format
+  const formatHoursToTimeString = (hours) => {
+    if (!hours || hours === 0) return "0h 0m";
+    const h = Math.floor(hours);
+    const m = Math.floor((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
+  // Helper function to format minutes to "xh ym" format
+  const formatMinutesToTimeString = (minutes) => {
+    if (!minutes || minutes === 0) return "0h 0m";
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return `${h}h ${m}m`;
+  };
+
+  // Helper function to format total break time (in minutes) to "xh ym" format
+  const formatBreakTimeMinutes = (minutes) => {
+    if (minutes === undefined || minutes === null) return "--";
+    if (minutes === 0) return "0m";
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h > 0) {
+      return `${h}h ${m}m`;
+    }
+    return `${m}m`;
+  };
+
   const dashboardStats = useMemo(() => {
-    if (processedLogs.length === 0) {
+    // Use API data if available, otherwise fallback to calculated values
+    if (breakSummary) {
+      // Use API data for all 4 cards
+      const breaksTakenToday = breakSummary.breaksTakenToday !== undefined
+        ? breakSummary.breaksTakenToday
+        : 0;
+      
+      const totalBreakTimeToday = breakSummary.totalBreakTimeToday !== undefined
+        ? formatBreakTimeMinutes(breakSummary.totalBreakTimeToday)
+        : "--";
+      
+      const remainingBreakAllowance = breakSummary.remainingBreakAllowance !== undefined
+        ? formatBreakTimeMinutes(breakSummary.remainingBreakAllowance)
+        : "--";
+      
+      const averageBreakDurationThisWeek = breakSummary.averageBreakDurationThisWeek !== undefined
+        ? formatHoursToTimeString(breakSummary.averageBreakDurationThisWeek)
+        : "--";
+
       return {
-        todaysBreakTime: "--",
-        mostUsedBreak: "--",
-        avgBreakPerDay: "--",
-        breaksOverLimit: "--",
+        breaksTakenToday,
+        totalBreakTimeToday,
+        remainingBreakAllowance,
+        averageBreakDurationThisWeek,
       };
     }
 
-    // Filter today's breaks using timeUtils
-    const todaysSeconds = processedLogs
-      .filter((record) => {
-        // Check if the start time is today in local timezone
-        return record.startTime && isUtcDateToday(record.startTime);
-      })
-      .reduce((sum, record) => sum + record.durationSeconds, 0);
-
-    const totalsByType = processedLogs.reduce((acc, record) => {
-      const key = record.breakType || "Unknown";
-      if (!acc[key]) {
-        acc[key] = { count: 0, seconds: 0 };
-      }
-      acc[key].count += 1;
-      acc[key].seconds += record.durationSeconds;
-      return acc;
-    }, {});
-
-    const mostUsed = Object.entries(totalsByType).reduce(
-      (max, [type, value]) => {
-        if (!max || value.count > max.count) {
-          return { type, count: value.count };
-        }
-        return max;
-      },
-      null
-    );
-
-    const uniqueDates = Array.from(
-      new Set(processedLogs.map((record) => record.date).filter(Boolean))
-    );
-    const totalSeconds = processedLogs.reduce(
-      (sum, record) => sum + record.durationSeconds,
-      0
-    );
-    const averageSeconds = uniqueDates.length
-      ? Math.floor(totalSeconds / uniqueDates.length)
-      : 0;
-
-    const breaksOverLimit = processedLogs.filter((record) => record.exceeded)
-      .length;
-
+    // Fallback to default values if API data not available
     return {
-      todaysBreakTime: formatDurationLabel(todaysSeconds),
-      mostUsedBreak: mostUsed?.type || "--",
-      avgBreakPerDay: formatDurationLabel(averageSeconds),
-      breaksOverLimit,
+      breaksTakenToday: 0,
+      totalBreakTimeToday: "--",
+      remainingBreakAllowance: "--",
+      averageBreakDurationThisWeek: "--",
     };
-  }, [processedLogs]);
+  }, [breakSummary]);
 
   const chartData = useMemo(() => {
     const totalsByType = processedLogs.reduce((acc, record) => {
@@ -270,7 +279,7 @@ const BreakTrackingPage = () => {
             <div className="w-full h-max p-3 sm:p-4 md:p-5 lg:p-4 xl:p-5 2xl:p-8">
               {/* Status Cards Row */}
               <div className="w-full mb-3 sm:mb-4 md:mb-5 lg:mb-4 xl:mb-6 2xl:mb-8">
-                <StatusCards stats={dashboardStats} isLoading={isLogsLoading} />
+                <StatusCards stats={dashboardStats} isLoading={isLogsLoading || isLoadingSummary} />
               </div>
 
               {/* Main Content Grid */}

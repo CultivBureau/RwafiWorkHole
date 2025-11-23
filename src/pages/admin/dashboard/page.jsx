@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import NavBarAdmin from "../../../components/admin/NavBarAdmin";
 import SideBarAdmin from "../../../components/admin/SideBarAdmin";
 import { useTranslation } from "react-i18next";
 import { PermissionGuard } from "../../../components/common/PermissionGuard";
+import { useGetAdminStatisticsQuery } from "../../../services/apis/DashboardApi";
 import {
   Users,
   UserCheck,
@@ -31,28 +32,34 @@ const DashboardAdmin = () => {
     }
   }, [i18n]);
 
-  const CardData = [
+  // Fetch admin dashboard statistics from API
+  const { data: adminStatistics, isLoading: isLoadingStatistics, isError: isStatisticsError } = useGetAdminStatisticsQuery();
+
+  // Build card data from API response
+  const CardData = useMemo(() => [
     {
       title: t("adminDashboard.cards.activeEmployees", "Active Employees"),
-      value: 100,
+      value: isLoadingStatistics ? "..." : (adminStatistics?.activeEmployees || 0),
       icon: <img src="/assets/AdminDashboard/Active.svg" alt="employees" />
     },
     {
       title: t("adminDashboard.cards.todayAttendance", "Today Attendance"),
-      value: 90,
+      value: isLoadingStatistics ? "..." : (adminStatistics?.attendanceRateToday !== undefined 
+        ? `${adminStatistics.attendanceRateToday}%` 
+        : "0%"),
       icon: <img src="/assets/AdminDashboard/today.svg" alt="employees" />
     },
     {
       title: t("adminDashboard.cards.leaveRequests", "Leave Requests"),
-      value: 2,
+      value: isLoadingStatistics ? "..." : (adminStatistics?.leaveRequests?.total || 0),
       icon: <img src="/assets/AdminDashboard/leavee.svg" alt="employees" />
     },
     {
-      title: t("adminDashboard.cards.overdueTasks", "Overdue Tasks"),
-      value: 4,
-      icon: <img src="/assets/AdminDashboard/task.svg" alt="employees" />
+      title: t("adminDashboard.cards.averageWorkingHours", "Avg Working Hours"),
+      value: isLoadingStatistics ? "..." : (adminStatistics?.averageWorkingHoursThisWeek || 0),
+      icon: <img src="/assets/AdminDashboard/task.svg" alt="hours" />
     }
-  ]
+  ], [adminStatistics, isLoadingStatistics, t])
 
   return (
     <PermissionGuard 
