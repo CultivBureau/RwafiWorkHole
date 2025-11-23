@@ -197,7 +197,6 @@ const AttendanceTable = () => {
       filtered = filtered.filter(employee => {
         if (locationFilter === "office") return employee.location === "Work from office"
         if (locationFilter === "home") return employee.location === "Work from home"
-        if (locationFilter === "onsite") return employee.location === "On-site"
         return true
       })
     }
