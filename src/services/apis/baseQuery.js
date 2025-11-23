@@ -80,16 +80,41 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
           refreshAttempts++;
           
           // Try to refresh using the refresh token endpoint
-          // Note: Update the endpoint URL and body structure based on your API
+          // Endpoint: POST /api/v1/Authentication/Refresh/refresh
+          // Request body: { "refreshToken": "string" }
+          // Response: { statusCode: 200, value: { accessToken, refreshToken, refreshTokenExpiresAt }, errorMessage: null, errors: null }
           const refreshResult = await fetchBaseQuery({
             baseUrl,
+            prepareHeaders: (headers) => {
+              headers.set("Content-Type", "application/json");
+              return headers;
+            },
           })({
-            url: '/api/v1/Authentication/refresh',
+            url: '/api/v1/Authentication/Refresh/refresh',
             method: 'POST',
-            body: { refreshToken: refreshToken },
+            body: { refreshToken: refreshToken }, // fetchBaseQuery will automatically stringify this
           }, api, extraOptions);
 
-          // Handle new API response structure
+          // Check if refresh was successful
+          if (refreshResult.error) {
+            // Refresh failed - check error response
+            const errorMessage = refreshResult.error?.data?.errorMessage || refreshResult.error?.data?.message || 'Token refresh failed';
+            console.error('Token refresh failed:', errorMessage);
+            
+            // If refresh token is invalid/expired, remove tokens
+            if (hasAnyAuthentication()) {
+              // We have some form of authentication, don't redirect - let ProtectedRoute handle it
+              refreshAttempts = 0;
+              return result;
+            }
+            // No authentication at all, remove tokens and redirect to login
+            refreshAttempts = 0;
+            removeAuthToken();
+            window.location.href = '/';
+            return result;
+          }
+
+          // Handle API response structure: { value: { accessToken, refreshToken, refreshTokenExpiresAt } }
           const refreshData = refreshResult.data?.value || refreshResult.data;
           
           if (refreshData?.accessToken && refreshData?.refreshToken) {
