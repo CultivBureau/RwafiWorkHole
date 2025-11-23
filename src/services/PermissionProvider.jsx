@@ -123,8 +123,9 @@ export const PermissionProvider = ({ children }) => {
       roles = userData.roles;
     } else if (userInfoFromCookie) {
       // Get role from decoded token in cookie
+      // Check both the full key and the 'role' property for compatibility
       const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-      roles = userInfoFromCookie[msRoleKey] || [];
+      roles = userInfoFromCookie[msRoleKey] || userInfoFromCookie.role || [];
     }
     
     const roleArray = Array.isArray(roles) ? roles : [roles];
@@ -180,8 +181,9 @@ export const PermissionProvider = ({ children }) => {
       roles = userData.roles;
     } else if (userInfoFromCookie) {
       // Get role from decoded token in cookie
+      // Check both the full key and the 'role' property for compatibility
       const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
-      roles = userInfoFromCookie[msRoleKey] || [];
+      roles = userInfoFromCookie[msRoleKey] || userInfoFromCookie.role || [];
     }
     
     const roleArray = Array.isArray(roles) ? roles : [roles];

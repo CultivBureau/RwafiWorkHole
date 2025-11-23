@@ -22,7 +22,7 @@ import {
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import Cookies from "js-cookie";
-import { setPermissionsFromToken, getAuthToken } from "../../utils/page";
+import { setPermissionsFromToken, getAuthToken, getUserInfo, getRefreshToken } from "../../utils/page";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -44,6 +44,23 @@ const Login = () => {
   });
 
   const isRtl = i18n.language === 'ar';
+  
+  // Check if user is already authenticated - redirect to appropriate dashboard
+  React.useEffect(() => {
+    const token = getAuthToken();
+    const refreshToken = getRefreshToken();
+    const userInfoFromCookie = getUserInfo();
+    
+    // If user is already authenticated, redirect to dashboard
+    if (token || refreshToken || userInfoFromCookie) {
+      // Determine dashboard based on role
+      const msRoleKey = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+      const role = userInfoFromCookie?.[msRoleKey] || userInfoFromCookie?.role;
+      const isAdmin = role && role.toLowerCase() === 'admin';
+      const dashboardPath = isAdmin ? "/pages/admin/dashboard" : "/pages/User/dashboard";
+      navigate(dashboardPath, { replace: true });
+    }
+  }, [navigate]);
 
   // Set document direction on mount and when language changes
   React.useEffect(() => {

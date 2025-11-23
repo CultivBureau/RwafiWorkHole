@@ -1,7 +1,13 @@
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./baseQuery";
-import { setAuthToken, removeAuthToken, setToken, setAuthTokens } from "../../utils/page";
-import Cookies from "js-cookie";
+import { 
+  setAuthToken, 
+  removeAuthToken, 
+  setToken, 
+  setAuthTokens,
+  setPermissionsFromToken,
+  setUserInfoFromToken
+} from "../../utils/page";
 
 export const authApi = createApi({
   reducerPath: "authApi",
@@ -21,25 +27,37 @@ export const authApi = createApi({
           const responseValue = data.value || data;
           
           if (responseValue?.accessToken && responseValue?.refreshToken) {
-            setAuthTokens(responseValue.accessToken, responseValue.refreshToken);
+            // Set tokens with refresh token expiry date
+            setAuthTokens(
+              responseValue.accessToken, 
+              responseValue.refreshToken,
+              responseValue.refreshTokenExpiresAt
+            );
             
-            // Also store refreshTokenExpiresAt if available
-            if (responseValue.refreshTokenExpiresAt) {
-              // Store expiry date in cookies for reference
-              Cookies.set("refresh_token_expires_at", responseValue.refreshTokenExpiresAt, { expires: 20 });
-            }
+            // Extract and save permissions from access token
+            setPermissionsFromToken(responseValue.accessToken);
+            
+            // Extract and save user info from access token
+            setUserInfoFromToken(responseValue.accessToken);
           } else if (responseValue?.accessToken) {
             // Fallback: only accessToken available
             setAuthToken(responseValue.accessToken);
+            setPermissionsFromToken(responseValue.accessToken);
+            setUserInfoFromToken(responseValue.accessToken);
           } else if (data.value?.token) {
             // Legacy support: old token format
             setToken(data.value.token);
+            setPermissionsFromToken(data.value.token);
+            setUserInfoFromToken(data.value.token);
           } else if (data.token) {
             // Legacy support: old token format
             setToken(data.token);
+            setPermissionsFromToken(data.token);
+            setUserInfoFromToken(data.token);
           }
         } catch (error) {
           // Error handling
+          console.error("Login error:", error);
         }
       },
     }),
@@ -57,23 +75,37 @@ export const authApi = createApi({
           const responseValue = data.value || data;
           
           if (responseValue?.accessToken && responseValue?.refreshToken) {
-            setAuthTokens(responseValue.accessToken, responseValue.refreshToken);
+            // Set tokens with refresh token expiry date
+            setAuthTokens(
+              responseValue.accessToken, 
+              responseValue.refreshToken,
+              responseValue.refreshTokenExpiresAt
+            );
             
-            // Store refreshTokenExpiresAt if available
-            if (responseValue.refreshTokenExpiresAt) {
-              Cookies.set("refresh_token_expires_at", responseValue.refreshTokenExpiresAt, { expires: 20 });
-            }
+            // Extract and save permissions from access token
+            setPermissionsFromToken(responseValue.accessToken);
+            
+            // Extract and save user info from access token
+            setUserInfoFromToken(responseValue.accessToken);
           } else if (responseValue?.accessToken) {
+            // Fallback: only accessToken available
             setAuthToken(responseValue.accessToken);
+            setPermissionsFromToken(responseValue.accessToken);
+            setUserInfoFromToken(responseValue.accessToken);
           } else if (data.value?.token) {
             // Legacy support
             setToken(data.value.token);
+            setPermissionsFromToken(data.value.token);
+            setUserInfoFromToken(data.value.token);
           } else if (data.token) {
             // Legacy support
             setToken(data.token);
+            setPermissionsFromToken(data.token);
+            setUserInfoFromToken(data.token);
           }
         } catch (error) {
           // Error handling
+          console.error("Register error:", error);
         }
       },
     }),

@@ -1,11 +1,30 @@
 import { fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { getAuthToken, setAuthToken, removeAuthToken, getRefreshToken, isTokenExpired, getUserInfo } from "../../utils/page";
+import { 
+  getAuthToken, 
+  setAuthToken, 
+  removeAuthToken, 
+  getRefreshToken, 
+  isTokenExpired, 
+  getUserInfo,
+  isRefreshTokenExpired,
+  setAuthTokens,
+  setPermissionsFromToken,
+  setUserInfoFromToken
+} from "../../utils/page";
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // Track refresh attempts to prevent infinite loops
 let refreshAttempts = 0;
 const MAX_REFRESH_ATTEMPTS = 2;
+
+// Helper function to check if we have any form of authentication
+const hasAnyAuthentication = () => {
+  const token = getAuthToken();
+  const refreshToken = getRefreshToken();
+  const userInfoFromCookie = getUserInfo();
+  return !!(token || refreshToken || userInfoFromCookie);
+};
 
 // Custom base query with automatic token refresh for all APIs
 export const baseQueryWithReauth = async (args, api, extraOptions) => {
@@ -35,38 +54,57 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
     },
   })(args, api, extraOptions);
 
-  // If the result is 401, check if we have cookie data first (for custom roles)
-  // This prevents redirecting to login when token is valid but /me API fails
+  // If the result is 401, check if we have cookie data or refresh token first
+  // This prevents redirecting to login when token is expired but we can refresh
   if (result.error && result.error.status === 401) {
     const userInfoFromCookie = getUserInfo();
+    const refreshToken = getRefreshToken();
+    const hasValidRefreshToken = refreshToken && !isRefreshTokenExpired();
     
     // If we have cookie data (valid token decoded), don't redirect to login
     // ProtectedRoute will handle access based on cookies
-    if (userInfoFromCookie) {
+    // OR if we have a valid refresh token, try to refresh first
+    if (userInfoFromCookie && !hasValidRefreshToken) {
       // Reset refresh attempts and return error - let ProtectedRoute handle it
+      // User can still access the app with cookie data
       refreshAttempts = 0;
       return result;
     }
     
-    // Only try to refresh if we have a refresh token and no cookie data
+    // Try to refresh if we have a refresh token (even if we have cookie data)
+    // This ensures tokens are refreshed in the background
     if (refreshAttempts < MAX_REFRESH_ATTEMPTS) {
-      const refreshToken = getRefreshToken();
-      
-      if (refreshToken && !isTokenExpired(refreshToken)) {
+      // Check if refresh token exists and is not expired
+      if (hasValidRefreshToken) {
         try {
           refreshAttempts++;
           
+          // Try to refresh using the refresh token endpoint
+          // Note: Update the endpoint URL and body structure based on your API
           const refreshResult = await fetchBaseQuery({
-            baseUrl: `${baseUrl}/auth`,
+            baseUrl,
           })({
-            url: '/refresh',
+            url: '/api/v1/Authentication/refresh',
             method: 'POST',
-            body: { refresh_token: refreshToken },
+            body: { refreshToken: refreshToken },
           }, api, extraOptions);
 
-          if (refreshResult.data && refreshResult.data.access_token) {
-            // Store the new access token
-            setAuthToken(refreshResult.data.access_token);
+          // Handle new API response structure
+          const refreshData = refreshResult.data?.value || refreshResult.data;
+          
+          if (refreshData?.accessToken && refreshData?.refreshToken) {
+            // Store the new tokens with expiry date
+            setAuthTokens(
+              refreshData.accessToken,
+              refreshData.refreshToken,
+              refreshData.refreshTokenExpiresAt
+            );
+            
+            // Extract and save permissions from new access token
+            setPermissionsFromToken(refreshData.accessToken);
+            
+            // Extract and save user info from new access token
+            setUserInfoFromToken(refreshData.accessToken);
             
             // Reset refresh attempts on successful refresh
             refreshAttempts = 0;
@@ -75,30 +113,69 @@ export const baseQueryWithReauth = async (args, api, extraOptions) => {
             result = await fetchBaseQuery({
               baseUrl,
               prepareHeaders: (headers) => {
-                headers.set("Authorization", `Bearer ${refreshResult.data.access_token}`);
+                headers.set("Authorization", `Bearer ${refreshData.accessToken}`);
+                return headers;
+              },
+            })(args, api, extraOptions);
+          } else if (refreshData?.accessToken) {
+            // Fallback: only accessToken available
+            setAuthToken(refreshData.accessToken);
+            setPermissionsFromToken(refreshData.accessToken);
+            setUserInfoFromToken(refreshData.accessToken);
+            
+            refreshAttempts = 0;
+            
+            result = await fetchBaseQuery({
+              baseUrl,
+              prepareHeaders: (headers) => {
+                headers.set("Authorization", `Bearer ${refreshData.accessToken}`);
                 return headers;
               },
             })(args, api, extraOptions);
           } else {
-            // Refresh failed, remove tokens and redirect to login
+            // Refresh failed - but check if we have any authentication before redirecting
+            if (hasAnyAuthentication()) {
+              // We have some form of authentication, don't redirect - let ProtectedRoute handle it
+              refreshAttempts = 0;
+              return result;
+            }
+            // No authentication at all, remove tokens and redirect to login
             refreshAttempts = 0;
             removeAuthToken();
             window.location.href = '/';
           }
         } catch (error) {
-          // Refresh failed, remove tokens and redirect to login
+          // Refresh failed - but check if we have any authentication before redirecting
+          if (hasAnyAuthentication()) {
+            // We have some form of authentication, don't redirect - let ProtectedRoute handle it
+            refreshAttempts = 0;
+            return result;
+          }
+          // No authentication at all, remove tokens and redirect to login
           refreshAttempts = 0;
           removeAuthToken();
           window.location.href = '/';
         }
       } else {
-        // No valid refresh token, remove tokens and redirect to login
+        // No valid refresh token - but check if we have any authentication before redirecting
+        if (hasAnyAuthentication()) {
+          // We have some form of authentication, don't redirect - let ProtectedRoute handle it
+          refreshAttempts = 0;
+          return result;
+        }
+        // No authentication at all, remove tokens and redirect to login
         refreshAttempts = 0;
         removeAuthToken();
         window.location.href = '/';
       }
     } else {
-      // Too many refresh attempts, redirect to login
+      // Too many refresh attempts - but check if we have any authentication before redirecting
+      if (hasAnyAuthentication()) {
+        // We have some form of authentication, don't redirect - let ProtectedRoute handle it
+        refreshAttempts = 0;
+        return result;
+      }
+      // No authentication at all, remove tokens and redirect to login
       refreshAttempts = 0;
       removeAuthToken();
       window.location.href = '/';
