@@ -185,48 +185,57 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
             try {
                 const balanceDays = parseFloat(balance.balanceDays) || 0;
                 
-                if (balance.id) {
+                // Check if balance has an ID (either id or leaveBalanceId from API)
+                const balanceId = balance.leaveBalanceId || balance.id;
+                
+                if (balanceId) {
                     // Update existing leave balance using PUT /api/v1/LeaveBalance/Update/{id}
+                    // The id should be the leaveBalanceId from the API response
                     // Calculate adjustmentAmount: new balance - old balance
                     const oldBalance = parseFloat(balance.originalBalanceDays) || 0;
                     const adjustmentAmount = balanceDays - oldBalance;
                     
                     if (Math.abs(adjustmentAmount) > 0.01) { // Only update if there's a meaningful change
                         await updateLeaveBalance({
-                            id: balance.id,
+                            id: balanceId, // Use leaveBalanceId (or id) for the update
                             adjustmentAmount: adjustmentAmount
                         }).unwrap();
                         
                         // Update the originalBalanceDays to the new value after successful update
-                        const balanceIndex = updatedBalances.findIndex(lb => lb.id === balance.id);
+                        const balanceIndex = updatedBalances.findIndex(lb => 
+                            (lb.leaveBalanceId || lb.id) === balanceId
+                        );
                         if (balanceIndex !== -1) {
                             updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
                         }
                     }
                 } else {
                     // Check if a leave balance already exists for this leaveTypeId in the fetched balances
+                    // API returns leaveBalanceId, so we need to check for that
                     const existingBalance = fetchedLeaveBalances.find(lb => 
                         (lb.leaveTypeId || lb.leaveType?.id) === balance.leaveTypeId
                     );
                     
                     if (existingBalance) {
                         // Leave balance already exists - use PUT instead of CREATE
-                        const existingId = existingBalance.id || existingBalance.leaveBalanceId;
+                        // API returns leaveBalanceId (not id), so extract it correctly
+                        const existingId = existingBalance.leaveBalanceId || existingBalance.id;
                         const existingBalanceDays = parseFloat(existingBalance.balanceDays) || 0;
                         const adjustmentAmount = balanceDays - existingBalanceDays;
                         
                         if (Math.abs(adjustmentAmount) > 0.01) { // Only update if there's a meaningful change
                             await updateLeaveBalance({
-                                id: existingId,
+                                id: existingId, // Use leaveBalanceId from API response
                                 adjustmentAmount: adjustmentAmount
                             }).unwrap();
                             
                             // Update the balance in updatedBalances with the ID so it's tracked properly
                             const balanceIndex = updatedBalances.findIndex(lb => 
-                                !lb.id && lb.leaveTypeId === balance.leaveTypeId
+                                !lb.id && !lb.leaveBalanceId && lb.leaveTypeId === balance.leaveTypeId
                             );
                             if (balanceIndex !== -1) {
                                 updatedBalances[balanceIndex].id = existingId;
+                                updatedBalances[balanceIndex].leaveBalanceId = existingId; // Also store as leaveBalanceId
                                 updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
                             }
                         }
@@ -240,18 +249,20 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
                             }).unwrap();
                             
                             // Extract ID from response: { value: { id: "uuid" } }
+                            // Note: The create response returns id, but we should also store it as leaveBalanceId for consistency
                             const newId = createResult?.value?.id || createResult?.id || null;
                             
                             if (newId) {
                                 // Find the balance in updatedBalances and update it with the new ID
                                 const balanceIndex = updatedBalances.findIndex(lb => 
-                                    !lb.id && 
+                                    !lb.id && !lb.leaveBalanceId && 
                                     lb.leaveTypeId === balance.leaveTypeId &&
                                     Math.abs(parseFloat(lb.balanceDays) - balanceDays) < 0.01
                                 );
                                 
                                 if (balanceIndex !== -1) {
                                     updatedBalances[balanceIndex].id = newId;
+                                    updatedBalances[balanceIndex].leaveBalanceId = newId; // Also store as leaveBalanceId
                                     updatedBalances[balanceIndex].originalBalanceDays = balanceDays;
                                 }
                             }
@@ -268,7 +279,9 @@ export default function EditEmployeePopup({ employee, isOpen, onClose, onSave })
         // Update formData with the new IDs if any were created or existing ones were assigned
         const hasNewIds = updatedBalances.some((lb, idx) => {
             const oldBalance = formData.leaveBalances[idx];
-            return (oldBalance && !oldBalance.id && lb.id) || (oldBalance && oldBalance.id && oldBalance.originalBalanceDays !== lb.originalBalanceDays);
+            const oldId = oldBalance?.leaveBalanceId || oldBalance?.id;
+            const newId = lb.leaveBalanceId || lb.id;
+            return (oldBalance && !oldId && newId) || (oldBalance && oldId && oldBalance.originalBalanceDays !== lb.originalBalanceDays);
         });
         
         if (hasNewIds) {
@@ -602,8 +615,10 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes, employeeId, isArabi
     useEffect(() => {
         if (fetchedLeaveBalances.length > 0) {
             // Only update if we haven't loaded balances yet or if the fetched data changed
+            // API returns leaveBalanceId (not id), so we need to extract it correctly
             const mappedBalances = fetchedLeaveBalances.map(lb => ({
-                id: lb.id || lb.leaveBalanceId || null, // Store ID if exists (for updates)
+                id: lb.leaveBalanceId || lb.id || null, // API returns leaveBalanceId, store as id for consistency
+                leaveBalanceId: lb.leaveBalanceId || lb.id || null, // Also store as leaveBalanceId for reference
                 leaveTypeId: lb.leaveTypeId || '',
                 leaveTypeName: lb.leaveTypeName || '',
                 balanceDays: parseFloat(lb.balanceDays) || 0,
@@ -611,8 +626,8 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes, employeeId, isArabi
             }));
             
             // Only update if formData doesn't have balances yet or if IDs don't match
-            const currentIds = leaveBalances.map(lb => lb.id).filter(Boolean).sort().join(',');
-            const fetchedIds = mappedBalances.map(lb => lb.id).filter(Boolean).sort().join(',');
+            const currentIds = leaveBalances.map(lb => lb.id || lb.leaveBalanceId).filter(Boolean).sort().join(',');
+            const fetchedIds = mappedBalances.map(lb => lb.id || lb.leaveBalanceId).filter(Boolean).sort().join(',');
             
             if (leaveBalances.length === 0 || currentIds !== fetchedIds) {
                 onChange('leaveBalances', mappedBalances);
@@ -645,9 +660,13 @@ function LeaveBalancesEdit({ formData, onChange, leaveTypes, employeeId, isArabi
             const newBalance = parseFloat(value) || 0;
             updated[index].balanceDays = newBalance;
             // Preserve original balance if it exists and hasn't been set yet
-            if (updated[index].id && !updated[index].originalBalanceDays && updated[index].originalBalanceDays !== 0) {
+            const balanceId = updated[index].leaveBalanceId || updated[index].id;
+            if (balanceId && !updated[index].originalBalanceDays && updated[index].originalBalanceDays !== 0) {
                 // Find the original balance from fetched data
-                const fetchedBalance = fetchedLeaveBalances.find(lb => lb.id === updated[index].id);
+                // API returns leaveBalanceId, so check for that
+                const fetchedBalance = fetchedLeaveBalances.find(lb => 
+                    (lb.leaveBalanceId || lb.id) === balanceId
+                );
                 if (fetchedBalance) {
                     updated[index].originalBalanceDays = parseFloat(fetchedBalance.balanceDays) || 0;
                 }
