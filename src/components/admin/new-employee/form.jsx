@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { User, Briefcase, FileText, Camera, Upload, Eye, EyeOff } from "lucide-react";
-import { jwtDecode } from "jwt-decode";
-import { getUserInfo, getCompanyId } from "../../../utils/page";
+import { User, Briefcase, Eye, ChevronDown, X, Plus, Check, Search, EyeOff, Camera } from "lucide-react";
+import { getCompanyId } from "../../../utils/page";
 import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
 import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
 import { useGetAllShiftsQuery } from "../../../services/apis/ShiftApi";
@@ -30,8 +29,8 @@ export default function NewEmployeeForm() {
         companyId: getCompanyId() || "",
         roleId: "",
         departmentId: "",
-        teamIds: [], // Changed to array
-        shiftIds: [], // Changed to array
+        teamIds: [],
+        shiftIds: [],
     });
 
     const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
@@ -43,7 +42,7 @@ export default function NewEmployeeForm() {
     const steps = [
         { label: t("employees.newEmployeeForm.steps.personalInfo"), icon: User },
         { label: t("employees.newEmployeeForm.steps.professionalInfo"), icon: Briefcase },
-        { label: t("employees.newEmployeeForm.steps.documents"), icon: FileText },
+        { label: "Review & Submit", icon: Eye },
     ];
 
     // Data for Step 2 selects
@@ -60,16 +59,13 @@ export default function NewEmployeeForm() {
     const teams = teamsRes?.value || teamsRes?.items || teamsRes || [];
 
     const handleSubmitAll = async () => {
-        // Final submit: register then assign team then assign shift
         try {
-            // Get companyId from token/cookie
             const companyId = getCompanyId();
             if (!companyId) {
                 toast.error("Company ID not found. Please login again.");
                 return;
             }
 
-            // Validate required register fields per API contract
             const required = {
                 userName: employeeData.userName,
                 email: employeeData.email,
@@ -89,7 +85,6 @@ export default function NewEmployeeForm() {
                 return;
             }
 
-            // Step 1: Register user with all required data including roleId, teamIds, and shiftIds
             const registerPayload = {
                 userName: employeeData.userName.trim(),
                 email: employeeData.email.trim(),
@@ -100,28 +95,22 @@ export default function NewEmployeeForm() {
                 jobTitle: employeeData.jobTitle.trim(),
                 roleId: employeeData.roleId,
                 companyId,
-                // Include hireDate only if provided, format as ISO string
                 ...(employeeData.hireDate && { hireDate: new Date(employeeData.hireDate).toISOString() }),
-                // Include teamIds and shiftIds as arrays only if they have values
                 ...(employeeData.teamIds && employeeData.teamIds.length > 0 && { teamIds: employeeData.teamIds }),
                 ...(employeeData.shiftIds && employeeData.shiftIds.length > 0 && { shiftIds: employeeData.shiftIds }),
             };
 
             toast.loading(t("employees.newEmployeeForm.processing.register") || "Registering user...");
-            const regRes = await registerUser(registerPayload).unwrap();
+            await registerUser(registerPayload).unwrap();
             toast.dismiss();
             
-            // Registration now includes teamIds and shiftIds, so no separate assignment needed
-            // Show success toast
             toast.success(t("employees.newEmployeeForm.success.title") || "Employee created successfully!");
             
-            // Redirect to all-employees page after successful registration
             setTimeout(() => {
                 navigate("/pages/admin/all-employees", { replace: true });
             }, 500);
         } catch (err) {
             toast.dismiss();
-            // Handle validation errors and API errors
             const apiErrors = err?.data?.errors || err?.data?.Errors;
             const modelState = apiErrors && typeof apiErrors === 'object' ? Object.values(apiErrors).flat().join(' | ') : null;
             const message = modelState || err?.data?.errorMessage || err?.data?.message || err?.message || t("employees.newEmployeeForm.errors.createFailed") || "Failed to create employee";
@@ -130,73 +119,91 @@ export default function NewEmployeeForm() {
     };
 
     return (
-        <div className="w-full  mx-auto bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)] p-8" dir={isArabic ? "rtl" : "ltr"}>
-            {/* Progress Bar */}
-            <div className="mb-8">
-                {/* Progress Line */}
-                <div className="relative mb-4">
-                    <div className="w-full h-1 bg-[var(--border-color)] rounded" />
-                    <div
-                        className={`absolute top-0 h-1 gradient-bg rounded transition-all duration-300 ${isArabic ? 'right-0' : 'left-0'}`}
-                        style={{ width: `${((step + 1) / steps.length) * 100}%` }}
-                    />
-                </div>
-
-                {/* Step Tabs - Hidden on mobile */}
-                <div className="hidden sm:flex justify-between">
-                    {steps.map((stepItem, idx) => {
-                        const IconComponent = stepItem.icon;
-                        const isActive = idx === step;
-                        const isCompleted = idx < step;
-
-                        return (
-                            <div key={stepItem.label} className="flex items-center">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isArabic ? 'ml-2' : 'mr-2'} ${isActive || isCompleted
-                                        ? 'gradient-bg text-white'
-                                        : 'bg-[var(--container-color)] text-[var(--sub-text-color)]'
-                                    }`}>
-                                    <IconComponent size={16} />
-                                </div>
-                                <span className={`text-sm font-medium ${isActive || isCompleted
-                                    ? 'gradient-text'
-                                    : 'text-[var(--sub-text-color)]'
-                                    }`}>
-                                    {stepItem.label}
-                                </span>
-                            </div>
-                        );
-                    })}
-                </div>
+        <div className="w-full mx-auto bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)]" dir={isArabic ? "rtl" : "ltr"}>
+            {/* Header */}
+            <div className="p-6 border-b border-[var(--border-color)]">
+                <h1
+                    className={`text-2xl font-bold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}
+                >
+                    {t("employees.newEmployeeForm.title") || "Create New Employee"}
+                </h1>
             </div>
 
-            {/* Step Content */}
-            <div className="mt-8">
-                {step === 0 && (
-                    <PersonalInfoStep
-                        data={employeeData}
-                        onChange={handleFieldChange}
-                        onNext={() => setStep(1)}
-                    />
-                )}
-                {step === 1 && (
-                    <ProfessionalInfoStep
-                        data={employeeData}
-                        onChange={handleFieldChange}
-                        departments={departments}
-                        roles={roles}
-                        shifts={shifts}
-                        teams={teams}
-                        onNext={() => setStep(2)}
-                        onBack={() => setStep(0)}
-                    />
-                )}
-                {step === 2 && (
-                    <DocumentsStep
-                        onNext={handleSubmitAll}
-                        onBack={() => setStep(1)}
-                        loading={isRegistering}
-                    />
-                )}
+            <div className="p-8">
+                {/* Progress Bar */}
+                <div className="mb-8">
+                    {/* Progress Line */}
+                    <div className="relative mb-4">
+                        <div className="w-full h-1 bg-[var(--border-color)] rounded" />
+                        <div
+                            className={`absolute top-0 h-1 gradient-bg rounded transition-all duration-300 ${isArabic ? 'right-0' : 'left-0'}`}
+                            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                        />
+                    </div>
+
+                    {/* Step Tabs */}
+                    <div className="flex justify-between">
+                        {steps.map((stepItem, idx) => {
+                            const IconComponent = stepItem.icon;
+                            const isActive = idx === step;
+                            const isCompleted = idx < step;
+
+                            return (
+                                <div
+                                    key={stepItem.label}
+                                    className="flex items-center"
+                                >
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isArabic ? 'ml-2' : 'mr-2'} ${isActive || isCompleted ? 'gradient-bg text-white' :
+                                        'bg-[var(--container-color)] text-[var(--sub-text-color)]'
+                                        }`}>
+                                        <IconComponent size={16} />
+                                    </div>
+                                    <span className={`text-sm font-medium hidden sm:block ${isActive || isCompleted
+                                        ? 'gradient-text'
+                                        : 'text-[var(--sub-text-color)]'
+                                        }`}>
+                                        {stepItem.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Step Content */}
+                <div className="mt-8">
+                    {step === 0 && (
+                        <PersonalInfoStep
+                            data={employeeData}
+                            onChange={handleFieldChange}
+                            onNext={() => setStep(1)}
+                        />
+                    )}
+                    {step === 1 && (
+                        <ProfessionalInfoStep
+                            data={employeeData}
+                            onChange={handleFieldChange}
+                            departments={departments}
+                            roles={roles}
+                            shifts={shifts}
+                            teams={teams}
+                            onNext={() => setStep(2)}
+                            onBack={() => setStep(0)}
+                        />
+                    )}
+                    {step === 2 && (
+                        <ReviewStep
+                            employeeData={employeeData}
+                            departments={departments}
+                            roles={roles}
+                            shifts={shifts}
+                            teams={teams}
+                            onNext={handleSubmitAll}
+                            onBack={() => setStep(1)}
+                            loading={isRegistering}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -206,6 +213,7 @@ export default function NewEmployeeForm() {
 function PersonalInfoStep({ onNext, onChange, data }) {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
+    const navigate = useNavigate();
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
     const [showPassword, setShowPassword] = useState(false);
@@ -223,7 +231,6 @@ function PersonalInfoStep({ onNext, onChange, data }) {
         return map[key] || key;
     };
 
-    // Real-time validation for a single field
     const validateField = (name, value) => {
         let error = '';
         
@@ -298,7 +305,6 @@ function PersonalInfoStep({ onNext, onChange, data }) {
         return error;
     };
 
-    // Validate all fields
     const validate = () => {
         const newErrors = {};
         Object.keys(data).forEach(key => {
@@ -311,11 +317,32 @@ function PersonalInfoStep({ onNext, onChange, data }) {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle field change with real-time validation
+    // Check form validity without setting state (for use during render)
+    const checkFormValid = useMemo(() => {
+        const requiredFields = ['userName', 'email', 'password', 'phoneNumber', 'firstName', 'lastName', 'jobTitle'];
+        return requiredFields.every(field => {
+            const value = data[field];
+            if (!value || (typeof value === 'string' && !value.trim())) {
+                return false;
+            }
+            // Additional validation for specific fields
+            if (field === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(value);
+            }
+            if (field === 'password') {
+                return value.length >= 8 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[^A-Za-z0-9]/.test(value);
+            }
+            if (field === 'userName') {
+                return /^[A-Za-z]+$/.test(value);
+            }
+            return true;
+        });
+    }, [data.userName, data.email, data.password, data.phoneNumber, data.firstName, data.lastName, data.jobTitle]);
+
     const handleFieldChange = (name, value) => {
         onChange(name, value);
         
-        // Only validate if field has been touched
         if (touched[name]) {
             const error = validateField(name, value);
             setErrors(prev => ({
@@ -325,7 +352,6 @@ function PersonalInfoStep({ onNext, onChange, data }) {
         }
     };
 
-    // Handle field blur
     const handleBlur = (name) => {
         setTouched(prev => ({ ...prev, [name]: true }));
         const error = validateField(name, data[name]);
@@ -336,7 +362,6 @@ function PersonalInfoStep({ onNext, onChange, data }) {
     };
 
     const handleNext = () => {
-        // Mark all fields as touched
         const allFields = ['userName', 'email', 'password', 'phoneNumber', 'firstName', 'lastName', 'jobTitle'];
         const newTouched = {};
         allFields.forEach(field => { newTouched[field] = true; });
@@ -347,11 +372,7 @@ function PersonalInfoStep({ onNext, onChange, data }) {
         }
     };
 
-    const errorClass = "border-red-500 focus:ring-red-500";
-    const successClass = "border-green-500 focus:ring-green-500";
-    const helpTextClass = `text-xs mt-1 ${isArabic ? 'text-right' : 'text-left'}`;
-    const successTextClass = `${helpTextClass} text-green-600`;
-    const errorTextClass = `${helpTextClass} text-red-600`;
+    const isFormValid = checkFormValid;
 
     return (
         <div className="space-y-6">
@@ -366,171 +387,114 @@ function PersonalInfoStep({ onNext, onChange, data }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <input
-                        className={`form-input ${
-                            touched.userName && errors.userName 
-                                ? errorClass 
-                                : touched.userName && !errors.userName && data.userName 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.userName ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder={t("employees.newEmployeeForm.professionalInfo.userName")}
                         type="text"
                         value={data.userName}
                         onChange={e => handleFieldChange('userName', e.target.value.replace(/[^A-Za-z]/g, ''))}
                         onBlur={() => handleBlur('userName')}
-                        aria-invalid={!!errors.userName}
-                        autoComplete="off"
-                        name="new-employee-username"
-                        id="new-employee-username"
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        inputMode="text"
                     />
-                    {touched.userName && errors.userName && <p className={errorTextClass}>{errors.userName}</p>}
-                    {touched.userName && !errors.userName && data.userName && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validUsername') || 'Valid username'}</p>
+                    {errors.userName && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.userName}
+                        </p>
                     )}
                 </div>
                 <div>
                     <input
-                        className={`form-input ${
-                            touched.email && errors.email 
-                                ? errorClass 
-                                : touched.email && !errors.email && data.email 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder={t("employees.newEmployeeForm.personalInfo.emailAddress")}
                         type="email"
                         value={data.email}
                         onChange={e => handleFieldChange('email', e.target.value)}
                         onBlur={() => handleBlur('email')}
-                        aria-invalid={!!errors.email}
-                        autoComplete="email"
-                        name="new-employee-email"
-                        id="new-employee-email"
-                        inputMode="email"
                     />
-                    {touched.email && errors.email && <p className={errorTextClass}>{errors.email}</p>}
-                    {touched.email && !errors.email && data.email && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validEmail') || 'Valid email'}</p>
+                    {errors.email && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.email}
+                        </p>
                     )}
                 </div>
                 <div className="relative">
                     <input
-                        className={`form-input ${
-                            touched.password && errors.password 
-                                ? errorClass 
-                                : touched.password && !errors.password && data.password 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder="Password"
                         type={showPassword ? 'text' : 'password'}
                         value={data.password}
                         onChange={e => handleFieldChange('password', e.target.value)}
                         onBlur={() => handleBlur('password')}
-                        aria-invalid={!!errors.password}
-                        autoComplete="new-password"
-                        name="new-employee-password"
-                        id="new-employee-password"
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword(s => !s)}
                         className={`absolute ${isArabic ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-[var(--sub-text-color)]`}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                    {touched.password && errors.password && <p className={errorTextClass}>{errors.password}</p>}
-                    {touched.password && !errors.password && data.password && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.strongPassword') || 'Strong password'}</p>
+                    {errors.password && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.password}
+                        </p>
                     )}
                 </div>
                 <div>
                     <input
-                        className={`form-input ${
-                            touched.phoneNumber && errors.phoneNumber 
-                                ? errorClass 
-                                : touched.phoneNumber && !errors.phoneNumber && data.phoneNumber 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.phoneNumber ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder={t("employees.newEmployeeForm.personalInfo.mobileNumber")}
                         type="tel"
                         value={data.phoneNumber}
                         onChange={e => handleFieldChange('phoneNumber', e.target.value)}
                         onBlur={() => handleBlur('phoneNumber')}
-                        aria-invalid={!!errors.phoneNumber}
                     />
-                    {touched.phoneNumber && errors.phoneNumber && <p className={errorTextClass}>{errors.phoneNumber}</p>}
-                    {touched.phoneNumber && !errors.phoneNumber && data.phoneNumber && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validPhone') || 'Valid phone number'}</p>
+                    {errors.phoneNumber && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.phoneNumber}
+                        </p>
                     )}
                 </div>
                 <div>
                     <input
-                        className={`form-input ${
-                            touched.firstName && errors.firstName 
-                                ? errorClass 
-                                : touched.firstName && !errors.firstName && data.firstName 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.firstName ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder={t("employees.newEmployeeForm.personalInfo.firstName")}
                         type="text"
                         value={data.firstName}
                         onChange={e => handleFieldChange('firstName', e.target.value)}
                         onBlur={() => handleBlur('firstName')}
-                        aria-invalid={!!errors.firstName}
                     />
-                    {touched.firstName && errors.firstName && <p className={errorTextClass}>{errors.firstName}</p>}
-                    {touched.firstName && !errors.firstName && data.firstName && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validFirstName') || 'Valid first name'}</p>
+                    {errors.firstName && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.firstName}
+                        </p>
                     )}
                 </div>
                 <div>
                     <input
-                        className={`form-input ${
-                            touched.lastName && errors.lastName 
-                                ? errorClass 
-                                : touched.lastName && !errors.lastName && data.lastName 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.lastName ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder={t("employees.newEmployeeForm.personalInfo.lastName")}
                         type="text"
                         value={data.lastName}
                         onChange={e => handleFieldChange('lastName', e.target.value)}
                         onBlur={() => handleBlur('lastName')}
-                        aria-invalid={!!errors.lastName}
                     />
-                    {touched.lastName && errors.lastName && <p className={errorTextClass}>{errors.lastName}</p>}
-                    {touched.lastName && !errors.lastName && data.lastName && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validLastName') || 'Valid last name'}</p>
+                    {errors.lastName && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.lastName}
+                        </p>
                     )}
                 </div>
                 <div className="md:col-span-2">
                     <input
-                        className={`form-input ${
-                            touched.jobTitle && errors.jobTitle 
-                                ? errorClass 
-                                : touched.jobTitle && !errors.jobTitle && data.jobTitle 
-                                ? successClass 
-                                : ''
-                        }`}
+                        className={`form-input ${errors.jobTitle ? 'border-red-500 focus:ring-red-500' : ''}`}
                         placeholder="Job Title"
                         type="text"
                         value={data.jobTitle}
                         onChange={e => handleFieldChange('jobTitle', e.target.value)}
                         onBlur={() => handleBlur('jobTitle')}
-                        aria-invalid={!!errors.jobTitle}
                     />
-                    {touched.jobTitle && errors.jobTitle && <p className={errorTextClass}>{errors.jobTitle}</p>}
-                    {touched.jobTitle && !errors.jobTitle && data.jobTitle && (
-                        <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validJobTitle') || 'Valid job title'}</p>
+                    {errors.jobTitle && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.jobTitle}
+                        </p>
                     )}
                 </div>
                 <div>
@@ -539,17 +503,28 @@ function PersonalInfoStep({ onNext, onChange, data }) {
                         placeholder={t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date (Optional)"}
                         type="date"
                         value={data.hireDate || ""}
-                        onChange={e => handleFieldChange('hireDate', e.target.value)}
-                        aria-label="Hire Date"
+                        onChange={e => onChange('hireDate', e.target.value)}
                     />
                 </div>
-                {/* companyId is derived from token and saved in state; not shown as input */}
             </div>
 
             {/* Action Buttons */}
             <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
-                <button type="button" className="btn-secondary">{t("employees.newEmployeeForm.buttons.cancel")}</button>
-                <button type="button" className="btn-primary" onClick={handleNext}>{t("employees.newEmployeeForm.buttons.next")}</button>
+                <button type="button" className="btn-secondary" onClick={() => navigate('/pages/admin/all-employees')}>
+                    {t("employees.newEmployeeForm.buttons.cancel") || "Cancel"}
+                </button>
+                <button 
+                    type="button" 
+                    className="btn-primary" 
+                    onClick={handleNext}
+                    disabled={!isFormValid}
+                    style={{
+                        opacity: !isFormValid ? 0.6 : 1,
+                        cursor: !isFormValid ? 'not-allowed' : 'pointer'
+                    }}
+                >
+                    {t("employees.newEmployeeForm.buttons.next") || "Next"}
+                </button>
             </div>
         </div>
     );
@@ -560,14 +535,81 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
     const [error, setError] = useState("");
+    
+    // Dropdown states
+    const [isDeptOpen, setIsDeptOpen] = useState(false);
+    const [isRoleOpen, setIsRoleOpen] = useState(false);
+    const [isShiftOpen, setIsShiftOpen] = useState(false);
+    const [isTeamOpen, setIsTeamOpen] = useState(false);
+    
+    // Search terms
+    const [deptSearch, setDeptSearch] = useState("");
+    const [roleSearch, setRoleSearch] = useState("");
+    const [shiftSearch, setShiftSearch] = useState("");
+    const [teamSearch, setTeamSearch] = useState("");
 
     const deptOptions = Array.isArray(departments) ? departments : [];
     const roleOptions = Array.isArray(roles) ? roles : [];
     const shiftOptions = Array.isArray(shifts) ? shifts : [];
     const teamOptions = Array.isArray(teams) ? teams : [];
 
+    // Filtered options
+    const filteredDepts = useMemo(() => {
+        if (!deptSearch.trim()) return deptOptions;
+        const search = deptSearch.toLowerCase();
+        return deptOptions.filter(d => 
+            (d.name || d.departmentName || '').toLowerCase().includes(search)
+        );
+    }, [deptOptions, deptSearch]);
+
+    const filteredRoles = useMemo(() => {
+        if (!roleSearch.trim()) return roleOptions;
+        const search = roleSearch.toLowerCase();
+        return roleOptions.filter(r => 
+            (r.name || r.roleName || r.code || '').toLowerCase().includes(search)
+        );
+    }, [roleOptions, roleSearch]);
+
+    const filteredShifts = useMemo(() => {
+        if (!shiftSearch.trim()) return shiftOptions;
+        const search = shiftSearch.toLowerCase();
+        return shiftOptions.filter(s => 
+            (s.name || s.shiftName || '').toLowerCase().includes(search)
+        );
+    }, [shiftOptions, shiftSearch]);
+
+    const filteredTeams = useMemo(() => {
+        if (!teamSearch.trim()) return teamOptions;
+        const search = teamSearch.toLowerCase();
+        return teamOptions.filter(t => 
+            (t.name || t.teamName || '').toLowerCase().includes(search)
+        );
+    }, [teamOptions, teamSearch]);
+
+    const selectedDept = deptOptions.find(d => (d.id || d.departmentId) === data.departmentId);
+    const selectedRole = roleOptions.find(r => (r.id || r.roleId) === data.roleId);
+    const selectedShifts = shiftOptions.filter(s => (data.shiftIds || []).includes(s.id || s.shiftId));
+    const selectedTeams = teamOptions.filter(t => (data.teamIds || []).includes(t.id || t.teamId));
+
+    const toggleShift = (shiftId) => {
+        const currentIds = data.shiftIds || [];
+        if (currentIds.includes(shiftId)) {
+            onChange('shiftIds', currentIds.filter(id => id !== shiftId));
+        } else {
+            onChange('shiftIds', [...currentIds, shiftId]);
+        }
+    };
+
+    const toggleTeam = (teamId) => {
+        const currentIds = data.teamIds || [];
+        if (currentIds.includes(teamId)) {
+            onChange('teamIds', currentIds.filter(id => id !== teamId));
+        } else {
+            onChange('teamIds', [...currentIds, teamId]);
+        }
+    };
+
     const handleNext = () => {
-        // Validate required fields for step 2
         if (!data.roleId) {
             setError(t("employees.newEmployeeForm.validation.roleRequired") || "Role is required");
             return;
@@ -586,132 +628,379 @@ function ProfessionalInfoStep({ onNext, onBack, onChange, data, departments, rol
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="form-group">
-                    <label className="form-label">
+                {/* Department Dropdown */}
+                <div className="relative">
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
                         {t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Department"} <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        className="form-input"
-                        value={data.departmentId}
-                        onChange={e => {
-                            onChange('departmentId', e.target.value);
-                            onChange('teamIds', []); // Reset teams when department changes
-                            setError("");
-                        }}
-                    >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectDepartment")}</option>
-                        {deptOptions.map((d) => (
-                            <option key={d.id || d.departmentId} value={d.id || d.departmentId}>{d.name || d.departmentName}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="form-group">
-                    <label className="form-label">
-                        {t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Role"} <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                        className={`form-input ${!data.roleId && error ? 'border-red-500' : ''}`}
-                        value={data.roleId}
-                        onChange={e => {
-                            onChange('roleId', e.target.value);
-                            setError("");
-                        }}
-                    >
-                        <option value="">{t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole")}</option>
-                        {roleOptions.map((r) => (
-                            <option key={r.id || r.roleId} value={r.id || r.roleId}>
-                                {r.name || r.roleName || r.code}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="form-group md:col-span-2">
-                    <label className="form-label">
-                        {t("employees.newEmployeeForm.professionalInfo.selectShifts") || "Select Shifts"} <span className="text-gray-400 text-sm">(Optional, hold Ctrl/Cmd to select multiple)</span>
-                    </label>
-                    <select
-                        className="form-input"
-                        multiple
-                        size={4}
-                        value={data.shiftIds || []}
-                        onChange={e => {
-                            const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
-                            onChange('shiftIds', selectedValues);
-                            setError("");
-                        }}
-                    >
-                        {shiftOptions.map((s) => (
-                            <option key={s.id || s.shiftId} value={s.id || s.shiftId}>{s.name || s.shiftName}</option>
-                        ))}
-                    </select>
-                    {data.shiftIds && data.shiftIds.length > 0 && (
-                        <p className="text-sm text-gray-500 mt-1">
-                            {data.shiftIds.length} shift(s) selected
-                        </p>
+                    <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => setIsDeptOpen(!isDeptOpen)}>
+                        <span className="text-[var(--sub-text-color)]">
+                            {selectedDept ? (selectedDept.name || selectedDept.departmentName) : t("employees.newEmployeeForm.professionalInfo.selectDepartment")}
+                        </span>
+                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isDeptOpen ? 'rotate-180' : ''}`} size={16} />
+                    </div>
+                    {isDeptOpen && (
+                        <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
+                            <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                    <input
+                                        type="text"
+                                        value={deptSearch}
+                                        onChange={(e) => setDeptSearch(e.target.value)}
+                                        placeholder="Search departments..."
+                                        className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        onClick={(e) => e.stopPropagation()}
+                                        dir={isArabic ? 'rtl' : 'ltr'}
+                                    />
+                                </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-[240px]">
+                                {filteredDepts.map((d) => (
+                                    <div 
+                                        key={d.id || d.departmentId} 
+                                        className="p-3 hover:bg-[var(--hover-color)] cursor-pointer"
+                                        onClick={() => {
+                                            onChange('departmentId', d.id || d.departmentId);
+                                            onChange('teamIds', []);
+                                            setIsDeptOpen(false);
+                                            setDeptSearch("");
+                                        }}
+                                    >
+                                        <div className="text-sm text-[var(--text-color)]">{d.name || d.departmentName}</div>
+                                    </div>
+                                ))}
+                                {filteredDepts.length === 0 && (
+                                    <div className="p-3 text-[var(--sub-text-color)]">No departments found</div>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
 
-                <div className="form-group md:col-span-2">
-                    <label className="form-label">
-                        {t("employees.newEmployeeForm.professionalInfo.selectTeams") || "Select Teams"} <span className="text-gray-400 text-sm">(Optional, hold Ctrl/Cmd to select multiple)</span>
+                {/* Role Dropdown */}
+                <div className="relative">
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        {t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole") || "Role"} <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        className="form-input"
-                        multiple
-                        size={4}
-                        value={data.teamIds || []}
-                        onChange={e => {
-                            const selectedValues = Array.from(e.target.selectedOptions, option => option.value);
-                            onChange('teamIds', selectedValues);
-                            setError("");
-                        }}
-                        disabled={!data.departmentId}
+                    <div className={`form-input cursor-pointer flex items-center justify-between ${!data.roleId && error ? 'border-red-500' : ''}`} onClick={() => setIsRoleOpen(!isRoleOpen)}>
+                        <span className="text-[var(--sub-text-color)]">
+                            {selectedRole ? (selectedRole.name || selectedRole.roleName || selectedRole.code) : t("employees.newEmployeeForm.professionalInfo.selectEmployeeRole")}
+                        </span>
+                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isRoleOpen ? 'rotate-180' : ''}`} size={16} />
+                    </div>
+                    {isRoleOpen && (
+                        <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
+                            <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                    <input
+                                        type="text"
+                                        value={roleSearch}
+                                        onChange={(e) => setRoleSearch(e.target.value)}
+                                        placeholder="Search roles..."
+                                        className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        onClick={(e) => e.stopPropagation()}
+                                        dir={isArabic ? 'rtl' : 'ltr'}
+                                    />
+                                </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-[240px]">
+                                {filteredRoles.map((r) => (
+                                    <div 
+                                        key={r.id || r.roleId} 
+                                        className="p-3 hover:bg-[var(--hover-color)] cursor-pointer"
+                                        onClick={() => {
+                                            onChange('roleId', r.id || r.roleId);
+                                            setIsRoleOpen(false);
+                                            setRoleSearch("");
+                                            setError("");
+                                        }}
+                                    >
+                                        <div className="text-sm text-[var(--text-color)]">{r.name || r.roleName || r.code}</div>
+                                    </div>
+                                ))}
+                                {filteredRoles.length === 0 && (
+                                    <div className="p-3 text-[var(--sub-text-color)]">No roles found</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Shifts Multi-Select */}
+                <div className="md:col-span-2 relative">
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        Select shift <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                    </label>
+                    <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => setIsShiftOpen(!isShiftOpen)}>
+                        <span className="text-[var(--sub-text-color)]">
+                            {selectedShifts.length > 0 
+                                ? `${selectedShifts.length} shift(s) selected` 
+                                : "Select shifts (optional)"}
+                        </span>
+                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isShiftOpen ? 'rotate-180' : ''}`} size={16} />
+                    </div>
+                    {isShiftOpen && (
+                        <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
+                            <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                    <input
+                                        type="text"
+                                        value={shiftSearch}
+                                        onChange={(e) => setShiftSearch(e.target.value)}
+                                        placeholder="Search shifts..."
+                                        className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        onClick={(e) => e.stopPropagation()}
+                                        dir={isArabic ? 'rtl' : 'ltr'}
+                                    />
+                                </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-[240px]">
+                                {filteredShifts.map((s) => {
+                                    const shiftId = s.id || s.shiftId;
+                                    const isSelected = (data.shiftIds || []).includes(shiftId);
+                                    return (
+                                        <div 
+                                            key={shiftId} 
+                                            className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-[var(--accent-color)] bg-opacity-10' : 'hover:bg-[var(--hover-color)]'}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleShift(shiftId);
+                                            }}
+                                        >
+                                            <div className="text-sm text-[var(--text-color)]">{s.name || s.shiftName}</div>
+                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                isSelected 
+                                                    ? 'border-[var(--accent-color)] bg-[var(--accent-color)]' 
+                                                    : 'border-[var(--border-color)]'
+                                            }`}>
+                                                {isSelected && <Check className="text-white" size={12} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {filteredShifts.length === 0 && (
+                                    <div className="p-3 text-[var(--sub-text-color)]">No shifts found</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {selectedShifts.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {selectedShifts.map((s) => (
+                                <div key={s.id || s.shiftId} className="flex items-center gap-1 px-2 py-1 bg-[var(--container-color)] rounded-lg text-xs border border-[var(--border-color)]">
+                                    <span className="text-[var(--text-color)]">{s.name || s.shiftName}</span>
+                                    <X 
+                                        size={12} 
+                                        className="text-[var(--sub-text-color)] cursor-pointer hover:text-red-500" 
+                                        onClick={() => toggleShift(s.id || s.shiftId)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Teams Multi-Select */}
+                <div className="md:col-span-2 relative">
+                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        Select Team <span className="text-[var(--sub-text-color)] text-xs">(Optional)</span>
+                    </label>
+                    <div 
+                        className={`form-input cursor-pointer flex items-center justify-between ${!data.departmentId ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                        onClick={() => data.departmentId && setIsTeamOpen(!isTeamOpen)}
                     >
-                        {data.departmentId ? (
-                            teamOptions.map((tm) => (
-                                <option key={tm.id || tm.teamId} value={tm.id || tm.teamId}>{tm.name || tm.teamName}</option>
-                            ))
-                        ) : (
-                            <option disabled>{t("employees.newEmployeeForm.professionalInfo.selectDepartment") || "Select department first"}</option>
-                        )}
-                    </select>
-                    {data.teamIds && data.teamIds.length > 0 && (
-                        <p className="text-sm text-gray-500 mt-1">
-                            {data.teamIds.length} team(s) selected
-                        </p>
+                        <span className="text-[var(--sub-text-color)]">
+                            {!data.departmentId 
+                                ? "Select department first"
+                                : selectedTeams.length > 0 
+                                    ? `${selectedTeams.length} team(s) selected` 
+                                    : "Select teams (optional)"}
+                        </span>
+                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isTeamOpen ? 'rotate-180' : ''}`} size={16} />
+                    </div>
+                    {isTeamOpen && data.departmentId && (
+                        <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
+                            <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                                <div className="relative">
+                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                    <input
+                                        type="text"
+                                        value={teamSearch}
+                                        onChange={(e) => setTeamSearch(e.target.value)}
+                                        placeholder="Search teams..."
+                                        className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        onClick={(e) => e.stopPropagation()}
+                                        dir={isArabic ? 'rtl' : 'ltr'}
+                                    />
+                                </div>
+                            </div>
+                            <div className="overflow-y-auto max-h-[240px]">
+                                {filteredTeams.map((t) => {
+                                    const teamId = t.id || t.teamId;
+                                    const isSelected = (data.teamIds || []).includes(teamId);
+                                    return (
+                                        <div 
+                                            key={teamId} 
+                                            className={`p-3 cursor-pointer flex items-center justify-between ${isSelected ? 'bg-[var(--accent-color)] bg-opacity-10' : 'hover:bg-[var(--hover-color)]'}`}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toggleTeam(teamId);
+                                            }}
+                                        >
+                                            <div className="text-sm text-[var(--text-color)]">{t.name || t.teamName}</div>
+                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                isSelected 
+                                                    ? 'border-[var(--accent-color)] bg-[var(--accent-color)]' 
+                                                    : 'border-[var(--border-color)]'
+                                            }`}>
+                                                {isSelected && <Check className="text-white" size={12} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                {filteredTeams.length === 0 && (
+                                    <div className="p-3 text-[var(--sub-text-color)]">No teams found</div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    {selectedTeams.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {selectedTeams.map((t) => (
+                                <div key={t.id || t.teamId} className="flex items-center gap-1 px-2 py-1 bg-[var(--container-color)] rounded-lg text-xs border border-[var(--border-color)]">
+                                    <span className="text-[var(--text-color)]">{t.name || t.teamName}</span>
+                                    <X 
+                                        size={12} 
+                                        className="text-[var(--sub-text-color)] cursor-pointer hover:text-red-500" 
+                                        onClick={() => toggleTeam(t.id || t.teamId)}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>
 
             {/* Action Buttons */}
             <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
-                <button type="button" className="btn-secondary" onClick={onBack}>{t("employees.newEmployeeForm.buttons.back")}</button>
-                <button type="button" className="btn-primary" onClick={handleNext}>{t("employees.newEmployeeForm.buttons.next")}</button>
+                <button type="button" className="btn-secondary" onClick={onBack}>
+                    {t("employees.newEmployeeForm.buttons.back") || "Back"}
+                </button>
+                <button type="button" className="btn-primary" onClick={handleNext}>
+                    {t("employees.newEmployeeForm.buttons.next") || "Next"}
+                </button>
             </div>
         </div>
     );
 }
 
-// Step 3: Documents
-function DocumentsStep({ onNext, onBack, loading }) {
+// Step 3: Review & Submit
+function ReviewStep({ onNext, onBack, employeeData, departments, roles, shifts, teams, loading }) {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
 
+    const selectedDept = departments.find(d => (d.id || d.departmentId) === employeeData.departmentId);
+    const selectedRole = roles.find(r => (r.id || r.roleId) === employeeData.roleId);
+    const selectedShifts = shifts.filter(s => (employeeData.shiftIds || []).includes(s.id || s.shiftId));
+    const selectedTeams = teams.filter(t => (employeeData.teamIds || []).includes(t.id || t.teamId));
+
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FileUpload label={t("employees.newEmployeeForm.documents.uploadProofOfIdentity")} />
-                <FileUpload label={t("employees.newEmployeeForm.documents.uploadEmploymentContract")} />
-                <FileUpload label={t("employees.newEmployeeForm.documents.uploadCertificatesQualifications")} optional />
-                <FileUpload label={t("employees.newEmployeeForm.documents.uploadSocialInsuranceDocs")} />
+        <div className="space-y-8">
+            <h2 className="text-xl font-bold text-[var(--text-color)]">
+                {t("employees.newEmployeeForm.review.title") || "Review Employee Details"}
+            </h2>
+
+            {/* Personal Information */}
+            <div className="p-6 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)]">
+                <h3 className="text-lg font-semibold text-[var(--text-color)] mb-4">
+                    {t("employees.newEmployeeForm.steps.personalInfo")}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">Username:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.userName}</div>
+                    </div>
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">Email:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.email}</div>
+                    </div>
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">First Name:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.firstName}</div>
+                    </div>
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">Last Name:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.lastName}</div>
+                    </div>
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">Phone Number:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.phoneNumber}</div>
+                    </div>
+                    <div>
+                        <span className="text-[var(--sub-text-color)] text-sm">Job Title:</span>
+                        <div className="text-[var(--text-color)] font-medium">{employeeData.jobTitle}</div>
+                    </div>
+                    {employeeData.hireDate && (
+                        <div>
+                            <span className="text-[var(--sub-text-color)] text-sm">Hire Date:</span>
+                            <div className="text-[var(--text-color)] font-medium">{new Date(employeeData.hireDate).toLocaleDateString()}</div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Professional Information */}
+            <div className="p-6 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)]">
+                <h3 className="text-lg font-semibold text-[var(--text-color)] mb-4">
+                    {t("employees.newEmployeeForm.steps.professionalInfo")}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedDept && (
+                        <div>
+                            <span className="text-[var(--sub-text-color)] text-sm">Department:</span>
+                            <div className="text-[var(--text-color)] font-medium">{selectedDept.name || selectedDept.departmentName}</div>
+                        </div>
+                    )}
+                    {selectedRole && (
+                        <div>
+                            <span className="text-[var(--sub-text-color)] text-sm">Role:</span>
+                            <div className="text-[var(--text-color)] font-medium">{selectedRole.name || selectedRole.roleName || selectedRole.code}</div>
+                        </div>
+                    )}
+                    {selectedShifts.length > 0 && (
+                        <div className="md:col-span-2">
+                            <span className="text-[var(--sub-text-color)] text-sm">Shifts:</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                                {selectedShifts.map((s) => (
+                                    <span key={s.id || s.shiftId} className="px-2 py-1 bg-[var(--bg-color)] rounded text-sm text-[var(--text-color)] border border-[var(--border-color)]">
+                                        {s.name || s.shiftName}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {selectedTeams.length > 0 && (
+                        <div className="md:col-span-2">
+                            <span className="text-[var(--sub-text-color)] text-sm">Teams:</span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                                {selectedTeams.map((t) => (
+                                    <span key={t.id || t.teamId} className="px-2 py-1 bg-[var(--bg-color)] rounded text-sm text-[var(--text-color)] border border-[var(--border-color)]">
+                                        {t.name || t.teamName}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Action Buttons */}
             <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
                 <button type="button" className="btn-secondary" onClick={onBack} disabled={loading}>
-                    {t("employees.newEmployeeForm.buttons.back")}
+                    {t("employees.newEmployeeForm.buttons.back") || "Back"}
                 </button>
                 <button 
                     type="button" 
@@ -725,134 +1014,9 @@ function DocumentsStep({ onNext, onBack, loading }) {
                             <span>{t("employees.newEmployeeForm.buttons.submitting") || t("common.loading") || "Processing..."}</span>
                         </>
                     ) : (
-                        t("employees.newEmployeeForm.buttons.submit") || t("common.submit") || "Submit"
+                        t("employees.newEmployeeForm.buttons.submit") || t("common.submit") || "Create Employee"
                     )}
                 </button>
-            </div>
-        </div>
-    );
-}
-
-function FileUpload({ label, optional }) {
-    const { t, i18n } = useTranslation();
-    const isArabic = i18n.language === "ar";
-    const [uploadedFile, setUploadedFile] = useState(null);
-    const [isDragging, setIsDragging] = useState(false);
-
-    const handleFileUpload = (files) => {
-        const file = files[0];
-        if (file) {
-            // Validate file type
-            const allowedTypes = ['image/jpeg', 'image/jpg', 'application/pdf'];
-            if (!allowedTypes.includes(file.type)) {
-                alert(t("employees.newEmployeeForm.documents.invalidFileType"));
-                return;
-            }
-
-            // Validate file size (e.g., max 5MB)
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSize) {
-                alert(t("employees.newEmployeeForm.documents.fileSizeLimit"));
-                return;
-            }
-
-            setUploadedFile(file);
-        }
-    };
-
-    const handleDragOver = (e) => {
-        e.preventDefault();
-        setIsDragging(true);
-    };
-
-    const handleDragLeave = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-    };
-
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        const files = Array.from(e.dataTransfer.files);
-        handleFileUpload(files);
-    };
-
-    const handleFileInputChange = (e) => {
-        const files = Array.from(e.target.files);
-        handleFileUpload(files);
-    };
-
-    const removeFile = () => {
-        setUploadedFile(null);
-    };
-
-    const formatFileSize = (bytes) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
-    return (
-        <div className="space-y-2">
-            <label className="block text-sm font-medium text-[var(--text-color)]">
-                {label} {optional && <span className="text-[var(--sub-text-color)]">{t("employees.newEmployeeForm.documents.optional")}</span>}
-            </label>
-
-            <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${isDragging
-                    ? 'border-[var(--accent-color)] bg-[var(--hover-color)]'
-                    : 'border-[var(--border-color)] bg-[var(--container-color)] hover:bg-[var(--hover-color)]'
-                    }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => document.getElementById(`file-input-${label.replace(/\s+/g, '-').toLowerCase()}`).click()}
-            >
-                <input
-                    id={`file-input-${label.replace(/\s+/g, '-').toLowerCase()}`}
-                    type="file"
-                    accept=".jpeg,.jpg,.pdf"
-                    onChange={handleFileInputChange}
-                    className="hidden"
-                />
-
-                {uploadedFile ? (
-                    <div className="flex flex-col items-center">
-                        <div className="w-12 h-12 mx-auto mb-3 gradient-bg rounded-full flex items-center justify-center">
-                            <FileText className="text-white" size={20} />
-                        </div>
-                        <p className="text-sm font-medium text-[var(--text-color)] mb-1">
-                            {uploadedFile.name}
-                        </p>
-                        <p className="text-xs text-[var(--sub-text-color)] mb-2">
-                            {formatFileSize(uploadedFile.size)}
-                        </p>
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                removeFile();
-                            }}
-                            className="text-xs text-[var(--error-color)] hover:underline"
-                        >
-                            {t("employees.newEmployeeForm.documents.removeFile")}
-                        </button>
-                    </div>
-                ) : (
-                    <div>
-                        <div className="w-12 h-12 mx-auto mb-3 gradient-bg rounded-full flex items-center justify-center">
-                            <Upload className="text-white" size={20} />
-                        </div>
-                        <p className="text-sm text-[var(--sub-text-color)] mb-1">
-                            {t("employees.newEmployeeForm.documents.dragDrop")} <span className="text-[var(--accent-color)] font-medium">{t("employees.newEmployeeForm.documents.chooseFile")}</span> {t("employees.newEmployeeForm.documents.toUpload")}
-                        </p>
-                        <p className="text-xs text-[var(--sub-text-color)]">
-                            {t("employees.newEmployeeForm.documents.supportedFormats")}
-                        </p>
-                    </div>
-                )}
             </div>
         </div>
     );
