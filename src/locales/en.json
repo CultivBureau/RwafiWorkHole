@@ -887,6 +887,7 @@
         "membersCountPlural": "s",
         "membersCountSingular": "",
         "teamLeader": "Team Leader",
+        "chooseTeamLeader": "Choose team leader",
         "membersLabel": "Members:"
       },
       "review": {

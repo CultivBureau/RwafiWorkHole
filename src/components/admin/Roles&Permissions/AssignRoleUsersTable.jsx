@@ -380,9 +380,6 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                                 {t('roles.assignUsersPage.table.email') || 'Email'}
                             </th>
                             <th className={`py-4 px-6 text-sm font-bold text-white ${isArabic ? 'text-right' : 'text-left'}`}>
-                                {t('roles.assignUsersPage.table.currentRole') || 'Current Role'}
-                            </th>
-                            <th className={`py-4 px-6 text-sm font-bold text-white ${isArabic ? 'text-right' : 'text-left'}`}>
                                 {t('roles.assignUsersPage.table.department') || 'Department'}
                             </th>
                             <th className={`py-4 px-6 text-sm font-bold text-white ${isArabic ? 'text-right' : 'text-left'}`}>
@@ -396,7 +393,7 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                     <tbody>
                         {filteredUsers.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="py-16 text-center">
+                                <td colSpan={5} className="py-16 text-center">
                                     <div className="flex flex-col items-center gap-3">
                                         <Users className="w-16 h-16 text-[var(--sub-text-color)] opacity-50" />
                                         <span className="text-[var(--sub-text-color)] text-base font-medium" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -413,7 +410,7 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                                 {/* Users With Role Section */}
                                 {currentPageData.showWithRoleHeader && (
                                     <tr className="sticky top-0 z-20">
-                                        <td colSpan={6} className="py-4 px-6 bg-gradient-to-r from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 border-b-2 border-[var(--accent-color)]/30">
+                                        <td colSpan={5} className="py-4 px-6 bg-gradient-to-r from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 border-b-2 border-[var(--accent-color)]/30">
                                             <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                 <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                     <div className="w-2 h-2 rounded-full bg-[var(--accent-color)]"></div>
@@ -447,19 +444,6 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                                         </td>
                                         <td className={`py-5 px-6 text-[var(--sub-text-color)] text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                                             {user.email}
-                                        </td>
-                                        <td className={`py-5 px-6 ${isArabic ? 'text-right' : 'text-left'}`}>
-                                            {user.roles && user.roles.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {user.roles.map((role, idx) => (
-                                                        <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20">
-                                                            {role}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="text-[var(--sub-text-color)] text-sm">-</span>
-                                            )}
                                         </td>
                                         <td className={`py-5 px-6 text-[var(--text-color)] text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                                             {user.departmentNames && user.departmentNames.length > 0 ? (
@@ -512,7 +496,7 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                                 {/* Users Without Role Section */}
                                 {currentPageData.showWithoutRoleHeader && (
                                     <tr className="sticky top-0 z-20">
-                                        <td colSpan={6} className="py-4 px-6 bg-gradient-to-r from-[var(--sub-text-color)]/10 to-[var(--sub-text-color)]/5 border-b-2 border-[var(--border-color)] border-t-2 border-[var(--border-color)]">
+                                        <td colSpan={5} className="py-4 px-6 bg-gradient-to-r from-[var(--sub-text-color)]/10 to-[var(--sub-text-color)]/5 border-b-2 border-[var(--border-color)] border-t-2 border-[var(--border-color)]">
                                             <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                 <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                     <div className="w-2 h-2 rounded-full bg-[var(--sub-text-color)]"></div>
@@ -546,19 +530,6 @@ const AssignRoleUsersTable = ({ roleId, roleName }) => {
                                         </td>
                                         <td className={`py-5 px-6 text-[var(--sub-text-color)] text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                                             {user.email}
-                                        </td>
-                                        <td className={`py-5 px-6 ${isArabic ? 'text-right' : 'text-left'}`}>
-                                            {user.roles && user.roles.length > 0 ? (
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {user.roles.map((role, idx) => (
-                                                        <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[var(--accent-color)]/10 text-[var(--accent-color)] border border-[var(--accent-color)]/20">
-                                                            {role}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="text-[var(--sub-text-color)] text-sm">-</span>
-                                            )}
                                         </td>
                                         <td className={`py-5 px-6 text-[var(--text-color)] text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                                             {user.departmentNames && user.departmentNames.length > 0 ? (

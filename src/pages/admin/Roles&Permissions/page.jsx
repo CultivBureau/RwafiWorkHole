@@ -11,6 +11,7 @@ const RolesAndPermissions = () => {
   const { t, i18n } = useTranslation();
   const isArabic = i18n.language === "ar";
   const [selectedRoleId, setSelectedRoleId] = useState(null);
+  const [searchValue, setSearchValue] = useState("");
 
   return (
     <PermissionGuard 
@@ -41,9 +42,16 @@ const RolesAndPermissions = () => {
                 {/* Status Cards Row */}
                 <StatusCards />
                 {/* Header with Search and Add Button */}
-                <Header selectedRoleId={selectedRoleId} />
+                <Header 
+                  selectedRoleId={selectedRoleId} 
+                  searchValue={searchValue}
+                  onSearchChange={setSearchValue}
+                />
                 {/* Roles Table */}
-                <RolesTable onRoleSelect={setSelectedRoleId} />
+                <RolesTable 
+                  onRoleSelect={setSelectedRoleId}
+                  searchValue={searchValue}
+                />
               </div>
             </div>
           </main>

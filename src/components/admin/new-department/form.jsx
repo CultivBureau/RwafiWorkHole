@@ -120,12 +120,20 @@ function DepartmentInfoStep({ onNext, value, onChange }) {
     const isArabic = i18n.language === "ar";
     const navigate = useNavigate();
     const [formData, setFormData] = useState(value || { departmentName: '', description: '' });
+    const [errors, setErrors] = useState({});
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
             ...prev,
             [field]: value
         }));
+        // Clear error when user starts typing
+        if (errors[field]) {
+            setErrors(prev => ({
+                ...prev,
+                [field]: ''
+            }));
+        }
     };
 
     // propagate up when formData changes
@@ -134,17 +142,39 @@ function DepartmentInfoStep({ onNext, value, onChange }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [formData]);
 
+    const handleNext = () => {
+        // Validate department name
+        if (!formData.departmentName || !formData.departmentName.trim()) {
+            setErrors({
+                departmentName: t("departments.newDepartmentForm.validation.departmentNameRequired") || "Department name is required"
+            });
+            return;
+        }
+        // Clear errors and proceed
+        setErrors({});
+        onNext();
+    };
+
+    const isFormValid = formData.departmentName && formData.departmentName.trim().length > 0;
+
     return (
         <div className="space-y-6">
             {/* Form Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input
-                    className="form-input"
-                    placeholder={t("departments.newDepartmentForm.departmentInfo.departmentName")}
-                    type="text"
-                    value={formData.departmentName}
-                    onChange={(e) => handleInputChange('departmentName', e.target.value)}
-                />
+                <div>
+                    <input
+                        className={`form-input ${errors.departmentName ? 'border-red-500 focus:ring-red-500' : ''}`}
+                        placeholder={t("departments.newDepartmentForm.departmentInfo.departmentName")}
+                        type="text"
+                        value={formData.departmentName}
+                        onChange={(e) => handleInputChange('departmentName', e.target.value)}
+                    />
+                    {errors.departmentName && (
+                        <p className="mt-1 text-sm text-red-500" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
+                            {errors.departmentName}
+                        </p>
+                    )}
+                </div>
                 {/* shortName removed per API schema */}
                 <textarea
                     className="form-input md:col-span-1"
@@ -159,7 +189,19 @@ function DepartmentInfoStep({ onNext, value, onChange }) {
             {/* Action Buttons */}
             <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
                 <button type="button" className="btn-secondary" onClick={() => navigate('/pages/admin/all-departments')}>{t("departments.newDepartmentForm.buttons.cancel")}</button>
-                <button type="button" className="btn-primary" onClick={onNext}>{t("departments.newDepartmentForm.buttons.next")}</button>
+                <button 
+                    type="button" 
+                    className="btn-primary" 
+                    onClick={handleNext}
+                    disabled={!isFormValid}
+                    style={{
+                        opacity: !isFormValid ? 0.6 : 1,
+                        cursor: !isFormValid ? 'not-allowed' : 'pointer'
+                    }}
+                    title={!isFormValid ? (t("departments.newDepartmentForm.validation.departmentNameRequired") || "Please enter a department name") : ''}
+                >
+                    {t("departments.newDepartmentForm.buttons.next")}
+                </button>
             </div>
         </div>
     );
@@ -494,7 +536,7 @@ function SetupTeamsStep({ onNext, onBack, teams, setTeams }) {
                                 className="form-input cursor-pointer flex items-center justify-between"
                                 onClick={() => newTeam.role && setIsUserDropdownOpen(!isUserDropdownOpen)}
                             >
-                                <span className="text-[var(--sub-text-color)]">{newTeam.teamLeader ? (newTeam.teamLeader.name || `${newTeam.teamLeader.firstName || ''} ${newTeam.teamLeader.lastName || ''}`.trim()) : t("departments.newDepartmentForm.assignSupervisor.chooseSupervisor")}</span>
+                                <span className="text-[var(--sub-text-color)]">{newTeam.teamLeader ? (newTeam.teamLeader.name || `${newTeam.teamLeader.firstName || ''} ${newTeam.teamLeader.lastName || ''}`.trim()) : t("departments.newDepartmentForm.setupTeams.chooseTeamLeader") || "Choose team leader"}</span>
                                 <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} size={16} />
                             </div>
                             {isUserDropdownOpen && newTeam.role && (
