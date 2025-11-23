@@ -362,12 +362,6 @@ const AttendanceTable = () => {
             {t("adminAttendance.table.location.workFromHome", "Work from home")}
           </span>
         );
-      case "On-site":
-        return (
-          <span className={`${baseClasses} bg-blue-500/10 text-blue-600 border-blue-400/40`}>
-            {t("adminAttendance.table.location.onsiteBadge", "On-site")}
-          </span>
-        );
       default:
         return <span className="text-[var(--sub-text-color-2)] text-sm">—</span>;
     }
@@ -430,9 +424,6 @@ const AttendanceTable = () => {
                 </option>
                 <option value="home">
                   {t("adminAttendance.table.location.home", "Home")}
-                </option>
-                <option value="onsite">
-                  {t("adminAttendance.table.location.onsite", "On-site")}
                 </option>
               </select>
             </div>
