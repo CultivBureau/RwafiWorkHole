@@ -13,6 +13,7 @@ const CompanyDetailsCard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [companyName, setCompanyName] = useState("");
   const [attachments, setAttachments] = useState([]);
+  const [showAddAttachmentModal, setShowAddAttachmentModal] = useState(false);
   
   // Permission checks
   const canUpdateCompany = useHasPermission('Company.Update');
@@ -152,6 +153,10 @@ const CompanyDetailsCard = () => {
   const removeAttachment = (index) => {
     const newAttachments = attachments.filter((_, i) => i !== index);
     setAttachments(newAttachments);
+  };
+
+  const handleAddAttachment = () => {
+    setShowAddAttachmentModal(true);
   };
 
   const getPlanTypeName = (planType) => {
@@ -435,7 +440,20 @@ const CompanyDetailsCard = () => {
               </p>
             </div>
 
-    
+            {/* Add Attachment Button - Only show if user has update permission */}
+            {canUpdateCompany && (
+              <button
+                onClick={handleAddAttachment}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs shadow-md transition-all duration-200 hover:scale-105"
+                style={{
+                  background: "linear-gradient(135deg, #15919B 0%, #09D1C7 100%)",
+                  color: "white",
+                }}
+              >
+                <Upload className="w-4 h-4" />
+                {t("company.addAttachment", "Add Attachment")}
+              </button>
+            )}
           </div>
 
           {attachments.length === 0 ? (
@@ -586,7 +604,246 @@ const CompanyDetailsCard = () => {
           )}
         </section>
 
+        {/* Add Attachment Modal */}
+        {showAddAttachmentModal && (
+          <AddAttachmentModal
+            companyId={companyId}
+            existingAttachments={attachments}
+            onClose={() => setShowAddAttachmentModal(false)}
+            onSuccess={() => {
+              setShowAddAttachmentModal(false);
+              refetch();
+            }}
+            t={t}
+          />
+        )}
+      </div>
+    </div>
+  );
+};
 
+// Add Attachment Modal Component
+const AddAttachmentModal = ({ companyId, existingAttachments = [], onClose, onSuccess, t }) => {
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [id, setId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [updateCompanyDetails] = useUpdateCompanyDetailsMutation();
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      // Auto-fill file name if empty
+      if (!fileName) {
+        setFileName(selectedFile.name);
+      }
+    }
+  };
+
+  const formatExpiryDate = (dateString) => {
+    if (!dateString) return "";
+    if (dateString.includes("/")) {
+      const [month, day, year] = dateString.split("/");
+      return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+    }
+    return dateString;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!file) {
+      toast.error(t("company.fileRequired", "Please select a file"));
+      return;
+    }
+
+    if (!fileName || fileName.trim() === "") {
+      toast.error(t("company.fileNameRequired", "Please enter a file name"));
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Helper function to format expiry date for API
+      const formatExpiryDateForAPI = (dateString) => {
+        if (!dateString) return null;
+        if (dateString.includes("/")) {
+          const [month, day, year] = dateString.split("/");
+          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+        return dateString;
+      };
+
+      // Prepare existing attachments (keep them as-is, no file re-upload)
+      const existingAttachmentsData = existingAttachments
+        .filter(att => att.filePath) // Only include attachments that have been saved (have filePath)
+        .map(att => ({
+          id: att.id || 0,
+          internalId: att.internalId || null,
+          file: null, // Don't re-upload existing files
+          fileName: att.fileName || "",
+          expiryDate: formatExpiryDateForAPI(att.expiryDate) || null,
+        }));
+
+      // Add the new attachment
+      const newAttachment = {
+        id: id ? parseInt(id) : 0, // Use provided ID or 0 for new attachment
+        internalId: null,
+        file: file,
+        fileName: fileName.trim() || file.name || "", // Use provided file name or fallback to file name
+        expiryDate: formatExpiryDateForAPI(expiryDate) || null,
+      };
+
+      // Combine existing and new attachments
+      const allAttachments = [...existingAttachmentsData, newAttachment];
+
+      await updateCompanyDetails({
+        companyId,
+        name: null, // Don't update company name
+        attachments: allAttachments,
+      }).unwrap();
+
+      toast.success(t("company.attachmentAdded", "Attachment added successfully"));
+      onSuccess();
+    } catch (error) {
+      console.error("Failed to add attachment:", error);
+      const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.message;
+      toast.error(errorMessage || t("company.attachmentAddError", "Failed to add attachment"));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0, 0, 0, 0.5)" }}>
+      <div 
+        className="w-full max-w-md rounded-2xl border overflow-hidden"
+        style={{
+          background: "var(--bg-color)",
+          borderColor: "var(--border-color)",
+        }}
+      >
+        {/* Header */}
+        <div className="px-6 py-4 border-b" style={{ borderColor: "var(--border-color)" }}>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold" style={{ color: "var(--text-color)" }}>
+              {t("company.addAttachment", "Add Attachment")}
+            </h3>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg transition-colors hover:bg-opacity-10"
+              style={{ color: "var(--text-color)" }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
+          {/* File Upload */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-2" style={{ color: "var(--sub-text-color)" }}>
+              <div className="w-1 h-3 rounded-full" style={{ background: "var(--accent-color)" }} />
+              {t("company.file", "File")} *
+            </label>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileChange}
+                required
+              />
+              <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-dashed transition-all duration-200 hover:border-solid" style={{
+                borderColor: file ? "var(--accent-color)" : "var(--border-color)",
+                background: "var(--container-color)",
+              }}>
+                <Upload className="w-5 h-5" style={{ color: "var(--accent-color)" }} />
+                <span className="text-sm font-medium" style={{ color: "var(--text-color)" }}>
+                  {file ? file.name : t("company.selectFile", "Select a file")}
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {/* File Name */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-2" style={{ color: "var(--sub-text-color)" }}>
+              <div className="w-1 h-3 rounded-full" style={{ background: "var(--accent-color)" }} />
+              {t("company.fileNameLabel", "File Name")} *
+            </label>
+            <input
+              type="text"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              className="form-input w-full border-2 rounded-xl px-4 py-3 transition-all duration-200 focus:ring-4"
+              placeholder={t("company.fileNamePlaceholder", "Enter file name")}
+              required
+              style={{ background: "var(--bg-color)", color: "var(--text-color)", borderColor: "var(--border-color)" }}
+            />
+          </div>
+
+          {/* ID */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-2" style={{ color: "var(--sub-text-color)" }}>
+              <div className="w-1 h-3 rounded-full" style={{ background: "var(--accent-color)" }} />
+              {t("company.attachmentId", "Attachment ID")}
+            </label>
+            <input
+              type="number"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              className="form-input w-full border-2 rounded-xl px-4 py-3 transition-all duration-200 focus:ring-4"
+              placeholder={t("company.enterId", "Enter ID ")}
+              style={{ background: "var(--bg-color)", color: "var(--text-color)", borderColor: "var(--border-color)" }}
+            />
+          </div>
+
+          {/* Expiry Date */}
+          <div>
+            <label className="text-xs font-bold uppercase tracking-wider flex items-center gap-2 mb-2" style={{ color: "var(--sub-text-color)" }}>
+              <div className="w-1 h-3 rounded-full" style={{ background: "var(--accent-color)" }} />
+              {t("company.expiryDate", "Expiry Date")}
+            </label>
+            <input
+              type="date"
+              value={formatExpiryDate(expiryDate)}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              className="form-input w-full border-2 rounded-xl px-4 py-3 transition-all duration-200 focus:ring-4"
+              style={{ background: "var(--bg-color)", color: "var(--text-color)", borderColor: "var(--border-color)" }}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 rounded-lg font-bold text-sm border transition-all duration-200 disabled:opacity-50"
+              style={{
+                background: "var(--container-color)",
+                borderColor: "var(--border-color)",
+                color: "var(--text-color)",
+              }}
+            >
+              {t("company.cancel", "Cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 px-4 py-2 rounded-lg font-bold text-sm shadow-md transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, #15919B 0%, #09D1C7 100%)",
+                color: "white",
+              }}
+            >
+              {isSubmitting ? t("company.submitting", "Submitting...") : t("company.submit", "Submit")}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
