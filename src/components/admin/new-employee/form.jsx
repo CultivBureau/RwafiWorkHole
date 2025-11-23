@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { User, Briefcase, FileText, Camera, Upload, Eye, EyeOff } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import { getUserInfo, getCompanyId } from "../../../utils/page";
@@ -13,6 +14,7 @@ import toast from "react-hot-toast";
 export default function NewEmployeeForm() {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
+    const navigate = useNavigate();
     const [step, setStep] = useState(0);
 
     // Initialize employee data, pre-filling companyId from token/cookie
@@ -89,17 +91,18 @@ export default function NewEmployeeForm() {
 
             // Step 1: Register user with all required data including roleId, teamIds, and shiftIds
             const registerPayload = {
-                userName: employeeData.userName,
-                email: employeeData.email,
+                userName: employeeData.userName.trim(),
+                email: employeeData.email.trim(),
                 password: employeeData.password,
-                phoneNumber: employeeData.phoneNumber,
-                firstName: employeeData.firstName,
-                lastName: employeeData.lastName,
-                jobTitle: employeeData.jobTitle,
-                hireDate: employeeData.hireDate || null, // Only include if provided
-                companyId,
+                phoneNumber: employeeData.phoneNumber.trim(),
+                firstName: employeeData.firstName.trim(),
+                lastName: employeeData.lastName.trim(),
+                jobTitle: employeeData.jobTitle.trim(),
                 roleId: employeeData.roleId,
-                // Include teamIds and shiftIds as arrays (optional)
+                companyId,
+                // Include hireDate only if provided, format as ISO string
+                ...(employeeData.hireDate && { hireDate: new Date(employeeData.hireDate).toISOString() }),
+                // Include teamIds and shiftIds as arrays only if they have values
                 ...(employeeData.teamIds && employeeData.teamIds.length > 0 && { teamIds: employeeData.teamIds }),
                 ...(employeeData.shiftIds && employeeData.shiftIds.length > 0 && { shiftIds: employeeData.shiftIds }),
             };
@@ -112,23 +115,10 @@ export default function NewEmployeeForm() {
             // Show success toast
             toast.success(t("employees.newEmployeeForm.success.title") || "Employee created successfully!");
             
-            // Reset form and go back to step 0
-            setEmployeeData({
-                userName: "",
-                email: "",
-                password: "",
-                phoneNumber: "",
-                firstName: "",
-                lastName: "",
-                jobTitle: "",
-                hireDate: "",
-                companyId: getCompanyId() || "",
-                roleId: "",
-                departmentId: "",
-                teamIds: [],
-                shiftIds: [],
-            });
-            setStep(0);
+            // Redirect to all-employees page after successful registration
+            setTimeout(() => {
+                navigate("/pages/admin/all-employees", { replace: true });
+            }, 500);
         } catch (err) {
             toast.dismiss();
             // Handle validation errors and API errors
@@ -204,7 +194,7 @@ export default function NewEmployeeForm() {
                     <DocumentsStep
                         onNext={handleSubmitAll}
                         onBack={() => setStep(1)}
-                        loading={isRegistering || isAssigningTeam || isAssigningShift}
+                        loading={isRegistering}
                     />
                 )}
             </div>
@@ -542,6 +532,16 @@ function PersonalInfoStep({ onNext, onChange, data }) {
                     {touched.jobTitle && !errors.jobTitle && data.jobTitle && (
                         <p className={successTextClass}>✓ {t('employees.newEmployeeForm.validation.validJobTitle') || 'Valid job title'}</p>
                     )}
+                </div>
+                <div>
+                    <input
+                        className="form-input"
+                        placeholder={t("employees.newEmployeeForm.personalInfo.hireDate") || "Hire Date (Optional)"}
+                        type="date"
+                        value={data.hireDate || ""}
+                        onChange={e => handleFieldChange('hireDate', e.target.value)}
+                        aria-label="Hire Date"
+                    />
                 </div>
                 {/* companyId is derived from token and saved in state; not shown as input */}
             </div>
