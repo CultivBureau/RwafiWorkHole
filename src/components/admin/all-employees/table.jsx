@@ -1,13 +1,39 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2, Calendar } from "lucide-react";
 import EmployeeCard from "./employee-card";
 import EditEmployeePopup from "./edit-employee";
 import { useGetAllUsersQuery } from "../../../services/apis/UserApi";
-import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
-import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
 import { useHasPermission } from "../../../hooks/useHasPermission";
+
+const STATUS_OPTIONS = ["Active", "Inactive"];
+
+const DATE_PICKER_HIDE_ICON_CSS = `
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0;
+    display: none;
+  }
+  input[type="date"]::-webkit-inner-spin-button,
+  input[type="date"]::-webkit-clear-button {
+    display: none;
+  }
+  input[type="date"]::-moz-focus-inner {
+    border: 0;
+  }
+  input[type="date"]::-ms-clear {
+    display: none;
+  }
+`;
+
+const normalizeRoleValue = (role) => {
+    if (!role) return null;
+    if (typeof role === "string") return role.trim();
+    if (typeof role === "object") {
+        return (role?.name || role?.displayName || role?.roleName || role?.title || role?.value || "").trim();
+    }
+    return String(role).trim();
+};
 
 const EmployeesTable = () => {
     const { t, i18n } = useTranslation();
@@ -31,7 +57,7 @@ const EmployeesTable = () => {
     const canViewAllProfiles = useHasPermission('User.Profile.ViewAll');
 
     // Responsive items per page based on screen size and view mode
-    const getItemsPerPage = () => {
+    const getItemsPerPage = useCallback(() => {
         if (viewMode === "grid") {
             // For grid: 8 on desktop (4x2), 4 on mobile (2x2)
             return window.innerWidth < 768 ? 4 : 8;
@@ -39,9 +65,9 @@ const EmployeesTable = () => {
             // For table: same as before
             return 6;
         }
-    };
+    }, [viewMode]);
 
-    const [itemsPerPage, setItemsPerPage] = useState(getItemsPerPage());
+    const [itemsPerPage, setItemsPerPage] = useState(() => getItemsPerPage());
 
     // Update items per page on resize
     useEffect(() => {
@@ -51,12 +77,18 @@ const EmployeesTable = () => {
 
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
-    }, [viewMode]);
+    }, [getItemsPerPage]);
+
+    useEffect(() => {
+        if (statusFilter && !STATUS_OPTIONS.includes(statusFilter)) {
+            setStatusFilter("");
+        }
+    }, [statusFilter]);
 
     // Update items per page when view mode changes
     useEffect(() => {
         setItemsPerPage(getItemsPerPage());
-    }, [viewMode]);
+    }, [getItemsPerPage]);
 
     // API calls
     const userQueryParams = useMemo(() => {
@@ -71,8 +103,6 @@ const EmployeesTable = () => {
     }, [departmentFilter, searchTerm]);
 
     const { data: usersResponse, isLoading: isLoadingUsers, isError: isErrorUsers } = useGetAllUsersQuery(userQueryParams);
-    const { data: departmentsResponse } = useGetAllDepartmentsQuery({ pageNumber: 1, pageSize: 100 });
-    const { data: rolesResponse } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 100 });
 
     // Transform API data to component format
     const employeesData = useMemo(() => {
@@ -102,8 +132,17 @@ const EmployeesTable = () => {
             // Get job title
             const position = user.jobTitle || "N/A";
             
-            // Get roles - primary role for display
-            const roles = user.roles || [];
+            // Normalize roles from array and top-level role field
+            const normalizedRolesFromArray = Array.isArray(user.roles)
+                ? user.roles
+                    .map((role) => normalizeRoleValue(role))
+                    .filter((role) => role && role.length > 0)
+                : [];
+            const normalizedSingleRole = normalizeRoleValue(user.role);
+            const roles = Array.from(new Set([
+                ...normalizedRolesFromArray,
+                ...(normalizedSingleRole ? [normalizedSingleRole] : []),
+            ]));
             const primaryRole = roles[0] || "N/A";
             
             // Get team names
@@ -133,15 +172,26 @@ const EmployeesTable = () => {
     }, [usersResponse]);
 
     // Get unique values for filters from API data
-    const uniqueDepartments = useMemo(() => {
+    const activeDepartments = useMemo(() => {
         const deptSet = new Set();
-        employeesData.forEach(emp => {
-            if (emp.departments && emp.departments.length > 0) {
-                emp.departments.forEach(dept => deptSet.add(dept));
-            }
-        });
-        return Array.from(deptSet).sort();
-    }, [employeesData]);
+        if (Array.isArray(usersResponse?.value)) {
+            usersResponse.value.forEach((user) => {
+                if (Array.isArray(user?.departments)) {
+                    user.departments.forEach((dept) => {
+                        const isActive =
+                            dept?.status === true ||
+                            (typeof dept?.status === "string" && dept.status.toLowerCase() === "active");
+                        if (isActive && dept?.name) {
+                            deptSet.add(dept.name);
+                        }
+                    });
+                }
+            });
+        }
+        return Array.from(deptSet).sort((a, b) =>
+            a.localeCompare(b, undefined, { sensitivity: "base" })
+        );
+    }, [usersResponse]);
 
     const uniqueRoles = useMemo(() => {
         const roleSet = new Set();
@@ -151,10 +201,6 @@ const EmployeesTable = () => {
             }
         });
         return Array.from(roleSet).sort();
-    }, [employeesData]);
-
-    const uniqueJoinDates = useMemo(() => {
-        return [...new Set(employeesData.map(emp => emp.joinDate))].sort();
     }, [employeesData]);
 
     // Filter data
@@ -170,8 +216,8 @@ const EmployeesTable = () => {
             const matchesDepartment = !departmentFilter || 
                 employee.departments.includes(departmentFilter);
             
-            const matchesRole = !roleFilter || 
-                employee.roles.includes(roleFilter);
+            const matchesRole = !roleFilter ||
+                employee.roles.some((role) => role.toLowerCase() === roleFilter.toLowerCase());
             
             const matchesStatus = !statusFilter || 
                 employee.status === statusFilter;
@@ -287,6 +333,7 @@ const EmployeesTable = () => {
 
     return (
         <>
+        <style>{DATE_PICKER_HIDE_ICON_CSS}</style>
         <div className="w-full" dir={isArabic ? "rtl" : "ltr"}>
             {/* Filters and Controls Container */}
             <div
@@ -324,45 +371,52 @@ const EmployeesTable = () => {
 
                     {/* Each filter/select is full width on mobile, 1 col on desktop */}
                     <div className="md:col-span-1 col-span-1 w-full">
-                        <div className="relative w-full">
+                        <div
+                            className="relative w-full cursor-pointer"
+                            onClick={() => {
+                                if (joinDateInputRef.current) {
+                                    if (typeof joinDateInputRef.current.showPicker === 'function') {
+                                        joinDateInputRef.current.showPicker();
+                                    } else {
+                                        joinDateInputRef.current.focus();
+                                        joinDateInputRef.current.click();
+                                    }
+                                }
+                            }}
+                        >
+                            <Calendar
+                                className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-color)] pointer-events-none ${isArabic ? 'right-4' : 'left-4'}`}
+                            />
+                            {!joinDateFilter && (
+                                <span
+                                    className={`pointer-events-none font-semibold gradient-text absolute top-1/2 -translate-y-1/2 text-xs ${isArabic ? 'right-10' : 'left-10'}`}
+                                    
+                                >
+                                    {t("employees.filters.joinDate")}
+                                </span>
+                            )}
                             <input
                                 ref={joinDateInputRef}
                                 type="date"
                                 value={joinDateFilter}
                                 onChange={(e) => setJoinDateFilter(e.target.value)}
-                                className="w-full border rounded-full px-4 py-2 text-xs font-medium transition-all duration-200 opacity-0 absolute inset-0 cursor-pointer"
-                                style={{
-                                    colorScheme: 'var(--theme)'
-                                }}
-                            />
-                            <div
-                                className="w-full border text-center rounded-full px-4 py-2 text-xs font-medium gradient-text transition-all duration-200"
+                                className={`w-full border rounded-full px-10 py-2 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] bg-[var(--bg-color)] ${isArabic ? 'text-right' : 'text-left'} ${joinDateFilter ? 'text-[var(--accent-color)] font-semibold' : 'text-transparent'}`}
                                 style={{
                                     borderColor: 'var(--border-color)',
-                                    backgroundColor: 'var(--bg-color)',
-                                    color: 'var(--accent-color)',
-                                    cursor: 'pointer'
+                                    colorScheme: 'var(--theme)',
+                                    appearance: 'none',
+                                    WebkitAppearance: 'none',
+                                    MozAppearance: 'none',
+                                    backgroundImage: 'none'
                                 }}
-                                onClick={() => {
-                                    if (joinDateInputRef.current) {
-                                        if (typeof joinDateInputRef.current.showPicker === 'function') {
-                                            joinDateInputRef.current.showPicker();
-                                        } else {
-                                            joinDateInputRef.current.focus();
-                                            joinDateInputRef.current.click();
-                                        }
-                                    }
-                                }}
-                            >
-                                {joinDateFilter ? new Date(joinDateFilter).toLocaleDateString() : t("employees.filters.joinDate")}
-                            </div>
+                            />
                         </div>
                     </div>
                     <div className="md:col-span-1 col-span-1 w-full">
                         <FilterSelect
                             value={departmentFilter}
                             onChange={(e) => setDepartmentFilter(e.target.value)}
-                            options={uniqueDepartments}
+                            options={activeDepartments}
                             placeholder={t("employees.filters.department")}
                         />
                     </div>
@@ -378,7 +432,7 @@ const EmployeesTable = () => {
                         <FilterSelect
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            options={["Active", "Inactive", "Pending"]}
+                            options={STATUS_OPTIONS}
                             placeholder={t("employees.filters.status")}
                         />
                     </div>
@@ -405,39 +459,26 @@ const EmployeesTable = () => {
                 <div className={`flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                     {/* Left side - Active Filters Chips */}
                     <div className={`flex flex-wrap items-center gap-2 flex-1 w-full md:w-auto ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        {activeFilters.length > 0 && (
-                            <>
-                                {activeFilters.map((filter) => (
-                                    <div
-                                        key={filter.key}
-                                        className="flex items-center gap-2 px-2 md:px-3 py-1 rounded-full text-xs border"
-                                        style={{
-                                            backgroundColor: 'var(--menu-active-bg)',
-                                            borderColor: 'var(--accent-color)',
-                                            color: 'var(--text-color)'
-                                        }}
-                                    >
-                                        <span>{filter.value}</span>
-                                        <button
-                                            onClick={() => filter.setter("")}
-                                            className="w-3 h-3 md:w-4 md:h-4 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"
-                                            style={{ color: 'var(--accent-color)' }}
-                                        >
-                                            <span className="text-xs">×</span>
-                                        </button>
-                                    </div>
-                                ))}
-                                {/* Results Count */}
-                                <div className="text-xs md:text-sm font-medium ml-2" style={{ color: 'var(--sub-text-color)' }}>
-                                    {filteredEmployees.length} {t("employees.results", "results")}
-                                </div>
-                            </>
-                        )}
-                        {activeFilters.length === 0 && (
-                            <div className="text-xs md:text-sm font-medium" style={{ color: 'var(--sub-text-color)' }}>
-                                {filteredEmployees.length} {t("employees.results", "results")}
+                        {activeFilters.map((filter) => (
+                            <div
+                                key={filter.key}
+                                className="flex items-center gap-2 px-2 md:px-3 py-1 rounded-full text-xs border"
+                                style={{
+                                    backgroundColor: 'var(--menu-active-bg)',
+                                    borderColor: 'var(--accent-color)',
+                                    color: 'var(--text-color)'
+                                }}
+                            >
+                                <span>{filter.value}</span>
+                                <button
+                                    onClick={() => filter.setter("")}
+                                    className="w-3 h-3 md:w-4 md:h-4 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"
+                                    style={{ color: 'var(--accent-color)' }}
+                                >
+                                    <span className="text-xs">×</span>
+                                </button>
                             </div>
-                        )}
+                        ))}
                     </div>
 
                     {/* Right side - View Toggle and Add Button */}

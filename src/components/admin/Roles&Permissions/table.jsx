@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { Edit, Trash2, UserPlus } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { ChevronLeft, ChevronRight, Edit, Trash2, UserPlus } from "lucide-react"
 import EditRole from "./edit_role"
 import { useTranslation } from "react-i18next"
 import { useGetAllRolesQuery, useDeleteRoleMutation } from "../../../services/apis/RoleApi"
@@ -12,8 +11,6 @@ import { useHasPermission } from "../../../hooks/useHasPermission"
 const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
-    const navigate = useNavigate();
-    
     // Permission checks
     const canUpdateRole = useHasPermission('Role.Update');
     const canDeleteRole = useHasPermission('Role.Delete');
@@ -25,8 +22,8 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
     const defaultRoleFilter = t('roles.filters.roleType');
     const defaultStatusFilter = t('roles.filters.allStatus');
 
-    const [roleType, setRoleType] = useState(defaultRoleFilter)
-    const [status, setStatus] = useState(defaultStatusFilter)
+    const [roleType] = useState(defaultRoleFilter)
+    const [status] = useState(defaultStatusFilter)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState(null)
     const [selectedRoleId, setSelectedRoleId] = useState(null)
@@ -51,13 +48,6 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
             companyId: role.companyId
         }));
     }, [rolesResponse]);
-
-    // Get unique role names for filter dropdown
-    const uniqueRoleNames = useMemo(() => {
-        if (!rolesData.length) return [];
-        const uniqueNames = [...new Set(rolesData.map(role => role.name))];
-        return uniqueNames.sort();
-    }, [rolesData]);
 
     // Calculate items per page based on table height
     useEffect(() => {
@@ -126,7 +116,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
         onRoleSelect?.(role.id);
     };
 
-    const handleSaveRole = async (updatedRole) => {
+    const handleSaveRole = async () => {
         // Refetch roles after update
         await refetch();
         setIsEditOpen(false);
@@ -248,115 +238,103 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
 
     return (
         <div className="flex flex-col" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
-            {/* Filters and header section */}
-            <div className="mb-4 flex-shrink-0">
-                <div className="flex bg-[var(--bg-color)] p-4 w-100%] h-max shadow-md rounded-3xl border border-[var(--border-color)] flex-wrap items-center gap-4 justify-between">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-medium text-[var(--sub-text-color)]">{t('roles.table.role')}</span>
-                            <select
-                                value={roleType}
-                                onChange={(e) => setRoleType(e.target.value)}
-                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)]"
-                                dir={isArabic ? 'rtl' : 'ltr'}
-                            >
-                                <option value={t('roles.filters.roleType')}>{t('roles.filters.roleType')}</option>
-                                {uniqueRoleNames.map(roleName => (
-                                    <option key={roleName} value={roleName}>{roleName}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-medium text-[var(--sub-text-color)]">{t('roles.table.status')}</span>
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)]"
-                                dir={isArabic ? 'rtl' : 'ltr'}
-                            >
-                                <option value={t('roles.filters.allStatus')}>{t('roles.filters.allStatus')}</option>
-                                <option value="Active">{t('roles.filters.active')}</option>
-                                <option value="Inactive">{t('roles.filters.inactive')}</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-[10px] text-[var(--sub-text-color)]">
-                            {t('leaves.table.page')} {currentPage} {t('leaves.table.of')} {totalPages} ({totalItems} {t('leaves.table.entries')})
-                        </span>
-                        <div className={`flex items-center gap-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                            <button
-                                onClick={handlePreviousPage}
-                                disabled={currentPage === 1}
-                                className="h-8 w-8 border border-[var(--border-color)] rounded-md bg-[var(--bg-color)] hover:bg-[var(--hover-color)] flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg className="h-4 w-4 text-[var(--sub-text-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isArabic ? "M15 19l-7-7 7-7" : "M15 19l-7-7 7-7"} />
-                                </svg>
-                            </button>
-                            <button
-                                onClick={handleNextPage}
-                                disabled={currentPage === totalPages || totalPages === 0}
-                                className="h-8 w-8 border border-[var(--border-color)] rounded-md bg-[var(--bg-color)] hover:bg-[var(--hover-color)] flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <svg className="h-4 w-4 text-[var(--sub-text-color)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isArabic ? "M9 5l7 7-7 7" : "M9 5l7 7-7 7"} />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+        
             {/* Main content area with table and edit panel - 80vh height */}
             <div className={`flex gap-4 ${isArabic ? 'flex-row-reverse' : ''}`} style={{ height: '80vh' }}>
                 {/* Table Section */}
                 <div className={`${isEditOpen ? 'w-[75%]' : 'w-full'} transition-all duration-300 h-full flex flex-col overflow-hidden`}>
-                    <div ref={tableContainerRef} className="flex-1 overflow-auto border border-[var(--border-color)] rounded-lg">
-                        <table className="min-w-[800px] w-full">
-                            <thead className="bg-[var(--bg-table-header)] sticky top-0 z-10">
-                                <tr>
-                                    <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
-                                        {t('roles.table.role')}
-                                    </th>
-                                    <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
-                                        {t('roles.table.users')}
-                                    </th>
-                                    <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
-                                        {t('roles.table.status')}
-                                    </th>
-                                    {/* Actions column - Only show if user has any action permissions */}
-                                    {(canUpdateRole || canDeleteRole) && (
-                                        <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
-                                            {t('roles.table.actions')}
-                                        </th>
-                                    )}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentPageData.length === 0 ? (
+                    <div className="h-full border border-[var(--border-color)] rounded-lg flex flex-col">
+                        <div ref={tableContainerRef} className="flex-1 overflow-auto">
+                            <table className="min-w-[800px] w-full">
+                                <thead className="bg-[var(--bg-table-header)] sticky top-0 z-10">
                                     <tr>
-                                        <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="py-8 text-center">
-                                            <span className="text-[var(--sub-text-color)] text-sm" dir={isArabic ? 'rtl' : 'ltr'}>
-                                                {t('roles.table.noRoles') || 'No roles found'}
-                                            </span>
-                                        </td>
+                                        <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                            {t('roles.table.role')}
+                                        </th>
+                                        <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                            {t('roles.table.users')}
+                                        </th>
+                                        <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                            {t('roles.table.status')}
+                                        </th>
+                                        {/* Actions column - Only show if user has any action permissions */}
+                                        {(canUpdateRole || canDeleteRole) && (
+                                            <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                                {t('roles.table.actions')}
+                                            </th>
+                                        )}
                                     </tr>
-                                ) : (
+                                </thead>
+                                <tbody>
+                                    {currentPageData.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="py-8 text-center">
+                                                <span className="text-[var(--sub-text-color)] text-sm" dir={isArabic ? 'rtl' : 'ltr'}>
+                                                    {t('roles.table.noRoles') || 'No roles found'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        <>
+                                            {renderTableRows()}
+                                            {/* Empty rows */}
+                                            {emptyRows.map((_, index) => (
+                                                <tr key={`empty-${index}`} className="border-b border-[var(--border-color)] last:border-b-0">
+                                                    <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="h-[68px]"></td>
+                                                </tr>
+                                            ))}
+                                        </>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div
+                            className={`px-3 md:px-6 py-3 border-t flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}
+                            style={{ borderColor: 'var(--border-color)' }}
+                        >
+                            <div className="text-xs md:text-sm font-medium" style={{ color: 'var(--sub-text-color)' }}>
+                                {totalPages > 0 ? (
                                     <>
-                                        {renderTableRows()}
-                                        {/* Empty rows */}
-                                        {emptyRows.map((_, index) => (
-                                            <tr key={`empty-${index}`} className="border-b border-[var(--border-color)] last:border-b-0">
-                                                <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="h-[68px]"></td>
-                                            </tr>
-                                        ))}
+                                        <span className="hidden md:inline">
+                                            {t("employees.pagination.page", "Page")} {currentPage} {t("employees.pagination.of", "of")} {totalPages}
+                                            {" "}
+                                            ({totalItems} {t("employees.pagination.total", "total entries")})
+                                        </span>
+                                        <span className="md:hidden">
+                                            {currentPage}/{totalPages} ({totalItems})
+                                        </span>
                                     </>
+                                ) : (
+                                    <span>{t('roles.table.noRoles') || 'No roles found'}</span>
                                 )}
-                            </tbody>
-                        </table>
+                            </div>
+                            <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <button
+                                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-1.5 md:p-2 rounded-xl border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: 'var(--border-color)',
+                                        backgroundColor: 'var(--bg-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                >
+                                    <ChevronLeft className="w-3 h-3 md:w-4 md:h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-1.5 md:p-2 rounded-xl border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        borderColor: 'var(--border-color)',
+                                        backgroundColor: 'var(--bg-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                >
+                                    <ChevronRight className="w-3 h-3 md:w-4 md:h-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
