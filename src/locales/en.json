@@ -746,6 +746,8 @@
       "personalInfo": {
         "firstName": "First Name",
         "lastName": "Last Name",
+        "jobTitle": "Job Title",
+        "hireDate": "Hire Date",
         "mobileNumber": "Mobile Number",
         "emailAddress": "Email Address",
         "dateOfBirth": "Date of Birth",
@@ -767,8 +769,10 @@
         "userName": "User Name",
         "selectEmployeeRole": "Select Employee Role",
         "selectDepartment": "Select Department",
+        "selectDepartmentFirst": "Select department first",
         "selectTeam": "Select Team",
         "selectShift": "Select Shift",
+        "holdCtrl": "Hold Ctrl/Cmd to select multiple",
         "managerSupervisor": "Enter Manager / Supervisor",
         "selectWorkingDays": "Select Working Days",
         "selectEmploymentType": "Select Employment Type",
@@ -846,6 +850,33 @@
         "teamAssignmentFailed": "Failed to assign user to team",
         "shiftAssignmentFailed": "Failed to assign user to shift",
         "createFailed": "Failed to create employee"
+      }
+    },
+    "editEmployee": {
+      "title": "Edit Employee",
+      "save": "Save Changes",
+      "processing": "Updating employee...",
+      "success": "Employee updated successfully!",
+      "password": "Password",
+      "passwordPlaceholder": "Enter new password (optional)",
+      "status": "Status",
+      "statusActive": "Active",
+      "statusInactive": "Inactive",
+      "leaveBalances": "Leave Balances",
+      "leaveBalancesDescription": "Manage employee's leave balances",
+      "addLeaveBalance": "Add Leave Balance",
+      "noLeaveBalances": "No leave balances added. Click 'Add Leave Balance' to add one.",
+      "leaveType": "Leave Type",
+      "selectLeaveType": "Select leave type",
+      "balanceDays": "Balance Days",
+      "personalInfoDescription": "Update employee's personal details",
+      "professionalInfoDescription": "Update employee's professional details and assignments",
+      "errors": {
+        "noEmployeeId": "Employee ID not found",
+        "firstNameRequired": "First name is required",
+        "lastNameRequired": "Last name is required",
+        "jobTitleRequired": "Job title is required",
+        "updateFailed": "Failed to update employee"
       }
     }
   },
@@ -1187,11 +1218,14 @@
         "breakManagement": "Break Management",
         "breakLogs": "Break Logs",
         "company": "Company",
+        "dashboard": "Dashboard",
         "department": "Department",
         "leaveBalance": "Leave Balance",
         "leaveType": "Leave Type",
         "permission": "Permission",
         "roles": "Roles",
+        "shift": "Shift",
+        "shiftAssignment": "Shift Assignment",
         "team": "Team"
       },
       "permissions": {
@@ -1542,7 +1576,12 @@
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",
-    "back": "Back"
+    "back": "Back",
+    "optional": "Optional",
+    "remove": "Remove",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "close": "Close"
   },
   "performance": {
     "statusCards": {

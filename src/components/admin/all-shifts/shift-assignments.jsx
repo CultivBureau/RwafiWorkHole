@@ -26,14 +26,17 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
     });
     const shift = shiftData?.value || shiftData;
     
-    // State declarations - must be before hooks that use them
+    // State declarations
     const [searchTerm, setSearchTerm] = useState('');
     const [addSearchTerm, setAddSearchTerm] = useState('');
     const [selectedUserIds, setSelectedUserIds] = useState([]);
     const [addDepartmentId, setAddDepartmentId] = useState('');
     const [addTeamId, setAddTeamId] = useState('');
-    const [effectiveFrom, setEffectiveFrom] = useState('');
-    const [effectiveTo, setEffectiveTo] = useState('');
+    
+    // Date fields for adding new users (right side)
+    const [newEffectiveFrom, setNewEffectiveFrom] = useState('');
+    const [newEffectiveTo, setNewEffectiveTo] = useState('');
+    
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [assignmentToDelete, setAssignmentToDelete] = useState(null);
     
@@ -78,7 +81,7 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
             };
             
             return {
-                assignmentId: item.id, // This is the assignment ID for DELETE
+                assignmentId: item.id, // This is the assignment ID for DELETE/UPDATE
                 userId: userId,
                 user: enrichedUser,
                 effectiveFrom: item.effectiveFrom,
@@ -256,7 +259,6 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
         try {
             await deleteAssignment({ assignmentId: assignmentToDelete, shiftId }).unwrap();
             toast.success(t('shifts.assignUsers.removeSuccess', 'User removed from shift successfully'));
-            // Cache invalidation will automatically refetch the query
         } catch (error) {
             const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.message || 
                 t('shifts.assignUsers.removeError', 'Failed to remove user from shift');
@@ -273,18 +275,18 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
             return;
         }
         
-        if (!effectiveFrom) {
+        if (!newEffectiveFrom) {
             toast.error(t('shifts.assignUsers.effectiveFromRequired', 'Effective from date is required'));
             return;
         }
         
-        if (!effectiveTo) {
+        if (!newEffectiveTo) {
             toast.error(t('shifts.assignUsers.effectiveToRequired', 'Effective to date is required'));
             return;
         }
         
-        const fromDate = new Date(effectiveFrom);
-        const toDate = new Date(effectiveTo);
+        const fromDate = new Date(newEffectiveFrom);
+        const toDate = new Date(newEffectiveTo);
         
         if (toDate < fromDate) {
             toast.error(t('shifts.assignUsers.invalidDateRange', 'Effective to date must be after effective from date'));
@@ -299,14 +301,16 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
         const payload = {
             shiftId: shiftId,
             userIds: selectedUserIds,
-            effectiveFrom: formatDateToISO(effectiveFrom),
-            effectiveTo: formatDateToISO(effectiveTo),
+            effectiveFrom: formatDateToISO(newEffectiveFrom),
+            effectiveTo: formatDateToISO(newEffectiveTo),
         };
         
         try {
             await assignUsers(payload).unwrap();
             toast.success(t('shifts.assignUsers.addSuccess', 'Users added to shift successfully!'));
             setSelectedUserIds([]);
+            setNewEffectiveFrom('');
+            setNewEffectiveTo('');
         } catch (error) {
             const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.message || 
                 t('shifts.assignUsers.addError', 'Failed to add users to shift');
@@ -320,9 +324,9 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
         setAddTeamId(''); // Reset team when department changes
     };
     
-    // Set default dates when component mounts
+    // Set default dates when component mounts or when users are selected
     useEffect(() => {
-        if (shiftId) {
+        if (shiftId && selectedUserIds.length > 0 && !newEffectiveFrom && !newEffectiveTo) {
             const today = new Date();
             const nextMonth = new Date(today);
             nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -334,16 +338,15 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                 return `${year}-${month}-${day}`;
             };
             
-            if (!effectiveFrom) {
-                setEffectiveFrom(formatDateForInput(today));
-            }
-            if (!effectiveTo) {
-                setEffectiveTo(formatDateForInput(nextMonth));
-            }
+            setNewEffectiveFrom(formatDateForInput(today));
+            setNewEffectiveTo(formatDateForInput(nextMonth));
         }
-    }, [shiftId]);
+    }, [shiftId, selectedUserIds.length]);
     
     const allAvailableSelected = filteredAvailableUsers.length > 0 && filteredAvailableUsers.every(user => selectedUserIds.includes(user.id));
+    
+    // Check if submit button should be shown (users selected + dates filled)
+    const canSubmit = selectedUserIds.length > 0 && newEffectiveFrom && newEffectiveTo;
     
     return (
         <div className="space-y-6" dir={isArabic ? 'rtl' : 'ltr'}>
@@ -436,12 +439,9 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                             <div className="max-h-[600px] overflow-y-auto">
                                 {filteredAssignedUsers.map((assignment) => {
                                     const user = assignment.user;
+                                    
                                     return (
-                                        <div
-                                            key={assignment.assignmentId}
-                                            className="p-4 border-b flex items-center justify-between hover:bg-[var(--hover-color)] transition-colors"
-                                            style={{ borderColor: 'var(--border-color)' }}
-                                        >
+                                        <div key={assignment.assignmentId} className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-color)' }}>
                                             <div className={`flex items-center gap-3 flex-1 min-w-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                 <div className="w-10 h-10 rounded-full bg-[var(--accent-color)]/10 flex items-center justify-center flex-shrink-0">
                                                     <User className="w-5 h-5" style={{ color: 'var(--accent-color)' }} />
@@ -469,21 +469,24 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                                                         )}
                                                     </div>
                                                     {assignment.effectiveFrom && assignment.effectiveTo && (
-                                                        <div className={`text-xs mt-1.5 ${isArabic ? 'text-right' : 'text-left'}`} style={{ color: 'var(--sub-text-color)' }}>
+                                                        <div className={`text-xs mt-1.5 flex items-center gap-1 ${isArabic ? 'flex-row-reverse' : ''}`} style={{ color: 'var(--sub-text-color)' }}>
+                                                            <Calendar className="w-3 h-3" />
                                                             {new Date(assignment.effectiveFrom).toLocaleDateString()} - {new Date(assignment.effectiveTo).toLocaleDateString()}
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleRemoveUser(assignment.assignmentId)}
-                                                disabled={isDeleting}
-                                                className={`p-2 rounded-lg hover:bg-[var(--error-color)]/10 transition-colors disabled:opacity-50 ${isArabic ? 'mr-2' : 'ml-2'}`}
-                                                style={{ color: 'var(--error-color)' }}
-                                                title={t('shifts.assignUsers.remove', 'Remove')}
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                                <button
+                                                    onClick={() => handleRemoveUser(assignment.assignmentId)}
+                                                    disabled={isDeleting}
+                                                    className={`p-2 rounded-lg hover:bg-[var(--error-color)]/10 transition-colors disabled:opacity-50 ${isArabic ? 'mr-2' : 'ml-2'}`}
+                                                    style={{ color: 'var(--error-color)' }}
+                                                    title={t('shifts.assignUsers.remove', 'Remove')}
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -498,58 +501,6 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                         <Plus className="w-5 h-5" />
                         {t('shifts.assignUsers.addUsers', 'Add Users to Shift')}
                     </h2>
-                    
-                    {/* Date Range for New Assignments */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border" style={{ 
-                        borderColor: 'var(--border-color)',
-                        backgroundColor: 'var(--container-color)'
-                    }}>
-                        <div>
-                            <label
-                                className={`block text-sm font-medium mb-2 ${isArabic ? 'text-right' : 'text-left'}`}
-                                style={{ color: 'var(--sub-text-color)' }}
-                            >
-                                <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                    <Calendar className="w-4 h-4" />
-                                    {t('shifts.assignUsers.effectiveFrom', 'Effective From')} <span className="text-red-500">*</span>
-                                </div>
-                            </label>
-                            <input
-                                type="date"
-                                value={effectiveFrom}
-                                onChange={(e) => setEffectiveFrom(e.target.value)}
-                                className="w-full px-4 py-2.5 rounded-lg border outline-none transition-all text-sm"
-                                style={{
-                                    backgroundColor: 'var(--bg-color)',
-                                    borderColor: 'var(--border-color)',
-                                    color: 'var(--text-color)'
-                                }}
-                            />
-                        </div>
-                        <div>
-                            <label
-                                className={`block text-sm font-medium mb-2 ${isArabic ? 'text-right' : 'text-left'}`}
-                                style={{ color: 'var(--sub-text-color)' }}
-                            >
-                                <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                    <Calendar className="w-4 h-4" />
-                                    {t('shifts.assignUsers.effectiveTo', 'Effective To')} <span className="text-red-500">*</span>
-                                </div>
-                            </label>
-                            <input
-                                type="date"
-                                value={effectiveTo}
-                                onChange={(e) => setEffectiveTo(e.target.value)}
-                                min={effectiveFrom}
-                                className="w-full px-4 py-2.5 rounded-lg border outline-none transition-all text-sm"
-                                style={{
-                                    backgroundColor: 'var(--bg-color)',
-                                    borderColor: 'var(--border-color)',
-                                    color: 'var(--text-color)'
-                                }}
-                            />
-                        </div>
-                    </div>
                     
                     {/* Filters: Department and Team */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -730,11 +681,65 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                         )}
                     </div>
                     
-                    {/* Add Button */}
+                    {/* Date Range for New Assignments - Show only when users are selected */}
                     {selectedUserIds.length > 0 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-lg border" style={{ 
+                            borderColor: 'var(--border-color)',
+                            backgroundColor: 'var(--container-color)'
+                        }}>
+                            <div>
+                                <label
+                                    className={`block text-sm font-medium mb-2 ${isArabic ? 'text-right' : 'text-left'}`}
+                                    style={{ color: 'var(--sub-text-color)' }}
+                                >
+                                    <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                        <Calendar className="w-4 h-4" />
+                                        {t('shifts.assignUsers.effectiveFrom', 'Effective From')} <span className="text-red-500">*</span>
+                                    </div>
+                                </label>
+                                <input
+                                    type="date"
+                                    value={newEffectiveFrom}
+                                    onChange={(e) => setNewEffectiveFrom(e.target.value)}
+                                    className="w-full px-4 py-2.5 rounded-lg border outline-none transition-all text-sm"
+                                    style={{
+                                        backgroundColor: 'var(--bg-color)',
+                                        borderColor: 'var(--border-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    className={`block text-sm font-medium mb-2 ${isArabic ? 'text-right' : 'text-left'}`}
+                                    style={{ color: 'var(--sub-text-color)' }}
+                                >
+                                    <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                        <Calendar className="w-4 h-4" />
+                                        {t('shifts.assignUsers.effectiveTo', 'Effective To')} <span className="text-red-500">*</span>
+                                    </div>
+                                </label>
+                                <input
+                                    type="date"
+                                    value={newEffectiveTo}
+                                    onChange={(e) => setNewEffectiveTo(e.target.value)}
+                                    min={newEffectiveFrom}
+                                    className="w-full px-4 py-2.5 rounded-lg border outline-none transition-all text-sm"
+                                    style={{
+                                        backgroundColor: 'var(--bg-color)',
+                                        borderColor: 'var(--border-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Add Button - Show only when users selected and dates filled */}
+                    {canSubmit && (
                         <button
                             onClick={handleAddUsers}
-                            disabled={isAssigning || !effectiveFrom || !effectiveTo}
+                            disabled={isAssigning}
                             className="w-full px-6 py-3 rounded-lg font-medium text-sm text-white transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             style={{
                                 backgroundColor: 'var(--accent-color)'
@@ -769,4 +774,3 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
 };
 
 export default ShiftAssignments;
-

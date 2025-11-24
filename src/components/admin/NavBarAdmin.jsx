@@ -13,7 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 const AvatarIcon = "/assets/navbar/Avatar.png";
-import { removeAuthToken, getAuthToken } from "../../utils/page";
+import { getAuthToken, getUserInfo, logout } from "../../utils/page";
 import { useLang } from "../../contexts/LangContext";
 import { useMeQuery } from "../../services/apis/AuthApi";
 import {
@@ -35,6 +35,9 @@ const NavBar = ({ onMobileSidebarToggle, isMobileSidebarOpen }) => {
   // Check if user is authenticated before making API calls
   const isAuthenticated = !!getAuthToken();
   
+  // Get user info from cookies as fallback (available immediately after login)
+  const userInfoFromCookie = getUserInfo();
+  
   // Fetch user data from /me endpoint
   const { data: meResponse, isLoading: userLoading, error: userError } = useMeQuery(undefined, {
     skip: !isAuthenticated, // Skip API call if not authenticated
@@ -49,6 +52,7 @@ const NavBar = ({ onMobileSidebarToggle, isMobileSidebarOpen }) => {
     ? (typeof firstRole === 'string' ? firstRole : firstRole?.name || '')
     : null;
   
+  // Use API data if available, otherwise fallback to cookie data, then loading/guest state
   const user = userData ? {
     id: userData.id,
     firstName: userData.firstName || "",
@@ -59,6 +63,17 @@ const NavBar = ({ onMobileSidebarToggle, isMobileSidebarOpen }) => {
     role: roleName || userData.jobTitle || "Employee", // Use first role name or jobTitle
     roles: userData.roles || [],
     profileImage: null, // API response doesn't include profileImage
+  } : (userInfoFromCookie ? {
+    // Use cookie data as fallback (available immediately after login)
+    id: userInfoFromCookie.sub || null,
+    firstName: userInfoFromCookie.firstName || "",
+    lastName: userInfoFromCookie.lastName || "",
+    userName: userInfoFromCookie.unique_name || "",
+    email: "",
+    jobTitle: userInfoFromCookie.jobTitle || "",
+    role: userInfoFromCookie.role || userInfoFromCookie.jobTitle || "Employee",
+    roles: [],
+    profileImage: null,
   } : (isAuthenticated ? {
     firstName: "Loading...",
     lastName: "",
@@ -69,19 +84,16 @@ const NavBar = ({ onMobileSidebarToggle, isMobileSidebarOpen }) => {
     lastName: "",
     role: "",
     profileImage: null
-  });
+  }));
 
-  // Logout function - just remove token locally
-  const logout = async () => {
-    // No API call needed, just remove token locally
-    removeAuthToken();
-  };
+  // Logout function - uses utility function that clears all data and reloads
 
   // Real API mutations
   const [clockInMutation, { isLoading: isClockingIn }] = useClockInMutation();
   const [clockOutMutation, { isLoading: isClockingOut }] = useClockOutMutation();
 
-  const userId = userData?.id || null;
+  // Use userId from API data or fallback to cookie data
+  const userId = userData?.id || userInfoFromCookie?.sub || null;
   const isArabic = lang === "ar";
 
   const {
@@ -191,9 +203,8 @@ const NavBar = ({ onMobileSidebarToggle, isMobileSidebarOpen }) => {
   };
 
   // زرار تسجيل الخروج
-  const handleLogout = async () => {
-    await logout();
-    navigate("/");
+  const handleLogout = () => {
+    logout(); // This will clear all data and reload page
   };
 
   // Handle clock in/out with location from Google Maps URL

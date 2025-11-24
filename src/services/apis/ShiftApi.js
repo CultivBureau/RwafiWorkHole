@@ -132,6 +132,19 @@ export const shiftApi = createApi({
       providesTags: (result) => [{ type: "Shifts", id: "ALL-ASSIGNMENTS" }],
     }),
 
+    // Update a single assignment (update effective dates for one user)
+    updateShiftAssignment: builder.mutation({
+      query: ({ assignmentId, ...body }) => ({
+        url: `/api/Shift/assignments/${assignmentId}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: () => [
+        { type: "Shifts", id: "LIST" },
+        { type: "Shifts", id: "ALL-ASSIGNMENTS" },
+      ],
+    }),
+
     // Delete a single assignment (remove user from shift)
     deleteShiftAssignment: builder.mutation({
       query: ({ assignmentId }) => ({
@@ -157,6 +170,7 @@ export const {
   useAssignUsersToShiftMutation,
   useUpdateShiftAssignmentsMutation,
   useGetAllShiftAssignmentsQuery,
+  useUpdateShiftAssignmentMutation,
   useDeleteShiftAssignmentMutation,
 } = shiftApi;
 

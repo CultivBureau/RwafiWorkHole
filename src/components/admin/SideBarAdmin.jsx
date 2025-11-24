@@ -605,7 +605,7 @@ export default function SideBarAdmin({ isMobileOpen, onMobileClose }) {
   // Settings click handler
   const handleSettingsClick = (key) => {
     if (key === "settingsItem") {
-      navigate("/pages/admin/dashboard");
+      navigate("/pages/User/profile");
       return;
     }
     const settingsItem = settingsItems.find(item => item.key === key);

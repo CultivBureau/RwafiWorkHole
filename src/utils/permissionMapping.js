@@ -349,19 +349,7 @@ export const hasBackendPermission = (backendCodes, requiredPermissions) => {
   );
   
   if (process.env.NODE_ENV === 'development' && (!hasMatch || isCriticalCheck)) {
-    console.log('[hasBackendPermission]', {
-      required: requiredArray,
-      normalizedRequired: normalizedRequired,
-      extractedCodes: permissionCodes,
-      match: hasMatch,
-      detailedMatch: normalizedRequired.map(req => ({
-        required: req,
-        found: permissionCodes.includes(req),
-        exactMatch: permissionCodes.find(p => p === req),
-        similarMatches: permissionCodes.filter(p => p.toLowerCase().includes(req.toLowerCase()) || req.toLowerCase().includes(p.toLowerCase()))
-      })),
-      allUserPermissions: permissionCodes // Show all for debugging
-    });
+
   }
   
   // Check if any required permission exists in the user's permissions (case-sensitive exact match)

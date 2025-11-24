@@ -63,7 +63,7 @@ const DashboardAdmin = () => {
 
   return (
     <PermissionGuard 
-      backendPermissions={[]} // Dashboard accessible to all authenticated users
+      backendPermissions={["Dashboard.View"]} // Dashboard requires Dashboard.View permission
       loadingFallback={
         <div className="flex items-center justify-center min-h-screen" style={{ background: "var(--bg-all)" }}>
           <span className="text-[var(--sub-text-color)]">{t('common.loading') || 'Loading...'}</span>

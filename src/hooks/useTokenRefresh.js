@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { getAuthToken, getRefreshToken, isTokenExpired, isTokenExpiringSoon, removeAuthToken } from '../utils/page';
+import { getAuthToken, getRefreshToken, isTokenExpired, isTokenExpiringSoon, removeAuthToken, isRefreshTokenExpired } from '../utils/page';
 
 export const useTokenRefresh = () => {
   const refreshTimeoutRef = useRef(null);
@@ -35,8 +35,10 @@ export const useTokenRefresh = () => {
         return;
       }
 
-      // If refresh token is expired, clear tokens
-      if (isTokenExpired(refreshToken)) {
+      // If refresh token is expired, clear tokens and redirect
+      // Use isRefreshTokenExpired() which checks the refreshTokenExpiresAt cookie
+      // Don't try to decode refresh token as JWT (it's an opaque token)
+      if (isRefreshTokenExpired()) {
         removeAuthToken();
         window.location.href = '/';
         return;
