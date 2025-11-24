@@ -8,7 +8,7 @@ import { useGetAllRolesQuery, useDeleteRoleMutation } from "../../../services/ap
 import toast from "react-hot-toast"
 import { useHasPermission } from "../../../hooks/useHasPermission"
 
-const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
+const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
     // Permission checks
@@ -16,14 +16,18 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
     const canDeleteRole = useHasPermission('Role.Delete');
 
     // Fetch roles from API
-    const { data: rolesResponse, isLoading, error, refetch } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 100 });
+    const queryArgs = useMemo(() => ({
+        pageNumber: 1,
+        pageSize: 100,
+        status: Number(statusFilter ?? 0),
+    }), [statusFilter]);
+
+    const { data: rolesResponse, isLoading, error, refetch } = useGetAllRolesQuery(queryArgs);
     const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
 
     const defaultRoleFilter = t('roles.filters.roleType');
-    const defaultStatusFilter = t('roles.filters.allStatus');
 
     const [roleType] = useState(defaultRoleFilter)
-    const [status] = useState(defaultStatusFilter)
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState(null)
     const [selectedRoleId, setSelectedRoleId] = useState(null)
@@ -91,12 +95,14 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
             const roleMatches = roleType === defaultRoleFilter || role.name === roleType || role.role === roleType;
 
             // Status filter
-            const defaultStatusFilter = t('roles.filters.allStatus');
-            const statusMatches = status === defaultStatusFilter || role.status === status;
+            const statusMatches =
+                statusFilter === "2" ||
+                (statusFilter === "0" && role.status === "Active") ||
+                (statusFilter === "1" && role.status === "Inactive");
 
             return searchMatches && roleMatches && statusMatches;
         });
-    }, [rolesData, roleType, status, searchValue, t]);
+    }, [rolesData, roleType, statusFilter, searchValue, t]);
 
     // Calculate pagination info
     const totalItems = filteredData.length;
@@ -108,7 +114,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "" }) => {
     // Reset to first page when filters or search change
     useEffect(() => {
         setCurrentPage(1);
-    }, [roleType, status, searchValue]);
+    }, [roleType, statusFilter, searchValue]);
 
     const handleEditRole = (role) => {
         setSelectedRole(role);
