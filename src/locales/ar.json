@@ -176,7 +176,9 @@
       "totalEmployees": "إجمالي الموظفين",
       "presentToday": "حاضر اليوم",
       "absentToday": "غائب اليوم",
-      "lateArrivals": "الوصول المتأخر"
+      "lateArrivals": "الوصول المتأخر",
+      "lateArrivalsToday": "التأخيرات اليوم",
+      "mostFrequentAbsentees": "الأكثر غيابًا"
     },
     "table": {
       "sortBy": "ترتيب حسب",
@@ -201,7 +203,7 @@
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
-      "pageOf": "5 من 18 صفحة",
+      "pageOf": " {{page}} من {{total}} صفحة",
       "columns": {
         "employeeName": "اسم الموظفين",
         "date": "التاريخ",
@@ -922,8 +924,7 @@
       "pending": "معلق",
       "rejected": "مرفوض"
     },
-    "page": "صفحة",
-    "of": "من"
+    "pageOf": "الصفحة {{page}} من {{total}} صفحة"
   },
   "walletPopup": {
     "title": "تفاصيل المعاملة",
@@ -1169,7 +1170,7 @@
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
-      "pageOf": "{{page}} من {{total}} صفحة",
+      "pageOf": " {{page}} من {{total}} صفحة",
       "columns": {
         "name": "الاسم",
         "leaveType": "نوع الإجازة",
