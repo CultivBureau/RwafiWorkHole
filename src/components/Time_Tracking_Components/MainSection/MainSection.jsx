@@ -1,5 +1,4 @@
 import WorkHoursCharts from "../WorkHoursChart/WorkHoursCharts"
-import TimeFocusLogs from "../timerLogs/TimerLogs"
 import MainContent from "../MainConent/MainContent"
 
 const MainSection = () => {
@@ -11,12 +10,9 @@ const MainSection = () => {
             <MainContent />
           </div>
 
-          {/* Right section - Charts and Logs */}
-          <div className="xl:col-span-1 h-full min-h-0 flex flex-col space-y-6">
+          {/* Right section - Charts */}
+          <div className="xl:col-span-1 h-full min-h-0 flex flex-col">
             <WorkHoursCharts />
-            <div className="flex-1 min-h-0 flex flex-col">
-              <TimeFocusLogs />
-            </div>
           </div>
         </div>
       </div>

@@ -1,12 +1,29 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-// Mock timer API functions for static mode
+// Mock timer API functions for static mode - return RTK Query-like structure
+const createMockMutation = (mockData) => {
+  return [
+    (params) => {
+      const promise = Promise.resolve(mockData);
+      promise.unwrap = () => Promise.resolve(mockData);
+      return promise;
+    }
+  ];
+};
+
 const useGetCurrentTimerQuery = () => ({ data: null, refetch: () => ({ data: null }) });
-const useStartTimerMutation = () => [async () => ({ data: { timer: { id: 'static-1', startTime: new Date(), tag: '', duration: 25 } } })];
-const usePauseTimerMutation = () => [async () => ({ data: {} })];
-const useResumeTimerMutation = () => [async () => ({ data: {} })];
-const useCompleteTimerMutation = () => [async () => ({ data: {} })];
-const useCancelTimerMutation = () => [async () => ({ data: {} })];
+const useStartTimerMutation = () => createMockMutation({ 
+  timer: { 
+    id: 'static-1', 
+    startTime: new Date().toISOString(), 
+    tag: '', 
+    duration: 25 
+  } 
+});
+const usePauseTimerMutation = () => createMockMutation({});
+const useResumeTimerMutation = () => createMockMutation({});
+const useCompleteTimerMutation = () => createMockMutation({});
+const useCancelTimerMutation = () => createMockMutation({});
 
 const TimerContext = createContext();
 
@@ -105,84 +122,141 @@ export function TimerProvider({ children }) {
     let interval;
     if (localTimer.status === "running" && localTimer.startTime) {
       interval = setInterval(() => {
-        setLocalTimer((prev) => ({
-          ...prev,
-          seconds: Math.floor((Date.now() - new Date(prev.startTime)) / 1000),
-        }));
+        setLocalTimer((prev) => {
+          const elapsed = Math.floor((Date.now() - new Date(prev.startTime)) / 1000);
+          const maxSeconds = (prev.duration || 0) * 60;
+          return {
+            ...prev,
+            seconds: maxSeconds > 0 ? Math.min(elapsed, maxSeconds) : elapsed,
+          };
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [localTimer.status, localTimer.startTime]);
 
+  const playCompletionSound = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+
+      const ctx = new AudioCtx();
+      
+      // Play a more noticeable alarm sound - 3 beeps
+      const playBeep = (startTime, frequency) => {
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, ctx.currentTime + startTime);
+
+        gainNode.gain.setValueAtTime(0, ctx.currentTime + startTime);
+        gainNode.gain.linearRampToValueAtTime(0.3, ctx.currentTime + startTime + 0.1);
+        gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + startTime + 0.3);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+
+        oscillator.start(ctx.currentTime + startTime);
+        oscillator.stop(ctx.currentTime + startTime + 0.3);
+      };
+
+      // Play 3 beeps at different frequencies for a more noticeable alarm
+      playBeep(0, 880);    // First beep
+      playBeep(0.4, 1100); // Second beep (higher pitch)
+      playBeep(0.8, 1320); // Third beep (even higher pitch)
+
+      // Close context after all beeps finish
+      setTimeout(() => {
+        if (typeof ctx.close === "function") {
+          ctx.close();
+        }
+      }, 1500);
+    } catch {
+      // Silent fail to avoid interrupting the UX if audio cannot play
+    }
+  }, []);
+
   // Enhanced timer functions that sync with backend
   const startTimer = useCallback(async (taskName, duration = 25) => {
     try {
-      const response = await startTimerMutation({ 
-        tag: taskName, 
-        duration 
-      }).unwrap();
+      // For local-only mode, start timer directly without API call
+      const timerId = `timer-${Date.now()}`;
+      const startTime = Date.now();
       
-      if (response.timer) {
-        setLocalTimer({
-          status: 'running',
-          startTime: new Date(response.timer.startTime).getTime(),
-          seconds: 0,
-          taskName: response.timer.tag,
-          duration: response.timer.duration,
-          id: response.timer.id
+      setLocalTimer({
+        status: 'running',
+        startTime: startTime,
+        seconds: 0,
+        taskName: taskName || `Focus Session (${duration} min)`,
+        duration: duration,
+        id: timerId
+      });
+      
+      // Try to call backend mutation if available (for future API integration)
+      try {
+        const response = await startTimerMutation({ 
+          tag: taskName, 
+          duration 
         });
-        // Only refetch if we're already polling
-        if (shouldFetchBackend) {
-          await refetchBackend();
+        const result = await response.unwrap();
+        if (result?.timer) {
+          setLocalTimer(prev => ({
+            ...prev,
+            id: result.timer.id,
+            startTime: new Date(result.timer.startTime).getTime(),
+          }));
         }
+      } catch (apiError) {
+        // Silently fail - we're using local mode anyway
       }
     } catch (error) {
       console.error('Failed to start timer:', error);
       throw error;
     }
-  }, [startTimerMutation, refetchBackend, shouldFetchBackend]);
+  }, [startTimerMutation]);
 
   const pauseTimer = useCallback(async () => {
     if (localTimer.id) {
       try {
-        await pauseTimerMutation(localTimer.id).unwrap();
         setLocalTimer(prev => ({ ...prev, status: 'paused' }));
-        if (shouldFetchBackend) {
-          await refetchBackend();
+        // Try to call backend mutation if available
+        try {
+          await pauseTimerMutation(localTimer.id);
+        } catch (apiError) {
+          // Silently fail - we're using local mode anyway
         }
       } catch (error) {
         console.error('Failed to pause timer:', error);
         throw error;
       }
     }
-  }, [localTimer.id, pauseTimerMutation, refetchBackend, shouldFetchBackend]);
+  }, [localTimer.id, pauseTimerMutation]);
 
   const resumeTimer = useCallback(async () => {
     if (localTimer.id) {
       try {
-        await resumeTimerMutation(localTimer.id).unwrap();
         setLocalTimer(prev => ({
           ...prev,
           status: 'running',
           startTime: Date.now() - prev.seconds * 1000,
         }));
-        if (shouldFetchBackend) {
-          await refetchBackend();
+        // Try to call backend mutation if available
+        try {
+          await resumeTimerMutation(localTimer.id);
+        } catch (apiError) {
+          // Silently fail - we're using local mode anyway
         }
       } catch (error) {
         console.error('Failed to resume timer:', error);
         throw error;
       }
     }
-  }, [localTimer.id, resumeTimerMutation, refetchBackend, shouldFetchBackend]);
+  }, [localTimer.id, resumeTimerMutation]);
 
   const completeTimer = useCallback(async (note = '') => {
     if (localTimer.id) {
       try {
-        await completeTimerMutation({ 
-          id: localTimer.id, 
-          note 
-        }).unwrap();
         setLocalTimer({
           status: 'idle',
           startTime: null,
@@ -191,23 +265,51 @@ export function TimerProvider({ children }) {
           duration: 25,
           id: null
         });
-        if (shouldFetchBackend) {
-          await refetchBackend();
+        // Try to call backend mutation if available
+        try {
+          await completeTimerMutation({ 
+            id: localTimer.id, 
+            note 
+          });
+        } catch (apiError) {
+          // Silently fail - we're using local mode anyway
         }
       } catch (error) {
         console.error('Failed to complete timer:', error);
         throw error;
       }
+    } else {
+      // If no ID, just reset the timer (for auto-completion)
+      setLocalTimer({
+        status: 'idle',
+        startTime: null,
+        seconds: 0,
+        taskName: '',
+        duration: 25,
+        id: null
+      });
     }
-  }, [localTimer.id, completeTimerMutation, refetchBackend, shouldFetchBackend]);
+  }, [localTimer.id, completeTimerMutation]);
+
+  useEffect(() => {
+    if (localTimer.status !== 'running') return;
+    if (!localTimer.duration || localTimer.duration <= 0) return;
+
+    const totalSeconds = localTimer.duration * 60;
+    if (localTimer.seconds >= totalSeconds) {
+      setLocalTimer(prev => ({
+        ...prev,
+        status: 'completed',
+        seconds: totalSeconds,
+      }));
+      playCompletionSound();
+      completeTimer();
+    }
+  }, [localTimer.status, localTimer.duration, localTimer.seconds, completeTimer, playCompletionSound]);
 
   const cancelTimer = useCallback(async (note = '') => {
     if (localTimer.id) {
       try {
-        await cancelTimerMutation({ 
-          id: localTimer.id, 
-          note 
-        }).unwrap();
         setLocalTimer({
           status: 'idle',
           startTime: null,
@@ -216,15 +318,21 @@ export function TimerProvider({ children }) {
           duration: 25,
           id: null
         });
-        if (shouldFetchBackend) {
-          await refetchBackend();
+        // Try to call backend mutation if available
+        try {
+          await cancelTimerMutation({ 
+            id: localTimer.id, 
+            note 
+          });
+        } catch (apiError) {
+          // Silently fail - we're using local mode anyway
         }
       } catch (error) {
         console.error('Failed to cancel timer:', error);
         throw error;
       }
     }
-  }, [localTimer.id, cancelTimerMutation, refetchBackend, shouldFetchBackend]);
+  }, [localTimer.id, cancelTimerMutation]);
 
   const stopTimer = useCallback(() => {
     setLocalTimer({
@@ -292,7 +400,7 @@ export function TimerProvider({ children }) {
         isPaused: localTimer.status === 'paused',
         isIdle: localTimer.status === 'idle',
         hasActiveTimer: localTimer.status !== 'idle',
-        displayTime: formatTime(localTimer.seconds),
+        displayTime: formatTime(Math.max((localTimer.duration || 0) * 60 - localTimer.seconds, 0)),
       }}
     >
       {children}

@@ -30,17 +30,16 @@ const TimerCard = () => {
   const [taskName, setTaskName] = useState(timer.taskName || "")
   const [duration, setDuration] = useState(timer.duration || 25)
 
-  // Handle starting timer
-  const handleSetTaskNameAndStart = async (name) => {
-    if (!name.trim()) return alert(t('timerCard.taskNameRequired'))
-    
+  // Handle starting timer directly without modal
+  const handleStartTimer = async () => {
     try {
-      await startTimer(name, duration)
-      setTaskName(name)
-      setShowControlPopup(false)
+      // Use a default task name if none is set
+      const taskNameToUse = taskName.trim() || `Focus Session (${duration} min)`
+      await startTimer(taskNameToUse, duration)
+      setTaskName(taskNameToUse)
     } catch (error) {
       console.error('Failed to start timer:', error)
-      alert(t('timerCard.startFailed'))
+      alert(t('timerCard.startFailed') || 'Failed to start timer')
     }
   }
 
@@ -189,7 +188,13 @@ const TimerCard = () => {
             }`}
             onClick={(e) => {
               e.stopPropagation()
-              setShowControlPopup(true)
+              if (hasActiveTimer) {
+                // If timer is active, show control popup
+                setShowControlPopup(true)
+              } else {
+                // If timer is idle, start it directly
+                handleStartTimer()
+              }
             }}
             disabled={isLoading.start}
           >
@@ -210,15 +215,15 @@ const TimerCard = () => {
         )}
       </div>
 
-      {/* Timer Popup */}
-      {showControlPopup && (
+      {/* Timer Popup - Only show when timer is active (for controls) */}
+      {showControlPopup && hasActiveTimer && (
         <TimerPopUp
-          timer={backendTimer?.timer || { tag: taskName, status: null }}
+          timer={backendTimer?.timer || { tag: taskName, status: timer.status, id: timer.id }}
           taskName={taskName}
           setTaskName={setTaskName}
           duration={duration}
           setDuration={setDuration}
-          onSetTaskNameAndStart={handleSetTaskNameAndStart}
+          onSetTaskNameAndStart={handleStartTimer}
           onPause={handlePause}
           onResume={handleResume}
           onComplete={handleComplete}
