@@ -13,7 +13,18 @@ const BreakTable = () => {
     const isArabic = i18n.language === "ar";
 
     // Fetch breaks from API
-    const { data: breaksResponse, isLoading, error, refetch } = useGetAllBreaksQuery({ pageNumber: 1, pageSize: 100 });
+    const [statusFilter, setStatusFilter] = useState("0"); // 0: Active, 1: Inactive, 2: All
+    const statusOptions = useMemo(() => ([
+        { value: "0", label: t('breaks.status.active') || 'Active' },
+        { value: "1", label: t('breaks.status.inactive') || 'Inactive' },
+        { value: "2", label: t('breaks.filters.allStatus') || 'All Status' },
+    ]), [t]);
+
+    const { data: breaksResponse, isLoading, error, refetch } = useGetAllBreaksQuery({
+        pageNumber: 1,
+        pageSize: 100,
+        status: Number(statusFilter ?? "0"),
+    });
     const [deleteBreak] = useDeleteBreakMutation();
     
     // Permission checks
@@ -23,7 +34,6 @@ const BreakTable = () => {
     const canRestore = useHasPermission('Break.Restore');
 
     const [searchTerm, setSearchTerm] = useState("")
-    const [statusFilter, setStatusFilter] = useState(t('breaks.filters.allStatus') || 'All Status')
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [selectedBreak, setSelectedBreak] = useState(null)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -74,12 +84,14 @@ const BreakTable = () => {
         return breaksData.filter(breakItem => {
             const matchesSearch = breakItem.name.toLowerCase().includes(searchTerm.toLowerCase());
             
-            const defaultStatusFilter = t('breaks.filters.allStatus') || 'All Status';
-            const matchesStatus = statusFilter === defaultStatusFilter || breakItem.status === statusFilter;
+            const matchesStatus =
+                statusFilter === "2" ||
+                (statusFilter === "0" && breakItem.status === "Active") ||
+                (statusFilter === "1" && breakItem.status === "Inactive");
 
             return matchesSearch && matchesStatus;
         });
-    }, [breaksData, searchTerm, statusFilter, t]);
+    }, [breaksData, searchTerm, statusFilter]);
 
     // Pagination
     const totalItems = filteredData.length;
@@ -190,16 +202,20 @@ const BreakTable = () => {
 
                         {/* Status Filter */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-medium text-[var(--sub-text-color)]">{t('breaks.status.label') || 'Status'}</span>
+                            <span className="text-[10px] font-medium text-[var(--sub-text-color)] whitespace-nowrap">
+                                {t('breaks.status.label') || 'Status'}
+                            </span>
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)]"
+                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] cursor-pointer"
                                 dir={isArabic ? 'rtl' : 'ltr'}
                             >
-                                <option value={t('breaks.filters.allStatus') || 'All Status'}>{t('breaks.filters.allStatus') || 'All Status'}</option>
-                                <option value="Active">{t('breaks.status.active')}</option>
-                                <option value="Inactive">{t('breaks.status.inactive')}</option>
+                                {statusOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 

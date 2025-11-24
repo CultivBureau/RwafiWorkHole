@@ -9,14 +9,22 @@ export const breakApi = createApi({
   endpoints: (builder) => ({
     // Get all breaks (paginated)
     getAllBreaks: builder.query({
-      query: ({ pageNumber = 1, pageSize = 10 } = {}) => ({
-        url: "/api/v1/Break/GetAll",
-        method: "GET",
-        params: {
+      query: ({ pageNumber = 1, pageSize = 10, status = 2 } = {}) => {
+        const params = {
           pageNumber,
           pageSize,
-        },
-      }),
+        };
+
+        if (status !== undefined && status !== null) {
+          params.status = status;
+        }
+
+        return {
+          url: "/api/v1/Break/GetAll",
+          method: "GET",
+          params,
+        };
+      },
       providesTags: ["Break"],
     }),
 
