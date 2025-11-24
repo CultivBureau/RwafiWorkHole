@@ -1538,6 +1538,82 @@
       "placeholder": "ابحث عن الفرق...",
       "addNewTeam": "إضافة فريق جديد"
     },
+    "addTeam": {
+      "subtitle": "إنشاء فريق جديد وتعيين الأعضاء",
+      "new": "جديد",
+      "sections": {
+        "basicInfo": "المعلومات الأساسية",
+        "teamLeader": "قائد الفريق",
+        "members": "أعضاء الفريق"
+      },
+      "steps": {
+        "leader": "القائد",
+        "members": "الأعضاء",
+        "info": "المعلومات"
+      },
+      "hints": {
+        "leader": "اختر من سيقود هذا الفريق",
+        "members": "إضافة أعضاء الفريق (اختياري)",
+        "basicInfo": "تقديم تفاصيل الفريق والقسم"
+      },
+      "placeholders": {
+        "teamName": "أدخل اسم الفريق",
+        "description": "أدخل وصف الفريق (اختياري)"
+      },
+      "selectLeader": "اختر قائد الفريق",
+      "addMembers": "إضافة أعضاء الفريق",
+      "searchUsers": "ابحث عن المستخدمين...",
+      "searchName": "البحث بالاسم...",
+      "noUsers": "لا يوجد مستخدمون متاحون",
+      "noUsersFound": "لم يتم العثور على مستخدمين يطابقون البحث",
+      "noUsersMatch": "لا يوجد مستخدمون يطابقون المرشحات",
+      "creating": "جاري إنشاء الفريق...",
+      "teamCreated": "تم إنشاء الفريق بنجاح!",
+      "addingMembers": "جاري إضافة الأعضاء...",
+      "membersAdded": "تم إضافة الأعضاء بنجاح!",
+      "createTeam": "إنشاء الفريق",
+      "selected": "محدد",
+      "teamLeaderRole": "قائد الفريق",
+      "removeLeader": "إزالة القائد",
+      "clickToSelect": "انقر للتصفح بين المستخدمين المتاحين",
+      "clickToBrowse": "انقر للتصفح واختيار الأعضاء",
+      "filters": "المرشحات",
+      "available": "متاح",
+      "clearFilters": "مسح",
+      "allRoles": "جميع الأدوار",
+      "allTeams": "جميع الفرق",
+      "showing": "عرض",
+      "of": "من",
+      "added": "تمت الإضافة",
+      "selectedMembers": "الأعضاء المحددون",
+      "removeMember": "إزالة عضو",
+      "department": "القسم",
+      "selectDepartment": "اختر القسم",
+      "required": "مطلوب",
+      "pleaseSelect": "يرجى الاختيار",
+      "characters": "حرف",
+      "optional": "اختياري",
+      "summary": "الملخص",
+      "reviewDetails": "راجع تفاصيل فريقك قبل الإنشاء",
+      "summaryDepartment": "القسم",
+      "summaryTeamLeader": "قائد الفريق",
+      "summaryMembers": "الأعضاء",
+      "summaryTeamName": "اسم الفريق",
+      "notSelected": "غير محدد",
+      "notProvided": "غير مقدم",
+      "membersCount": "عضو(أعضاء)",
+      "requiredFields": "الحقول المطلوبة مفقودة",
+      "selectDepartmentRequired": "اختر قسماً",
+      "selectLeaderRequired": "اختر قائد الفريق",
+      "provideNameRequired": "قدم اسم الفريق",
+      "errors": {
+        "nameRequired": "يرجى إدخال اسم الفريق",
+        "departmentRequired": "معرف القسم مفقود",
+        "leaderRequired": "يرجى اختيار قائد الفريق",
+        "createFailed": "فشل إنشاء الفريق. يرجى المحاولة مرة أخرى.",
+        "addMembersFailed": "فشل إضافة الأعضاء"
+      }
+    },
     "editTeam": {
       "title": "تعديل الفريق",
       "loadingTeamData": "جاري تحميل بيانات الفريق...",
@@ -1649,7 +1725,8 @@
     "remove": "إزالة",
     "showPassword": "إظهار كلمة المرور",
     "hidePassword": "إخفاء كلمة المرور",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "cancel": "إلغاء"
   },
   "performance": {
     "statusCards": {

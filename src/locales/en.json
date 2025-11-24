@@ -1113,6 +1113,82 @@
       "placeholder": "Search teams...",
       "addNewTeam": "Add New Team"
     },
+    "addTeam": {
+      "subtitle": "Create a new team and assign members",
+      "new": "New",
+      "sections": {
+        "basicInfo": "Basic Information",
+        "teamLeader": "Team Leader",
+        "members": "Team Members"
+      },
+      "steps": {
+        "leader": "Leader",
+        "members": "Members",
+        "info": "Info"
+      },
+      "hints": {
+        "leader": "Select who will lead this team",
+        "members": "Add team members (optional)",
+        "basicInfo": "Provide team details and department"
+      },
+      "placeholders": {
+        "teamName": "Enter team name",
+        "description": "Enter team description (optional)"
+      },
+      "selectLeader": "Select Team Leader",
+      "addMembers": "Add Team Members",
+      "searchUsers": "Search users...",
+      "searchName": "Search by name...",
+      "noUsers": "No users available",
+      "noUsersFound": "No users found matching your search",
+      "noUsersMatch": "No users match your filters",
+      "creating": "Creating team...",
+      "teamCreated": "Team created successfully!",
+      "addingMembers": "Adding members...",
+      "membersAdded": "Members added successfully!",
+      "createTeam": "Create Team",
+      "selected": "Selected",
+      "teamLeaderRole": "Team Leader",
+      "removeLeader": "Remove leader",
+      "clickToSelect": "Click to browse available users",
+      "clickToBrowse": "Click to browse and select members",
+      "filters": "Filters",
+      "available": "available",
+      "clearFilters": "Clear",
+      "allRoles": "All Roles",
+      "allTeams": "All Teams",
+      "showing": "Showing",
+      "of": "of",
+      "added": "Added",
+      "selectedMembers": "Selected Members",
+      "removeMember": "Remove member",
+      "department": "Department",
+      "selectDepartment": "Select Department",
+      "required": "Required",
+      "pleaseSelect": "Please select",
+      "characters": "characters",
+      "optional": "Optional",
+      "summary": "Summary",
+      "reviewDetails": "Review your team details before creating",
+      "summaryDepartment": "Department",
+      "summaryTeamLeader": "Team Leader",
+      "summaryMembers": "Members",
+      "summaryTeamName": "Team Name",
+      "notSelected": "Not selected",
+      "notProvided": "Not provided",
+      "membersCount": "member(s)",
+      "requiredFields": "Required Fields Missing",
+      "selectDepartmentRequired": "Select a department",
+      "selectLeaderRequired": "Select a team leader",
+      "provideNameRequired": "Provide a team name",
+      "errors": {
+        "nameRequired": "Please enter a team name",
+        "departmentRequired": "Department ID is missing",
+        "leaderRequired": "Please select a team leader",
+        "createFailed": "Failed to create team. Please try again.",
+        "addMembersFailed": "Failed to add members"
+      }
+    },
     "editTeam": {
       "title": "Edit Team",
       "loadingTeamData": "Loading team data...",
@@ -1650,7 +1726,8 @@
     "remove": "Remove",
     "showPassword": "Show password",
     "hidePassword": "Hide password",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel"
   },
   "performance": {
     "statusCards": {

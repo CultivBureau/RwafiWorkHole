@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Search, Plus, ArrowLeft } from "lucide-react";
 import EnrichedTeamCard from "./enriched-team-card";
 import TeamsStatusCards from "./status-cards";
-import AddTeamModal from "./add-team";
 import EditTeamModal from "./edit-team";
 import { useGetTeamsByDepartmentQuery, useDeleteTeamMutation } from "../../../../services/apis/TeamApi";
 import { useTeamDetails } from "./useTeamDetails";
@@ -14,7 +13,6 @@ export default function AllTeams() {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
     const [searchTerm, setSearchTerm] = useState("");
-    const [isAddTeamModalOpen, setIsAddTeamModalOpen] = useState(false);
     const [isEditTeamModalOpen, setIsEditTeamModalOpen] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
     const navigate = useNavigate();
@@ -68,7 +66,7 @@ export default function AllTeams() {
     }, [teamsData]);
 
     const handleAddNewTeam = () => {
-        setIsAddTeamModalOpen(true);
+        navigate(`/pages/admin/new-team?departmentId=${departmentId || ''}`);
     };
 
     const handleAddTeam = (teamData) => {
@@ -241,14 +239,6 @@ export default function AllTeams() {
                     Showing {filteredTeams.length} of {teams.length} teams
                 </div>
             )}
-
-            {/* Add Team Modal */}
-            <AddTeamModal 
-                isOpen={isAddTeamModalOpen}
-                onClose={() => setIsAddTeamModalOpen(false)}
-                onAddTeam={handleAddTeam}
-                departmentId={departmentId}
-            />
 
             {/* Edit Team Modal */}
             <EditTeamModal
