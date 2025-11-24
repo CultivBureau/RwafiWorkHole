@@ -5,8 +5,7 @@ import { Search, Plus, Filter, MoreVertical, Eye, Edit, Trash2, RotateCcw, Clock
 import AddShiftPopup from "./add-shift-popup";
 import EditShiftPopup from "./edit-shift-popup";
 import ConfirmDialog from "./confirm-dialog";
-import { useGetAllShiftsQuery, useDeleteShiftMutation, useUpdateShiftMutation } from "../../../services/apis/ShiftApi";
-import { getCompanyId } from "../../../utils/page";
+import { useGetAllShiftsQuery, useDeleteShiftMutation, useRestoreShiftMutation } from "../../../services/apis/ShiftApi";
 import toast from "react-hot-toast";
 import { formatWorkDays } from "../../../utils/workDayUtils";
 import { useHasPermission } from "../../../hooks/useHasPermission";
@@ -31,7 +30,7 @@ export default function AllShifts() {
     const [shiftToRestore, setShiftToRestore] = useState(null);
 
     const [deleteShift, { isLoading: isDeleting }] = useDeleteShiftMutation();
-    const [updateShift, { isLoading: isRestoring }] = useUpdateShiftMutation();
+    const [restoreShiftMutation, { isLoading: isRestoring }] = useRestoreShiftMutation();
     
     // Permission checks
     const canCreate = useHasPermission('Shift.Create');
@@ -169,42 +168,16 @@ export default function AllShifts() {
     const handleConfirmRestore = async () => {
         if (!shiftToRestore) return;
 
-        const companyId = getCompanyId();
-        if (!companyId) {
-            toast.error(t('shifts.validation.companyIdRequired', 'Company ID is required'));
-            setShiftToRestore(null);
-            return;
-        }
-
-        // Convert workDays if needed
-        const workDays = Array.isArray(shiftToRestore.workDays) ? shiftToRestore.workDays : [];
-
-        // Prepare payload with existing shift data
-        // Note: This uses PUT to update the shift, which may restore it if the backend
-        // handles restoration through PUT. If not, a separate restore endpoint may be needed.
-        const payload = {
-            name: shiftToRestore.name || '',
-            latitude: shiftToRestore.latitude || 0,
-            longitude: shiftToRestore.longitude || 0,
-            radiusMeters: shiftToRestore.radiusMeters || 0,
-            gracePeriodMinutes: shiftToRestore.gracePeriodMinutes || 0,
-            maxOvertimeMinutes: shiftToRestore.maxOvertimeMinutes || 0,
-            startTime: shiftToRestore.startTime || '',
-            endTime: shiftToRestore.endTime || '',
-            workDays: workDays,
-            isLocation: shiftToRestore.isLocation || false,
-            isFaceRecognition: shiftToRestore.isFaceRecognition || false,
-            isDevice: shiftToRestore.isDevice || false,
-            overtimeAllowed: shiftToRestore.overtimeAllowed || false,
-            companyId: companyId,
-        };
-
         try {
-            await updateShift({ id: shiftToRestore.id, ...payload }).unwrap();
+            await restoreShiftMutation(shiftToRestore.id).unwrap();
             toast.success(t('shifts.restore.success', 'Shift restored successfully'));
             refetch();
         } catch (error) {
-            const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.message || t('shifts.restore.error', 'Failed to restore shift');
+            const errorMessage =
+                error?.data?.errorMessage ||
+                error?.data?.message ||
+                error?.message ||
+                t('shifts.restore.error', 'Failed to restore shift');
             toast.error(errorMessage);
         } finally {
             setShiftToRestore(null);
