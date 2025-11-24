@@ -43,7 +43,7 @@ const Departments = () => {
   return (
     <div className="w-full h-max flex justify-center items-center shadow-lg border border-[var(--border-color)] rounded-[22px] p-2 sm:p-3 flex-col">
       <div className='w-full h-max flex pb-2 pl-2 pt-1 justify-between items-center'>
-        <h1 className='text-start text-[11px] sm:text-[12px] text-[var(--text-color)] font-medium transition-colors duration-200 flex-1'>
+        <h1 className='text-start text-[13px] sm:text-[14px] text-[var(--text-color)] font-medium transition-colors duration-200 flex-1'>
           {t("adminDashboard.departments.overview", "Departments Overview")}
         </h1>
         <button

@@ -141,6 +141,24 @@ const AttendanceTable = () => {
   };
 
   // Filter data
+  const roleOptions = useMemo(() => {
+    const uniqueRoles = new Set();
+    employeeData.forEach((employee) => {
+      if (employee.designation && employee.designation.trim().length > 0) {
+        uniqueRoles.add(employee.designation);
+      }
+    });
+    return Array.from(uniqueRoles).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
+  }, [employeeData]);
+
+  useEffect(() => {
+    if (roleFilter !== "All" && !roleOptions.includes(roleFilter)) {
+      setRoleFilter("All");
+    }
+  }, [roleOptions, roleFilter]);
+
   const filteredEmployees = useMemo(() => {
     let filtered = employeeData.filter(employee => {
       return (
@@ -262,9 +280,11 @@ const AttendanceTable = () => {
                   dir={isArabic ? 'rtl' : 'ltr'}
                 >
                   <option value="All">{t("adminDashboard.table.all", "All")}</option>
-                  <option value="Design">Design</option>
-                  <option value="Development">Development</option>
-                  <option value="Marketing">Marketing</option>
+                  {roleOptions.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className={`absolute top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-[var(--sub-text-color)] pointer-events-none ${isArabic ? 'left-1.5' : 'right-1.5'}`} />
               </div>
