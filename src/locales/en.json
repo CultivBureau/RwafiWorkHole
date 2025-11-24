@@ -1025,6 +1025,12 @@
     }
   },
   "allDepartments": {
+    "cards": {
+      "totalDepartments": "Total Departments",
+      "totalTeams": "Total Teams",
+      "largestDepartmentHeadcount": "Largest Department Headcount",
+      "smallestDepartmentHeadcount": "Smallest Department Headcount"
+    },
     "statusCards": {
       "totalDepartments": {
         "title": "Total Departments",

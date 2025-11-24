@@ -1443,6 +1443,12 @@
     }
   },
   "allDepartments": {
+    "cards": {
+      "totalDepartments": "إجمالي الأقسام",
+      "totalTeams": "إجمالي الفرق",
+      "largestDepartmentHeadcount": "أكبر عدد موظفين في قسم",
+      "smallestDepartmentHeadcount": "أقل عدد موظفين في قسم"
+    },
     "statusCards": {
       "totalDepartments": {
         "title": "إجمالي الأقسام",
