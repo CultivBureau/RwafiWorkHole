@@ -25,6 +25,7 @@ import LocationInputModal from "../Time_Tracking_Components/LocationInputModal/L
 import LateReasonModal from "../Time_Tracking_Components/LateReasonModal/LateReasonModal";
 import toast from "react-hot-toast";
 import { isUtcDateToday } from "../../utils/timeUtils";
+import { useHasPermission } from "../../hooks/useHasPermission";
 
 const NavBar = () => {
   const { t } = useTranslation();
@@ -34,6 +35,11 @@ const NavBar = () => {
 
   // Check if user is authenticated before making API calls
   const isAuthenticated = !!getAuthToken();
+
+  // Permission checks for clocking in/out
+  const canClockIn = useHasPermission("ClockinLog.Clockin");
+  const canClockOut = useHasPermission("ClockinLog.Clockout");
+  const canUseClockFeature = canClockIn && canClockOut;
   
   // Get user info from cookies as fallback (available immediately after login)
   const userInfoFromCookie = getUserInfo();
@@ -552,45 +558,47 @@ const NavBar = () => {
         </div>
 
         {/* Center Section - Clock Button */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-          {/* Clock In/Out Button */}
-          <button
-            onClick={handleClockInOut}
-            disabled={isClockingIn || isClockingOut || hasCompletedToday || logsLoading || logsFetching}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 border text-xs font-semibold min-w-[80px] justify-center"
-            style={{
-              borderColor: hasCompletedToday
-                ? "#9CA3AF"
-                : currentStatus === "Clocked In"
-                  ? "#EF4444"
-                  : "var(--accent-color)",
-              backgroundColor: hasCompletedToday
-                ? "#F3F4F6"
-                : currentStatus === "Clocked In"
-                  ? "#FEF2F2"
-                  : "var(--accent-color)",
-              color: hasCompletedToday
-                ? "#9CA3AF"
-                : currentStatus === "Clocked In"
-                  ? "#EF4444"
-                  : "#fff",
-              cursor: hasCompletedToday ? "not-allowed" : "pointer",
-            }}
-          >
-            {(isClockingIn || isClockingOut || logsLoading || logsFetching) ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Clock className="w-4 h-4" />
-            )}
-            <span className="text-xs">
-              {hasCompletedToday
-                ? (lang === "ar" ? "مكتمل" : "Done")
-                : currentStatus === "Clocked In"
-                  ? (lang === "ar" ? "خروج" : "Out")
-                  : (lang === "ar" ? "دخول" : "In")}
-            </span>
-          </button>
-        </div>
+        {canUseClockFeature && (
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            {/* Clock In/Out Button */}
+            <button
+              onClick={handleClockInOut}
+              disabled={isClockingIn || isClockingOut || hasCompletedToday || logsLoading || logsFetching}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 border text-xs font-semibold min-w-[80px] justify-center"
+              style={{
+                borderColor: hasCompletedToday
+                  ? "#9CA3AF"
+                  : currentStatus === "Clocked In"
+                    ? "#EF4444"
+                    : "var(--accent-color)",
+                backgroundColor: hasCompletedToday
+                  ? "#F3F4F6"
+                  : currentStatus === "Clocked In"
+                    ? "#FEF2F2"
+                    : "var(--accent-color)",
+                color: hasCompletedToday
+                  ? "#9CA3AF"
+                  : currentStatus === "Clocked In"
+                    ? "#EF4444"
+                    : "#fff",
+                cursor: hasCompletedToday ? "not-allowed" : "pointer",
+              }}
+            >
+              {(isClockingIn || isClockingOut || logsLoading || logsFetching) ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Clock className="w-4 h-4" />
+              )}
+              <span className="text-xs">
+                {hasCompletedToday
+                  ? (lang === "ar" ? "مكتمل" : "Done")
+                  : currentStatus === "Clocked In"
+                    ? (lang === "ar" ? "خروج" : "Out")
+                    : (lang === "ar" ? "دخول" : "In")}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Right Section - Profile Only */}
         <div className="flex items-center flex-shrink-0">
@@ -827,42 +835,44 @@ const NavBar = () => {
         {/* Desktop Right Section */}
         <div className="flex items-center gap-3 sm:gap-4">
           {/* Clock In/Out Button */}
-          <button
-            onClick={handleClockInOut}
-            disabled={isClockingIn || isClockingOut || hasCompletedToday || logsLoading || logsFetching}
-            className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl transition-all duration-200 border font-semibold text-sm"
-            style={{
-              borderColor: hasCompletedToday
-                ? "#9CA3AF"
-                : currentStatus === "Clocked In"
-                  ? "#EF4444"
-                  : "var(--accent-color)",
-              backgroundColor: hasCompletedToday
-                ? "#F3F4F6"
-                : currentStatus === "Clocked In"
-                  ? "#FEF2F2"
-                  : "var(--accent-color)",
-              color: hasCompletedToday
-                ? "#9CA3AF"
-                : currentStatus === "Clocked In"
-                  ? "#EF4444"
-                  : "#fff",
-              cursor: hasCompletedToday ? "not-allowed" : "pointer",
-            }}
-          >
-            {(isClockingIn || isClockingOut || logsLoading || logsFetching) ? (
-              <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
-            ) : (
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
-            )}
-            <span>
-              {hasCompletedToday
-                ? (lang === "ar" ? "مكتمل اليوم" : "Completed Today")
-                : currentStatus === "Clocked In"
-                  ? (lang === "ar" ? "تسجيل خروج" : "Clock Out")
-                  : (lang === "ar" ? "تسجيل دخول" : "Clock In")}
-            </span>
-          </button>
+          {canUseClockFeature && (
+            <button
+              onClick={handleClockInOut}
+              disabled={isClockingIn || isClockingOut || hasCompletedToday || logsLoading || logsFetching}
+              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl transition-all duration-200 border font-semibold text-sm"
+              style={{
+                borderColor: hasCompletedToday
+                  ? "#9CA3AF"
+                  : currentStatus === "Clocked In"
+                    ? "#EF4444"
+                    : "var(--accent-color)",
+                backgroundColor: hasCompletedToday
+                  ? "#F3F4F6"
+                  : currentStatus === "Clocked In"
+                    ? "#FEF2F2"
+                    : "var(--accent-color)",
+                color: hasCompletedToday
+                  ? "#9CA3AF"
+                  : currentStatus === "Clocked In"
+                    ? "#EF4444"
+                    : "#fff",
+                cursor: hasCompletedToday ? "not-allowed" : "pointer",
+              }}
+            >
+              {(isClockingIn || isClockingOut || logsLoading || logsFetching) ? (
+                <Loader2 className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+              ) : (
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+              )}
+              <span>
+                {hasCompletedToday
+                  ? (lang === "ar" ? "مكتمل اليوم" : "Completed Today")
+                  : currentStatus === "Clocked In"
+                    ? (lang === "ar" ? "تسجيل خروج" : "Clock Out")
+                    : (lang === "ar" ? "تسجيل دخول" : "Clock In")}
+              </span>
+            </button>
+          )}
 
           {/* Date and Time - Dynamic - Compact */}
           <div
