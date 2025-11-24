@@ -1567,6 +1567,10 @@
     "deleteMessage": "هل أنت متأكد من رغبتك في حذف هذه الاستراحة؟",
     "deleteSuccess": "تم حذف الاستراحة بنجاح",
     "deleteFailed": "فشل حذف الاستراحة",
+    "confirmRestore": "تأكيد الاستعادة",
+    "restoreMessage": "هل أنت متأكد من رغبتك في استعادة هذه الاستراحة؟",
+    "restoreSuccess": "تمت استعادة الاستراحة بنجاح",
+    "restoreFailed": "فشلت استعادة الاستراحة",
     "createSuccess": "تم إنشاء الاستراحة بنجاح",
     "updateSuccess": "تم تحديث الاستراحة بنجاح",
     "minutes": "دقيقة",
@@ -1594,7 +1598,8 @@
     },
     "actions": {
       "edit": "تعديل",
-      "delete": "حذف"
+      "delete": "حذف",
+      "restore": "استعادة"
     },
     "validation": {
       "nameRequired": "اسم الاستراحة مطلوب",
