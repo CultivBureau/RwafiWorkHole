@@ -20,6 +20,23 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const [deleteError, setDeleteError] = useState("");
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [isTeamPopupOpen, setIsTeamPopupOpen] = useState(false);
+    const menuRef = React.useRef(null);
+    
+    // Close menu when clicking outside
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }
+    }, [isMenuOpen]);
     
     // Permission checks for Department actions
     const canViewSupervisor = useHasPermission('Department.GetSupervisor');
@@ -346,46 +363,71 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                         
                         {/* Three Dot Menu - Only show if user has any action permissions */}
                         {(canUpdate || canDelete || canRestore) && (
-                            <div className="relative">
+                            <div className="relative" ref={menuRef}>
                                 <button
                                     onClick={handleMenuToggle}
-                                    className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-all duration-200 hover:scale-110"
+                                    className={`p-2 rounded-lg transition-all duration-200 hover:scale-110 ${
+                                        isMenuOpen 
+                                            ? 'bg-[var(--accent-color)]/10 text-[var(--accent-color)]' 
+                                            : 'hover:bg-[var(--hover-color)] text-[var(--sub-text-color)]'
+                                    }`}
+                                    aria-label="More options"
                                 >
-                                    <MoreVertical className="text-[var(--sub-text-color)]" size={18} />
+                                    <MoreVertical size={18} />
                                 </button>
 
                                 {isMenuOpen && (
-                                    <div className={`absolute top-full mt-2 w-40 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-xl shadow-xl z-10 overflow-hidden ${isArabic ? 'right-0' : 'left-0'}`}>
-                                        {canUpdate && (
-                                            <button
-                                                onClick={handleEditDepartment}
-                                                className="w-full px-4 py-3 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-3 text-[var(--text-color)] border-b border-[var(--border-color)]"
-                                            >
-                                                <Edit size={16} className="text-[var(--accent-color)]" />
-                                                <span className="font-medium">Edit</span>
-                                            </button>
-                                        )}
-                                        {!isInactive && canDelete && (
-                                            <button
-                                                onClick={handleDeleteDepartment}
-                                                disabled={isDeleting}
-                                                className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 text-red-600 dark:text-red-400 disabled:opacity-50"
-                                            >
-                                                <Trash2 size={16} />
-                                                <span className="font-medium">{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                                            </button>
-                                        )}
-                                        {isInactive && canRestore && (
-                                            <button
-                                                onClick={handleRestoreDepartment}
-                                                disabled={isRestoring}
-                                                className="w-full px-4 py-3 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-3 text-[var(--text-color)] disabled:opacity-50"
-                                            >
-                                                <RotateCcw size={16} className="text-[var(--accent-color)]" />
-                                                <span className="font-medium">{isRestoring ? 'Restoring...' : 'Restore'}</span>
-                                            </button>
-                                        )}
-                                    </div>
+                                    <>
+                                        {/* Subtle backdrop overlay */}
+                                        <div 
+                                            className="fixed inset-0 z-[9]"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        />
+                                        
+                                        {/* Enhanced dropdown menu */}
+                                        <div 
+                                            className={`absolute top-full mt-2 w-48 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-xl shadow-2xl z-[10] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 ${isArabic ? 'right-0' : 'left-0'}`}
+                                            style={{
+                                                boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06)'
+                                            }}
+                                        >
+                                            {canUpdate && (
+                                                <button
+                                                    onClick={handleEditDepartment}
+                                                    className={`w-full px-4 py-3 text-sm hover:bg-gradient-to-r hover:from-[var(--accent-color)]/5 hover:to-[var(--accent-color)]/10 transition-all duration-200 flex items-center gap-3 text-[var(--text-color)] border-b border-[var(--border-color)] group ${isArabic ? 'flex-row-reverse text-right' : 'text-left'}`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors duration-200">
+                                                        <Edit size={16} className="text-blue-600 dark:text-blue-400" />
+                                                    </div>
+                                                    <span className="font-medium flex-1">{t("allDepartments.departmentCard.edit", "Edit Department")}</span>
+                                                </button>
+                                            )}
+                                            {!isInactive && canDelete && (
+                                                <button
+                                                    onClick={handleDeleteDepartment}
+                                                    disabled={isDeleting}
+                                                    className={`w-full px-4 py-3 text-sm hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 dark:hover:from-red-900/10 dark:hover:to-red-900/20 transition-all duration-200 flex items-center gap-3 text-red-600 dark:text-red-400 disabled:opacity-50 group ${isArabic ? 'flex-row-reverse text-right' : 'text-left'}`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors duration-200">
+                                                        <Trash2 size={16} className="text-red-600 dark:text-red-400" />
+                                                    </div>
+                                                    <span className="font-medium flex-1">{isDeleting ? t("allDepartments.departmentCard.deleting", "Deleting...") : t("allDepartments.departmentCard.delete", "Delete")}</span>
+                                                </button>
+                                            )}
+                                            {isInactive && canRestore && (
+                                                <button
+                                                    onClick={handleRestoreDepartment}
+                                                    disabled={isRestoring}
+                                                    className={`w-full px-4 py-3 text-sm hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 dark:hover:from-green-900/10 dark:hover:to-green-900/20 transition-all duration-200 flex items-center gap-3 text-green-600 dark:text-green-400 disabled:opacity-50 group ${isArabic ? 'flex-row-reverse text-right' : 'text-left'}`}
+                                                >
+                                                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors duration-200">
+                                                        <RotateCcw size={16} className="text-green-600 dark:text-green-400" />
+                                                    </div>
+                                                    <span className="font-medium flex-1">{isRestoring ? t("allDepartments.departmentCard.restoring", "Restoring...") : t("allDepartments.departmentCard.restore", "Restore")}</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </>
                                 )}
                             </div>
                         )}
