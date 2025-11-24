@@ -13,13 +13,6 @@ const formatDate = (isoString, locale) => {
   return utcToLocalDate(isoString, locale);
 };
 
-const formatDay = (isoString, locale) => {
-  if (!isoString) return "—";
-  const date = new Date(isoString);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString(locale, { weekday: "long" });
-};
-
 const formatTime = (isoString, locale) => {
   // API returns UTC time, convert to local time for display
   return utcToLocalTime(isoString, locale);
@@ -82,6 +75,18 @@ const getInitials = (name = "") => {
     .split(" ")
     .map((n) => n[0])
     .join("");
+};
+
+const parseBreakDuration = (duration) => {
+  if (!duration) return 0;
+  const parts = duration.split(':');
+  if (parts.length === 3) {
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    const seconds = parseInt(parts[2], 10) || 0;
+    return hours * 60 + minutes + seconds / 60;
+  }
+  return 0;
 };
 
 const AttendanceTable = () => {
@@ -272,22 +277,10 @@ const AttendanceTable = () => {
             aVal = (a.reason || "").toLowerCase()
             bVal = (b.reason || "").toLowerCase()
             break
-          case 'breakDuration':
-            // Parse HH:mm:ss format to minutes for sorting
-            const parseBreakDuration = (duration) => {
-              if (!duration) return 0
-              const parts = duration.split(':')
-              if (parts.length === 3) {
-                const hours = parseInt(parts[0]) || 0
-                const minutes = parseInt(parts[1]) || 0
-                const seconds = parseInt(parts[2]) || 0
-                return hours * 60 + minutes + seconds / 60
-              }
-              return 0
-            }
-            aVal = parseBreakDuration(a.breakDuration)
-            bVal = parseBreakDuration(b.breakDuration)
-            break
+      case 'breakDuration':
+        aVal = parseBreakDuration(a.breakDuration)
+        bVal = parseBreakDuration(b.breakDuration)
+        break
           default:
             return 0
         }
@@ -482,7 +475,11 @@ const AttendanceTable = () => {
 
           <div className={`flex items-center gap-3 ${isRtl ? 'flex-row-reverse' : ''}`}>
             <span className="text-[10px] text-[var(--sub-text-color)]">
-              {t("adminAttendance.table.pageOf", `${currentPage} of ${totalPages} page`)}
+              {t("adminAttendance.table.pageOf", {
+                page: currentPage,
+                total: totalPages || 1,
+                defaultValue: `Page ${currentPage} of ${totalPages || 1} page`
+              })}
             </span>
             <div className={`flex items-center gap-1 ${isRtl ? 'flex-row-reverse' : ''}`}>
               <button
@@ -646,7 +643,7 @@ const AttendanceTable = () => {
                 </td>
               </tr>
             ) : (
-              currentData.map((employee, index) => (
+              currentData.map((employee) => (
               <tr key={employee.id} className="border-b border-[var(--border-color)] hover:bg-[var(--hover-color)] transition-colors">
                 <td className="py-4 px-6">
                   <div className="flex items-center gap-3">

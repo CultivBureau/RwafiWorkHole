@@ -224,7 +224,9 @@
       "totalEmployees": "Total Employees",
       "presentToday": "Present Today",
       "absentToday": "Absent Today",
-      "lateArrivals": "Late Arrivals"
+      "lateArrivals": "Late Arrivals",
+      "lateArrivalsToday": "Late Arrivals Today",
+      "mostFrequentAbsentees": "Most Frequent Absentees"
     },
     "table": {
       "sortBy": "Sort By",
@@ -249,7 +251,7 @@
       },
       "dateFrom": "Date from",
       "dateTo": "Date To",
-      "pageOf": "5 of 18 page",
+      "pageOf": " {{page}} of {{total}} page",
       "columns": {
         "employeeName": "Employees Name",
         "date": "Date",
@@ -1023,6 +1025,12 @@
     }
   },
   "allDepartments": {
+    "cards": {
+      "totalDepartments": "Total Departments",
+      "totalTeams": "Total Teams",
+      "largestDepartmentHeadcount": "Largest Department Headcount",
+      "smallestDepartmentHeadcount": "Smallest Department Headcount"
+    },
     "statusCards": {
       "totalDepartments": {
         "title": "Total Departments",
@@ -1190,8 +1198,7 @@
       "pending": "Pending",
       "rejected": "Rejected"
     },
-    "page": "Page",
-    "of": "of"
+    "pageOf": "Page {{page}} of {{total}} page"
   },
   "walletPopup": {
     "title": "Transaction Details",
