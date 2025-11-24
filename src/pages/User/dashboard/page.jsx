@@ -213,6 +213,9 @@ const Dashboard = () => {
       
       // Add attendance streak days
       baseData.attendanceStreakDays = dashboardCardsData.attendanceStreakDays || 0;
+
+      // Store last leave request status code for status cards
+      baseData.lastLeaveRequestStatus = dashboardCardsData.lastLeaveRequestStatus ?? null;
     }
     
     return baseData;

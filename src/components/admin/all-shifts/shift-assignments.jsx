@@ -371,13 +371,6 @@ const ShiftAssignments = ({ shiftId, onBack }) => {
                         )}
                     </div>
                 </div>
-                {assignments.length > 0 && (
-                    <div className="px-4 py-2 rounded-lg" style={{ backgroundColor: 'var(--container-color)' }}>
-                        <span className="text-sm font-medium" style={{ color: 'var(--text-color)' }}>
-                            {t('shifts.assignUsers.totalAssigned', '{{count}} users assigned', { count: assignments.length })}
-                        </span>
-                    </div>
-                )}
             </div>
             
             {/* Two Column Layout */}

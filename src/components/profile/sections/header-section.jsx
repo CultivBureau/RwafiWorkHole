@@ -1,14 +1,14 @@
 "use client"
 
-import { Mail, Briefcase, Pencil } from "lucide-react"
+import { Mail, Briefcase } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-const HeaderSection = ({ firstName, lastName, email, role, avatar, teamLeader, teamLeaderAvatar, isAdminView = false }) => {
+const HeaderSection = ({ firstName, lastName, email, role, avatar, teamLeader, teamLeaderAvatar }) => {
   const { t } = useTranslation()
 
   return (
     <div className="bg-[var(--bg-color)] shadow-sm rounded-lg border border-[var(--border-color)]">
-      <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between px-4 sm:px-6 lg:px-8 py-4 sm:py-6 gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-12 sm:gap-16 p-4 sm:p-6 lg:p-8 xl:p-10">
         {/* Left side - User Info */}
         <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 w-full sm:w-auto">
           {/* User Profile Image */}
@@ -67,17 +67,6 @@ const HeaderSection = ({ firstName, lastName, email, role, avatar, teamLeader, t
           </div>
         )}
 
-        {/* Right side - Edit Button (only show if not in admin view) */}
-        {!isAdminView && (
-          <button
-            className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-white text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 hover:opacity-90 w-full sm:w-auto justify-center sm:justify-start"
-            style={{ backgroundColor: "#4DB8AC" }}
-          >
-            <Pencil className="w-4 h-4" />
-            <span className="hidden sm:inline">{t("profile.editProfile")}</span>
-            <span className="sm:hidden">{t("profile.editProfile")}</span>
-          </button>
-        )}
       </div>
 
       {/* Bottom border */}

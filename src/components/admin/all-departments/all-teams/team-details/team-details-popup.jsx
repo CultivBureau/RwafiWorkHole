@@ -3,11 +3,13 @@ import { X, Users, User, Search, Calendar } from 'lucide-react';
 import { useGetTeamUsersQuery } from '../../../../../services/apis/TeamApi';
 import { useGetTeamClockinLogsQuery } from '../../../../../services/apis/ClockinLogApi';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { utcToLocalDate, utcToLocalTime } from '../../../../../utils/timeUtils';
 
 const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
     const { t, i18n } = useTranslation();
     const isRtl = i18n.dir() === 'rtl';
+    const navigate = useNavigate();
     const [memberSearchTerm, setMemberSearchTerm] = useState('');
     const [attendanceSearchTerm, setAttendanceSearchTerm] = useState('');
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -310,10 +312,43 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                         </div>
                                     ) : (
                                         filteredMembers.map((member, index) => (
-                                            <div
-                                                key={member.userId || index}
-                                                className={`flex items-center gap-3 p-3 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)] hover:shadow-md transition-all ${isRtl ? 'flex-row-reverse' : ''}`}
-                                            >
+                                        <div
+                                            key={member.userId || index}
+                                            className={`flex items-center gap-3 p-3 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)] hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] ${isRtl ? 'flex-row-reverse' : ''}`}
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => {
+                                                navigate("/pages/User/profile", {
+                                                    state: {
+                                                        employeeData: member.user || {
+                                                            id: member.userId,
+                                                            firstName: member.firstName,
+                                                            lastName: member.lastName,
+                                                            email: member.email,
+                                                            jobTitle: member.jobTitle,
+                                                        },
+                                                        isAdminView: true,
+                                                    },
+                                                });
+                                            }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    navigate("/pages/User/profile", {
+                                                        state: {
+                                                            employeeData: member.user || {
+                                                                id: member.userId,
+                                                                firstName: member.firstName,
+                                                                lastName: member.lastName,
+                                                                email: member.email,
+                                                                jobTitle: member.jobTitle,
+                                                            },
+                                                            isAdminView: true,
+                                                        },
+                                                    });
+                                                }
+                                            }}
+                                        >
                                                 {member.avatar ? (
                                                     <img
                                                         src={member.avatar}
