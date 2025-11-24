@@ -8,14 +8,22 @@ export const roleApi = createApi({
   endpoints: (builder) => ({
     // Get all roles (paginated)
     getAllRoles: builder.query({
-      query: ({ pageNumber = 1, pageSize = 20 } = {}) => ({
-        url: "/api/v1/Role/GetAll",
-        method: "GET",
-        params: {
+      query: ({ pageNumber = 1, pageSize = 20, status = 2 } = {}) => {
+        const params = {
           pageNumber,
           pageSize,
-        },
-      }),
+        };
+
+        if (status !== undefined && status !== null) {
+          params.status = status;
+        }
+
+        return {
+          url: "/api/v1/Role/GetAll",
+          method: "GET",
+          params,
+        };
+      },
       // Don't throw error on 401, just return empty data
       transformErrorResponse: (response, meta, arg) => {
         // If 401, return empty data instead of throwing

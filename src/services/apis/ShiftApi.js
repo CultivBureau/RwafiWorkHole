@@ -59,7 +59,7 @@ export const shiftApi = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (result, error, id) => [
         { type: "Shifts", id: "LIST" },
         { type: "Shifts", id },
       ],
@@ -76,14 +76,9 @@ export const shiftApi = createApi({
 
     // Restore a shift (sets status back to active)
     restoreShift: builder.mutation({
-      query: ({ id, ...body }) => ({
-        url: `/api/Shift/${id}`,
-        method: "PUT",
-        body: {
-          ...body,
-          // Note: Assuming backend accepts status field or will restore on PUT
-          // If backend doesn't support status in PUT, this will need adjustment
-        },
+      query: (id) => ({
+        url: `/api/Shift/${id}/restore`,
+        method: "POST",
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Shifts", id: "LIST" },

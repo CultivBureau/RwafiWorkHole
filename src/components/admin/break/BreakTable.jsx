@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { Edit, Trash2, Plus } from "lucide-react"
+import { Edit, Trash2, Plus, RotateCcw } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { useGetAllBreaksQuery, useDeleteBreakMutation } from "../../../services/apis/BreakApi"
+import { useGetAllBreaksQuery, useDeleteBreakMutation, useRestoreBreakMutation } from "../../../services/apis/BreakApi"
 import BreakForm from "./BreakForm"
 import toast from "react-hot-toast"
 import { useHasPermission } from "../../../hooks/useHasPermission"
@@ -13,8 +13,20 @@ const BreakTable = () => {
     const isArabic = i18n.language === "ar";
 
     // Fetch breaks from API
-    const { data: breaksResponse, isLoading, error, refetch } = useGetAllBreaksQuery({ pageNumber: 1, pageSize: 100 });
+    const [statusFilter, setStatusFilter] = useState("0"); // 0: Active, 1: Inactive, 2: All
+    const statusOptions = useMemo(() => ([
+        { value: "0", label: t('breaks.status.active') || 'Active' },
+        { value: "1", label: t('breaks.status.inactive') || 'Inactive' },
+        { value: "2", label: t('breaks.filters.allStatus') || 'All Status' },
+    ]), [t]);
+
+    const { data: breaksResponse, isLoading, error, refetch } = useGetAllBreaksQuery({
+        pageNumber: 1,
+        pageSize: 100,
+        status: Number(statusFilter ?? "0"),
+    });
     const [deleteBreak] = useDeleteBreakMutation();
+    const [restoreBreak] = useRestoreBreakMutation();
     
     // Permission checks
     const canCreate = useHasPermission('Break.Create');
@@ -23,11 +35,9 @@ const BreakTable = () => {
     const canRestore = useHasPermission('Break.Restore');
 
     const [searchTerm, setSearchTerm] = useState("")
-    const [statusFilter, setStatusFilter] = useState(t('breaks.filters.allStatus') || 'All Status')
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [selectedBreak, setSelectedBreak] = useState(null)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [breakToDelete, setBreakToDelete] = useState(null)
+    const [pendingAction, setPendingAction] = useState(null) // { type: 'delete' | 'restore', breakItem }
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
 
@@ -74,12 +84,14 @@ const BreakTable = () => {
         return breaksData.filter(breakItem => {
             const matchesSearch = breakItem.name.toLowerCase().includes(searchTerm.toLowerCase());
             
-            const defaultStatusFilter = t('breaks.filters.allStatus') || 'All Status';
-            const matchesStatus = statusFilter === defaultStatusFilter || breakItem.status === statusFilter;
+            const matchesStatus =
+                statusFilter === "2" ||
+                (statusFilter === "0" && breakItem.status === "Active") ||
+                (statusFilter === "1" && breakItem.status === "Inactive");
 
             return matchesSearch && matchesStatus;
         });
-    }, [breaksData, searchTerm, statusFilter, t]);
+    }, [breaksData, searchTerm, statusFilter]);
 
     // Pagination
     const totalItems = filteredData.length;
@@ -97,22 +109,34 @@ const BreakTable = () => {
         setIsFormOpen(true);
     };
 
-    const handleDelete = (breakItem) => {
-        setBreakToDelete(breakItem);
-        setIsDeleteModalOpen(true);
+    const openActionModal = (actionType, breakItem) => {
+        setPendingAction({ type: actionType, breakItem });
     };
 
-    const confirmDelete = async () => {
-        if (!breakToDelete) return;
+    const confirmAction = async () => {
+        if (!pendingAction?.breakItem) return;
+
+        const { type, breakItem } = pendingAction;
+        const isRestore = type === "restore";
 
         try {
-            await deleteBreak(breakToDelete.id).unwrap();
-            toast.success(t('breaks.deleteSuccess') || 'Break deleted successfully');
-            setIsDeleteModalOpen(false);
-            setBreakToDelete(null);
+            if (isRestore) {
+                await restoreBreak(breakItem.id).unwrap();
+                toast.success(t('breaks.restoreSuccess') || 'Break restored successfully');
+            } else {
+                await deleteBreak(breakItem.id).unwrap();
+                toast.success(t('breaks.deleteSuccess') || 'Break deleted successfully');
+            }
             refetch();
         } catch (error) {
-            toast.error(error?.data?.errorMessage || t('breaks.deleteFailed') || 'Failed to delete break');
+            toast.error(
+                error?.data?.errorMessage ||
+                (isRestore
+                    ? t('breaks.restoreFailed') || 'Failed to restore break'
+                    : t('breaks.deleteFailed') || 'Failed to delete break')
+            );
+        } finally {
+            setPendingAction(null);
         }
     };
 
@@ -190,16 +214,20 @@ const BreakTable = () => {
 
                         {/* Status Filter */}
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-medium text-[var(--sub-text-color)]">{t('breaks.status.label') || 'Status'}</span>
+                            <span className="text-[10px] font-medium text-[var(--sub-text-color)] whitespace-nowrap">
+                                {t('breaks.status.label') || 'Status'}
+                            </span>
                             <select
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
-                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)]"
+                                className="h-8 px-3 border border-[var(--border-color)] rounded-md text-[10px] bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] cursor-pointer"
                                 dir={isArabic ? 'rtl' : 'ltr'}
                             >
-                                <option value={t('breaks.filters.allStatus') || 'All Status'}>{t('breaks.filters.allStatus') || 'All Status'}</option>
-                                <option value="Active">{t('breaks.status.active')}</option>
-                                <option value="Inactive">{t('breaks.status.inactive')}</option>
+                                {statusOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
@@ -297,14 +325,24 @@ const BreakTable = () => {
                                                         <Edit className="w-4 h-4" />
                                                     </button>
                                                 )}
-                                                {canDelete && (
+                                                {breakItem.status === "Active" && canDelete && (
                                                     <button
-                                                        onClick={() => handleDelete(breakItem)}
+                                                        onClick={() => openActionModal("delete", breakItem)}
                                                         className="p-2 text-[var(--error-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
                                                         aria-label={t('breaks.actions.delete') || 'Delete'}
                                                         title={t('breaks.actions.delete') || 'Delete'}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                {breakItem.status === "Inactive" && canRestore && (
+                                                    <button
+                                                        onClick={() => openActionModal("restore", breakItem)}
+                                                        className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                                                        aria-label={t('breaks.actions.restore') || 'Restore'}
+                                                        title={t('breaks.actions.restore') || 'Restore'}
+                                                    >
+                                                        <RotateCcw className="w-4 h-4" />
                                                     </button>
                                                 )}
                                             </div>
@@ -331,31 +369,40 @@ const BreakTable = () => {
                 />
             )}
 
-            {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
+            {/* Delete/Restore Confirmation Modal */}
+            {pendingAction && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-[var(--bg-color)] rounded-lg border border-[var(--border-color)] p-6 max-w-md w-full" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
                         <h3 className="text-lg font-semibold text-[var(--text-color)] mb-4">
-                            {t('breaks.confirmDelete') || 'Confirm Delete'}
+                            {pendingAction.type === "restore"
+                                ? t('breaks.confirmRestore') || 'Confirm Restore'
+                                : t('breaks.confirmDelete') || 'Confirm Delete'}
                         </h3>
                         <p className="text-[var(--sub-text-color)] mb-6">
-                            {t('breaks.deleteMessage') || 'Are you sure you want to delete this break?'} "{breakToDelete?.name}"
+                            {pendingAction.type === "restore"
+                                ? (t('breaks.restoreMessage') || 'Are you sure you want to restore this break?')
+                                : (t('breaks.deleteMessage') || 'Are you sure you want to delete this break?')}
+                            {` "${pendingAction.breakItem?.name}"`}
                         </p>
                         <div className={`flex gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                             <button
-                                onClick={() => {
-                                    setIsDeleteModalOpen(false);
-                                    setBreakToDelete(null);
-                                }}
+                                onClick={() => setPendingAction(null)}
                                 className="flex-1 px-4 py-2 border border-[var(--border-color)] text-[var(--text-color)] rounded-lg font-medium hover:bg-[var(--hover-color)] transition-colors"
                             >
                                 {t('breaks.cancel') || 'Cancel'}
                             </button>
                             <button
-                                onClick={confirmDelete}
-                                className="flex-1 px-4 py-2 bg-[var(--error-color)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity"
+                                onClick={confirmAction}
+                                className="flex-1 px-4 py-2 rounded-lg font-medium text-white transition-opacity"
+                                style={{
+                                    background: pendingAction.type === "restore"
+                                        ? "linear-gradient(135deg, #15919B 0%, #09D1C7 100%)"
+                                        : "var(--error-color)",
+                                }}
                             >
-                                {t('breaks.delete') || 'Delete'}
+                                {pendingAction.type === "restore"
+                                    ? t('breaks.actions.restore') || 'Restore'
+                                    : t('breaks.delete') || 'Delete'}
                             </button>
                         </div>
                     </div>

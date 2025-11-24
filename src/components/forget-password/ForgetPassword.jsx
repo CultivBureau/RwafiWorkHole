@@ -2,16 +2,17 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useForgotPasswordMutation } from "../../services/apis/AuthApi";
 
 const ForgetPassword = () => {
-  const [forgetPassword, { isLoading }] = useForgetPasswordMutation();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await forgetPassword({ email }).unwrap();
+      await forgotPassword({ email }).unwrap();
       toast.success("Check your email for the reset code");
       // Navigate to reset-password and pass email as state
       navigate("/reset-password", { state: { email } });

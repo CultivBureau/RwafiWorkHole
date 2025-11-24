@@ -12,6 +12,13 @@ const RolesAndPermissions = () => {
   const isArabic = i18n.language === "ar";
   const [selectedRoleId, setSelectedRoleId] = useState(null);
   const [searchValue, setSearchValue] = useState("");
+  const [statusFilter, setStatusFilter] = useState("0"); // 2 => All, 0 => Active, 1 => Inactive
+
+  const statusOptions = [
+    { value: "2", label: t("roles.filters.allStatus", "All") },
+    { value: "0", label: t("roles.filters.active", "Active") },
+    { value: "1", label: t("roles.filters.inactive", "Inactive") },
+  ];
 
   return (
     <PermissionGuard 
@@ -46,11 +53,15 @@ const RolesAndPermissions = () => {
                   selectedRoleId={selectedRoleId} 
                   searchValue={searchValue}
                   onSearchChange={setSearchValue}
+                  statusFilter={statusFilter}
+                  onStatusChange={setStatusFilter}
+                  statusOptions={statusOptions}
                 />
                 {/* Roles Table */}
                 <RolesTable 
                   onRoleSelect={setSelectedRoleId}
                   searchValue={searchValue}
+                  statusFilter={statusFilter}
                 />
               </div>
             </div>

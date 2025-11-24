@@ -52,6 +52,15 @@ export const userApi = createApi({
       invalidatesTags: ["User"],
     }),
 
+    // Restore a user
+    restoreUser: builder.mutation({
+      query: (id) => ({
+        url: `/api/v1/User/Restore/${id}`,
+        method: "POST",
+      }),
+      invalidatesTags: ["User"],
+    }),
+
     // Get user by ID
     getUserById: builder.query({
       query: (userId) => ({
@@ -96,6 +105,7 @@ export const {
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
+  useRestoreUserMutation,
   useGetUserByIdQuery,
   useGetUsersByIdsQuery,
   useGetUserProfileByIdQuery,

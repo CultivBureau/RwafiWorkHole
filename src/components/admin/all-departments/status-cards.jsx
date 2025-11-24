@@ -21,19 +21,32 @@ const StatusCards = () => {
     // Dynamically create cards from API response fields
     const statusCards = useMemo(() => {
         const iconMap = {
-            totalDepartments: <img src="/assets/all-department/total.svg" alt="Total Departments" className="w-6 h-6" />,
-            totalTeams: <img src="/assets/all-department/employees.svg" alt="Total Teams" className="w-6 h-6" />,
-            largestDepartmentHeadcount: <img src="/assets/all-department/highest.svg" alt="Largest Department" className="w-6 h-6" />,
-            smallestDepartmentHeadcount: <img src="/assets/all-department/issues.svg" alt="Smallest Department" className="w-6 h-6" />,
+            totalDepartments: <img src="/assets/all-department/total.svg" alt={t("allDepartments.cards.totalDepartments")} className="w-6 h-6" />,
+            totalTeams: <img src="/assets/all-department/employees.svg" alt={t("allDepartments.cards.totalTeams")} className="w-6 h-6" />,
+            largestDepartmentHeadcount: <img src="/assets/all-department/highest.svg" alt={t("allDepartments.cards.largestDepartmentHeadcount")} className="w-6 h-6" />,
+            smallestDepartmentHeadcount: <img src="/assets/all-department/issues.svg" alt={t("allDepartments.cards.smallestDepartmentHeadcount")} className="w-6 h-6" />,
         };
 
         // Create cards for each field in the API response
-        return Object.entries(stats).map(([key, value]) => ({
-            header: formatHeader(key),
-            title: isLoading ? "..." : (value ?? 0).toString(),
-            rightIcon: iconMap[key] || <img src="/assets/all-department/total.svg" alt={formatHeader(key)} className="w-6 h-6" />,
-        }));
-    }, [stats, isLoading]);
+        return Object.entries(stats).map(([key, value]) => {
+            const translationKey = `allDepartments.cards.${key}`;
+            const translated = t(translationKey);
+            const header = translated === translationKey ? formatHeader(key) : translated;
+
+            return {
+                header,
+                title: isLoading ? "..." : (value ?? 0).toString(),
+                rightIcon:
+                    iconMap[key] || (
+                        <img
+                            src="/assets/all-department/total.svg"
+                            alt={header}
+                            className="w-6 h-6"
+                        />
+                    ),
+            };
+        });
+    }, [stats, isLoading, t]);
 
     const gridColsClass = statusCards.length === 1 ? "lg:grid-cols-1" : 
                           statusCards.length === 2 ? "lg:grid-cols-2" : 

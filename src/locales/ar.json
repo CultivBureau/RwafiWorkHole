@@ -185,7 +185,9 @@
       "totalEmployees": "إجمالي الموظفين",
       "presentToday": "حاضر اليوم",
       "absentToday": "غائب اليوم",
-      "lateArrivals": "الوصول المتأخر"
+      "lateArrivals": "الوصول المتأخر",
+      "lateArrivalsToday": "التأخيرات اليوم",
+      "mostFrequentAbsentees": "الأكثر غيابًا"
     },
     "table": {
       "sortBy": "ترتيب حسب",
@@ -210,7 +212,7 @@
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
-      "pageOf": "5 من 18 صفحة",
+      "pageOf": " {{page}} من {{total}} صفحة",
       "columns": {
         "employeeName": "اسم الموظفين",
         "date": "التاريخ",
@@ -697,7 +699,19 @@
     "actions": {
       "view": "عرض",
       "edit": "تعديل",
-      "delete": "حذف"
+      "delete": "حذف",
+      "restore": "استعادة"
+    },
+    "messages": {
+      "deleteConfirm": "هل أنت متأكد من رغبتك في حذف هذا الموظف؟",
+      "restoreConfirm": "هل أنت متأكد من رغبتك في استعادة هذا الموظف؟",
+      "deleteSuccess": "تم حذف الموظف بنجاح",
+      "restoreSuccess": "تمت استعادة الموظف بنجاح",
+      "deleteFailed": "فشل حذف الموظف",
+      "restoreFailed": "فشلت استعادة الموظف",
+      "deleting": "جاري حذف الموظف...",
+      "restoring": "جاري استعادة الموظف...",
+      "missingId": "معرف الموظف غير موجود"
     },
     "newEmployeeForm": {
       "title": "إضافة موظف جديد",
@@ -919,8 +933,7 @@
       "pending": "معلق",
       "rejected": "مرفوض"
     },
-    "page": "صفحة",
-    "of": "من"
+    "pageOf": "الصفحة {{page}} من {{total}} صفحة"
   },
   "walletPopup": {
     "title": "تفاصيل المعاملة",
@@ -960,7 +973,13 @@
     "confirmDelete": "تأكيد الحذف",
     "confirmDeleteMessage": "هل أنت متأكد من رغبتك في حذف هذا الدور؟",
     "roleDeleted": "تم حذف الدور بنجاح",
+    "confirmRestore": "تأكيد الاستعادة",
+    "restoreMessage": "هل أنت متأكد من رغبتك في استعادة هذا الدور؟",
+    "roleRestored": "تمت استعادة الدور بنجاح",
     "roleSaved": "تم حفظ الدور بنجاح",
+    "actions": {
+      "restore": "استعادة"
+    },
     "users": "المستخدمون",
     "lastUpdated": "آخر تحديث",
     "view": "عرض",
@@ -1078,7 +1097,8 @@
       "loadPermissionsFailed": "فشل تحميل الصلاحيات",
       "loadRolesFailed": "فشل تحميل الأدوار",
       "updateFailed": "فشل تحديث الدور",
-      "deleteFailed": "فشل حذف الدور"
+      "deleteFailed": "فشل حذف الدور",
+      "restoreFailed": "فشل استعادة الدور"
     },
     "noPermissionToViewPermissions": "لا يوجد صلاحية لعرض الصلاحيات",
     "noPermissionToViewPermissionsDesc": "ليس لديك صلاحية لعرض الصلاحيات. لا يزال بإمكانك إنشاء دور، لكن لن تتمكن من تعيين الصلاحيات له."
@@ -1166,7 +1186,7 @@
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
-      "pageOf": "{{page}} من {{total}} صفحة",
+      "pageOf": " {{page}} من {{total}} صفحة",
       "columns": {
         "name": "الاسم",
         "leaveType": "نوع الإجازة",
@@ -1439,6 +1459,12 @@
     }
   },
   "allDepartments": {
+    "cards": {
+      "totalDepartments": "إجمالي الأقسام",
+      "totalTeams": "إجمالي الفرق",
+      "largestDepartmentHeadcount": "أكبر عدد موظفين في قسم",
+      "smallestDepartmentHeadcount": "أقل عدد موظفين في قسم"
+    },
     "statusCards": {
       "totalDepartments": {
         "title": "إجمالي الأقسام",
@@ -1563,6 +1589,10 @@
     "deleteMessage": "هل أنت متأكد من رغبتك في حذف هذه الاستراحة؟",
     "deleteSuccess": "تم حذف الاستراحة بنجاح",
     "deleteFailed": "فشل حذف الاستراحة",
+    "confirmRestore": "تأكيد الاستعادة",
+    "restoreMessage": "هل أنت متأكد من رغبتك في استعادة هذه الاستراحة؟",
+    "restoreSuccess": "تمت استعادة الاستراحة بنجاح",
+    "restoreFailed": "فشلت استعادة الاستراحة",
     "createSuccess": "تم إنشاء الاستراحة بنجاح",
     "updateSuccess": "تم تحديث الاستراحة بنجاح",
     "minutes": "دقيقة",
@@ -1590,7 +1620,8 @@
     },
     "actions": {
       "edit": "تعديل",
-      "delete": "حذف"
+      "delete": "حذف",
+      "restore": "استعادة"
     },
     "validation": {
       "nameRequired": "اسم الاستراحة مطلوب",

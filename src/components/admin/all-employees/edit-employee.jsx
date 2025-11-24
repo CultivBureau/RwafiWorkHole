@@ -709,21 +709,6 @@ function PersonalInfoEdit({ formData, onChange, isArabic, t }) {
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <label className={`flex items-center gap-2 text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <span className="w-1 h-4 rounded-full bg-[var(--accent-color)] shadow-sm" />
-                        {t("employees.editEmployee.status") || "Status"}
-                    </label>
-                    <select
-                        className={`w-full px-4 py-3.5 rounded-xl border-2 border-[var(--border-color)] bg-[var(--bg-color)] text-[var(--text-color)] focus:border-[var(--accent-color)] focus:ring-4 focus:ring-[var(--accent-color)]/20 transition-all hover:border-[var(--accent-color)]/50 cursor-pointer ${isArabic ? 'text-right' : 'text-left'}`}
-                        value={formData.employeeStatus !== undefined ? formData.employeeStatus : 0}
-                        onChange={(e) => onChange('employeeStatus', parseInt(e.target.value))}
-                        dir={isArabic ? "rtl" : "ltr"}
-                    >
-                        <option value={0}>{t("employees.editEmployee.statusActive") || "Active"}</option>
-                        <option value={1}>{t("employees.editEmployee.statusInactive") || "Inactive"}</option>
-                    </select>
-                </div>
             </div>
         </div>
     );

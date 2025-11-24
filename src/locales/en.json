@@ -233,7 +233,9 @@
       "totalEmployees": "Total Employees",
       "presentToday": "Present Today",
       "absentToday": "Absent Today",
-      "lateArrivals": "Late Arrivals"
+      "lateArrivals": "Late Arrivals",
+      "lateArrivalsToday": "Late Arrivals Today",
+      "mostFrequentAbsentees": "Most Frequent Absentees"
     },
     "table": {
       "sortBy": "Sort By",
@@ -258,7 +260,7 @@
       },
       "dateFrom": "Date from",
       "dateTo": "Date To",
-      "pageOf": "5 of 18 page",
+      "pageOf": " {{page}} of {{total}} page",
       "columns": {
         "employeeName": "Employees Name",
         "date": "Date",
@@ -750,7 +752,19 @@
     "actions": {
       "view": "View",
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "restore": "Restore"
+    },
+    "messages": {
+      "deleteConfirm": "Are you sure you want to delete this employee?",
+      "restoreConfirm": "Are you sure you want to restore this employee?",
+      "deleteSuccess": "Employee deleted successfully",
+      "restoreSuccess": "Employee restored successfully",
+      "deleteFailed": "Failed to delete employee",
+      "restoreFailed": "Failed to restore employee",
+      "deleting": "Deleting employee...",
+      "restoring": "Restoring employee...",
+      "missingId": "Employee ID not found"
     },
     "newEmployeeForm": {
       "title": "Add New Employee",
@@ -1020,6 +1034,12 @@
     }
   },
   "allDepartments": {
+    "cards": {
+      "totalDepartments": "Total Departments",
+      "totalTeams": "Total Teams",
+      "largestDepartmentHeadcount": "Largest Department Headcount",
+      "smallestDepartmentHeadcount": "Smallest Department Headcount"
+    },
     "statusCards": {
       "totalDepartments": {
         "title": "Total Departments",
@@ -1193,8 +1213,7 @@
       "pending": "Pending",
       "rejected": "Rejected"
     },
-    "page": "Page",
-    "of": "of"
+    "pageOf": "Page {{page}} of {{total}} page"
   },
   "walletPopup": {
     "title": "Transaction Details",
@@ -1234,7 +1253,13 @@
     "confirmDelete": "Confirm Delete",
     "confirmDeleteMessage": "Are you sure you want to delete this role?",
     "roleDeleted": "Role deleted successfully",
+    "confirmRestore": "Restore Role",
+    "restoreMessage": "Are you sure you want to restore this role?",
+    "roleRestored": "Role restored successfully",
     "roleSaved": "Role saved successfully",
+    "actions": {
+      "restore": "Restore"
+    },
     "users": "Users",
     "lastUpdated": "Last Updated Date",
     "view": "View",
@@ -1352,7 +1377,8 @@
       "loadPermissionsFailed": "Failed to load permissions",
       "loadRolesFailed": "Failed to load roles",
       "updateFailed": "Failed to update role",
-      "deleteFailed": "Failed to delete role"
+      "deleteFailed": "Failed to delete role",
+      "restoreFailed": "Failed to restore role"
     },
     "noPermissionToViewPermissions": "No Permission to View Permissions",
     "noPermissionToViewPermissionsDesc": "You do not have permission to view permissions. You can still create a role, but you will not be able to assign permissions to it."
@@ -1564,6 +1590,10 @@
     "deleteMessage": "Are you sure you want to delete this break?",
     "deleteSuccess": "Break deleted successfully",
     "deleteFailed": "Failed to delete break",
+    "confirmRestore": "Restore Break",
+    "restoreMessage": "Are you sure you want to restore this break?",
+    "restoreSuccess": "Break restored successfully",
+    "restoreFailed": "Failed to restore break",
     "createSuccess": "Break created successfully",
     "updateSuccess": "Break updated successfully",
     "minutes": "min",
@@ -1591,7 +1621,8 @@
     },
     "actions": {
       "edit": "Edit",
-      "delete": "Delete"
+      "delete": "Delete",
+      "restore": "Restore"
     },
     "validation": {
       "nameRequired": "Break name is required",
