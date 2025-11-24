@@ -20,10 +20,29 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
   // Use API response fields with proper fallbacks
   const status = dashboardData?.currentStatus || t("dashboard.statusCards.notClockedIn");
   const isLive = status === "Clocked In" || status === t("dashboard.statusCards.clockedIn");
-  
-  const leaveStatus = dashboardData?.totalLeaveRequests !== undefined 
-    ? dashboardData.totalLeaveRequests.toString() 
-    : (dashboardData?.leaveStatus || t("dashboard.statusCards.pending"));
+
+  const leaveStatusCodeRaw = dashboardData?.lastLeaveRequestStatus;
+  const leaveStatusCode =
+    typeof leaveStatusCodeRaw === "string"
+      ? parseInt(leaveStatusCodeRaw, 10)
+      : leaveStatusCodeRaw;
+
+  const leaveStatus = (() => {
+    switch (leaveStatusCode) {
+      case 1:
+        return t("dashboard.statusCards.leaveStatuses.pendingApproval", "Pending Approval");
+      case 2:
+        return t("dashboard.statusCards.leaveStatuses.teamLeadApproved", "Approved by Team Lead");
+      case 3:
+        return t("dashboard.statusCards.leaveStatuses.rejected", "Rejected");
+      case 4:
+        return t("dashboard.statusCards.leaveStatuses.confirmed", "Confirmed");
+      case 5:
+        return t("dashboard.statusCards.leaveStatuses.cancelled", "Cancelled");
+      default:
+        return t("dashboard.statusCards.leaveStatuses.unknown", "N/A");
+    }
+  })();
   
   // Hours Worked Today from API
   const hoursWorkedToday = dashboardData?.hoursWorkedToday !== undefined
@@ -173,10 +192,9 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
         />
         
         <Card
-          header={t("dashboard.statusCards.leaveRequest")}
+          header={t("dashboard.statusCards.leaveStatus", "Leave Status")}
           title={<span className="text-sm sm:text-base lg:text-sm xl:text-base">{leaveStatus}</span>}
           rightIcon={LeaveIcon}
-          footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />
         
@@ -190,7 +208,6 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
           rightIcon={ClockIcon}
           bar={hoursWorkedTodayBar}
           percentage={hoursWorkedTodayBar}
-          footer={BarChartIcon}
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />
         
@@ -204,7 +221,7 @@ export default function StatusCards({ dashboardData, isLoading, error }) {
           rightIcon={PerformanceIcon}
           bar={Math.min(attendanceStreakDays * 10, 100)}
           percentage={Math.min(attendanceStreakDays * 10, 100)}
-          footer={BarChartIcon}
+          
           className="h-full min-h-[140px] sm:min-h-[160px] lg:min-h-[150px] xl:min-h-[160px]"
         />
       </div>

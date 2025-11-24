@@ -7,26 +7,25 @@ export default function DataReview({ data, fieldLabels }) {
     
     // Check if value contains bullet points (•)
     if (value.includes(' • ')) {
-      const parts = value.split(' • ')
+      const parts = value.split(' • ').filter(Boolean)
       return (
-        <span className="flex flex-wrap items-center gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 w-full text-center sm:text-left">
           {parts.map((part, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && (
-                <span 
-                  className="mx-1 font-bold text-base"
-                  style={{ 
-                    color: 'rgb(77, 184, 172)',
-                    textShadow: '0 0 8px rgba(77, 184, 172, 0.3)'
-                  }}
-                >
-                  •
-                </span>
-              )}
+            <div
+              key={index}
+              className="flex items-center gap-2 justify-center sm:justify-start text-sm sm:text-base"
+            >
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: 'rgb(77, 184, 172)',
+                  boxShadow: '0 0 8px rgba(77, 184, 172, 0.4)',
+                }}
+              />
               <span className="transition-colors duration-200">{part}</span>
-            </React.Fragment>
+            </div>
           ))}
-        </span>
+        </div>
       )
     }
     

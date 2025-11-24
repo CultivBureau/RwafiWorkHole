@@ -159,6 +159,7 @@
       "notClockedIn": "لم يتم تسجيل الدخول",
       "goToTimeTracker": "اذهب إلى متتبع الوقت",
       "leaveRequest": "طلب إجازة",
+      "leaveStatus": "حالة الإجازة",
       "noLeaveRequest": "لا يوجد طلب إجازة",
       "noRequestText": "لم تطلب أي إجازة لهذا الشهر",
       "dailyShift": "الوردية اليومية",
@@ -168,7 +169,15 @@
       "leave": "إجازة",
       "pending": "معلق",
       "clock": "ساعة",
-      "comingSoon": "قريباً"
+      "comingSoon": "قريباً",
+      "leaveStatuses": {
+        "pendingApproval": "في انتظار الموافقة",
+        "teamLeadApproved": "معتمد من قائد الفريق",
+        "rejected": "مرفوض",
+        "confirmed": "مؤكد",
+        "cancelled": "ملغي",
+        "unknown": "حالة غير معروفة"
+      }
     }
   },
   "adminAttendance": {
@@ -1488,7 +1497,13 @@
       "teams": "الفرق",
       "viewAll": "عرض الكل",
       "supervisor": "المشرف",
-      "edit": "تعديل"
+      "edit": "تعديل",
+      "untitled": "هذا القسم",
+      "deleteTitle": "حذف القسم",
+      "deleteMessage": "هل أنت متأكد أنك تريد حذف \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+      "deleteAction": "حذف",
+      "deleteFailed": "فشل حذف القسم. يرجى المحاولة مرة أخرى.",
+      "deleteHasDependencies": "لا يمكن حذف هذا القسم لوجود فرق أو موظفين أو ارتباطات أخرى متعلقة به. يرجى إزالتها أولاً."
     }
   },
   "allTeams": {

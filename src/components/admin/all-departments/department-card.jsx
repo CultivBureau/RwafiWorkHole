@@ -14,6 +14,9 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [deleteDepartment, { isLoading: isDeleting }] = useDeleteDepartmentMutation();
     const [restoreDepartment, { isLoading: isRestoring }] = useRestoreDepartmentMutation();
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [departmentToDelete, setDepartmentToDelete] = useState(null);
+    const [deleteError, setDeleteError] = useState("");
     
     // Permission checks for Department actions
     const canViewSupervisor = useHasPermission('Department.GetSupervisor');
@@ -136,65 +139,79 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
         navigate(`/pages/admin/edit-department/${department.id}`);
     };
 
-    const handleDeleteDepartment = async (e) => {
-        e.stopPropagation(); // Prevent card click
+    const openDeleteModal = (departmentData) => {
+        setDepartmentToDelete({
+            id: departmentData.id,
+            name: departmentData.name || t("allDepartments.departmentCard.untitled", "This department"),
+        });
+        setDeleteError("");
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setDepartmentToDelete(null);
+        setDeleteError("");
+    };
+
+    const handleDeleteDepartment = (e) => {
+        e.stopPropagation();
         setIsMenuOpen(false);
-        
-        // Confirmation dialog
-        const departmentName = department.name || 'this department';
-        if (!confirm(`Are you sure you want to delete "${departmentName}"? This action cannot be undone.`)) {
-            return;
-        }
-        
+        openDeleteModal(department);
+    };
+
+    const confirmDeleteDepartment = async () => {
+        if (!departmentToDelete?.id) return;
+        setDeleteError("");
+
         try {
-            await deleteDepartment(department.id).unwrap();
-            
-            // Notify parent component to refetch if callback provided
-            // Add a small delay to ensure API has processed the deletion before refetching
+            await deleteDepartment(departmentToDelete.id).unwrap();
+
             setTimeout(() => {
                 if (onDelete) {
-                    onDelete(department.id);
+                    onDelete(departmentToDelete.id);
                 }
             }, 300);
-            
-            // The cache will be invalidated automatically by RTK Query
-            // The department status will be updated from the API response after refetch
+
+            closeDeleteModal();
         } catch (error) {
-            // Handle 409 Conflict - department has dependencies or already deleted
-            // RTK Query wraps errors, check multiple possible locations for status code
-            const statusCode = error?.status || 
-                              error?.originalStatus || 
-                              error?.error?.status ||
-                              error?.data?.statusCode ||
-                              (error?.data && typeof error.data === 'object' && 'statusCode' in error.data ? error.data.statusCode : null);
-            
+            const statusCode = error?.status ||
+                error?.originalStatus ||
+                error?.error?.status ||
+                error?.data?.statusCode ||
+                (error?.data && typeof error.data === 'object' && 'statusCode' in error.data ? error.data.statusCode : null);
+
             if (statusCode === 409) {
-                const errorMessage = error?.data?.errorMessage || '';
-                
-                // If department is already deleted, treat it as successful deletion and refetch silently
-                if (errorMessage.toLowerCase().includes('already deleted')) {
-                    // Notify parent component to refetch to update status
+                const errorMessage = (error?.data?.errorMessage || "").toLowerCase();
+
+                if (errorMessage.includes('already deleted')) {
                     if (onDelete) {
-                        onDelete(department.id);
+                        onDelete(departmentToDelete.id);
                     }
-                    // Silently return - don't log or show error since it's already deleted (inactive)
+                    closeDeleteModal();
                     return;
                 }
-                
-                // Extract error message from various possible locations for other 409 conflicts
-                const conflictMessage = errorMessage || 
-                                       (error?.data?.errors && typeof error.data.errors === 'object' ? Object.values(error.data.errors).flat().join(', ') : null) ||
-                                       (error?.data?.message) ||
-                                       'This department cannot be deleted because it has associated teams, employees, or other dependencies. Please remove all dependencies first.';
-                alert(conflictMessage);
+
+                const conflictMessage =
+                    error?.data?.errorMessage ||
+                    (error?.data?.errors && typeof error.data.errors === 'object'
+                        ? Object.values(error.data.errors).flat().join(', ')
+                        : null) ||
+                    error?.data?.message ||
+                    t("allDepartments.departmentCard.deleteHasDependencies", "This department cannot be deleted because it has related teams, employees, or other dependencies. Please remove them first.");
+
+                setDeleteError(conflictMessage);
             } else {
-                // Extract error message from various possible locations
-                const errorMsg = error?.data?.errorMessage || 
-                                (error?.data?.errors && typeof error.data.errors === 'object' ? Object.values(error.data.errors).flat().join(', ') : null) ||
-                                error?.data?.message ||
-                                error?.message || 
-                                'Failed to delete department. Please try again.';
-                alert(errorMsg);
+                const errorMsg =
+                    error?.data?.errorMessage ||
+                    (error?.data?.errors && typeof error.data.errors === 'object'
+                        ? Object.values(error.data.errors).flat().join(', ')
+                        : null) ||
+                    error?.data?.message ||
+                    error?.message ||
+                    t("allDepartments.departmentCard.deleteFailed", "Failed to delete department. Please try again.");
+
+                setDeleteError(errorMsg);
             }
         }
     };
@@ -229,6 +246,7 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     };
 
     return (
+        <>
         <div
             className={`bg-[var(--bg-color)] rounded-xl p-6 border border-[var(--border-color)] transition-all duration-300 relative ${
                 canViewTeams ? 'hover:shadow-lg cursor-pointer' : 'cursor-default'
@@ -407,5 +425,55 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
             )}
 
         </div>
+
+        {isDeleteModalOpen && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div
+                    className="bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] p-6 max-w-md w-full shadow-2xl"
+                    style={{ direction: isArabic ? 'rtl' : 'ltr' }}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
+                        {t("allDepartments.departmentCard.deleteTitle", "Delete Department")}
+                    </h3>
+                    <p className={`text-sm text-[var(--sub-text-color)] mb-4 ${isArabic ? 'text-right' : 'text-left'}`}>
+                        {t("allDepartments.departmentCard.deleteMessage", {
+                            defaultValue: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
+                            name: departmentToDelete?.name || t("allDepartments.departmentCard.untitled", "this department"),
+                        })}
+                    </p>
+                    {deleteError && (
+                        <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--rejected-leave-box-bg)', color: 'var(--error-color)' }}>
+                            {deleteError}
+                        </div>
+                    )}
+                    <div className={`flex gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <button
+                            onClick={closeDeleteModal}
+                            className="flex-1 px-4 py-2 border rounded-lg font-medium transition-all"
+                            style={{
+                                borderColor: 'var(--border-color)',
+                                color: 'var(--text-color)',
+                                backgroundColor: 'var(--bg-color)',
+                            }}
+                            disabled={isDeleting}
+                        >
+                            {t("common.cancel", "Cancel")}
+                        </button>
+                        <button
+                            onClick={confirmDeleteDepartment}
+                            disabled={isDeleting}
+                            className="flex-1 px-4 py-2 rounded-lg text-white font-semibold transition-all flex items-center justify-center gap-2"
+                            style={{ background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)' }}
+                        >
+                            {isDeleting && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
+                            <span>{t("allDepartments.departmentCard.deleteAction", "Delete")}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 }
