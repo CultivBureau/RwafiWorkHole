@@ -25,6 +25,31 @@ export const teamApi = createApi({
         url: `/api/v1/Team/GetByDepartment/department/${departmentId}`,
         method: "GET",
       }),
+      // Handle 404 errors gracefully - return empty array if department has no teams
+      transformErrorResponse: (response, meta, arg) => {
+        // If 404, return empty array instead of throwing (404 means no teams, which is valid)
+        // Check both meta.response.status and response.status for compatibility
+        const status = meta?.response?.status || response?.status || meta?.status;
+        if (status === 404) {
+          // Return a successful response structure with empty array
+          return { value: [], data: [], items: [] };
+        }
+        // For other errors, return the response as-is
+        return response;
+      },
+      // Transform response to handle different API response structures
+      transformResponse: (response) => {
+        // If response is already an array, return it wrapped
+        if (Array.isArray(response)) {
+          return { value: response, data: response, items: response };
+        }
+        // If response has value/data/items, return as-is
+        if (response?.value || response?.data || response?.items) {
+          return response;
+        }
+        // Default: return empty array
+        return { value: [], data: [], items: [] };
+      },
       providesTags: (result, error, departmentId) => [
         { type: "Teams", id: `DEPARTMENT-${departmentId}` },
       ],

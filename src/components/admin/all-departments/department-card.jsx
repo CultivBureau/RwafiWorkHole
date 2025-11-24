@@ -6,6 +6,7 @@ import GroupDepartmentIcon from '/assets/groupDepartments.svg';
 import { useGetDepartmentSupervisorQuery, useDeleteDepartmentMutation, useRestoreDepartmentMutation } from "../../../services/apis/DepartmentApi";
 import { useGetTeamsByDepartmentQuery, useGetTeamUsersQuery } from "../../../services/apis/TeamApi";
 import { useHasPermission } from "../../../hooks/useHasPermission";
+import TeamDetailsPopup from "./all-teams/team-details/team-details-popup";
 
 export default function DepartmentCard({ department, onDelete, canUpdate = true, canDelete = true, canRestore = true }) {
     const { t, i18n } = useTranslation();
@@ -17,6 +18,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
     const [deleteError, setDeleteError] = useState("");
+    const [selectedTeam, setSelectedTeam] = useState(null);
+    const [isTeamPopupOpen, setIsTeamPopupOpen] = useState(false);
     
     // Permission checks for Department actions
     const canViewSupervisor = useHasPermission('Department.GetSupervisor');
@@ -56,9 +59,12 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const supervisor = supervisorResp?.value || supervisorResp?.data || supervisorResp || null;
     
     // Fetch teams for this department using GetTeamsByDepartment API - only if user has permission
-    const { data: teamsData, isLoading: isLoadingTeams } = useGetTeamsByDepartmentQuery(department.id, {
+    const { data: teamsData, isLoading: isLoadingTeams, error: teamsError } = useGetTeamsByDepartmentQuery(department.id, {
         skip: !department?.id || !canViewTeams
     });
+    
+    // Handle 404 errors gracefully - 404 means no teams, which is a valid state
+    const hasTeamsError = teamsError && teamsError?.status !== 404;
     
     // Parse teams from API response
     const teams = React.useMemo(() => {
@@ -74,7 +80,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                 id: team.id,
                 name: team.name,
                 description: team.description || null,
-                teamLeader: teamLeaderName,
+                teamLeader: teamLeaderName, // For display in card
+                teamLeaderObject: teamLeader, // Full object for popup
                 teamLeaderJobTitle: teamLeader?.jobTitle || null,
                 teamLeadId: team.teamLeadId || team.teamLeader?.id || team.teamLead?.id || null,
             };
@@ -245,215 +252,320 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
         }
     };
 
+    const handleTeamClick = (e, team) => {
+        e.stopPropagation(); // Prevent card navigation
+        // Prepare team object for popup with full teamLeader object
+        const teamForPopup = {
+            ...team,
+            teamLeader: team.teamLeaderObject || team.teamLeader, // Use full object if available
+            teamLead: team.teamLeaderObject || team.teamLeader, // Also set teamLead for popup compatibility
+        };
+        setSelectedTeam(teamForPopup);
+        setIsTeamPopupOpen(true);
+    };
+
+    const handleCloseTeamPopup = () => {
+        setIsTeamPopupOpen(false);
+        setSelectedTeam(null);
+    };
+
     return (
         <>
         <div
-            className={`bg-[var(--bg-color)] rounded-xl p-6 border border-[var(--border-color)] transition-all duration-300 relative ${
-                canViewTeams ? 'hover:shadow-lg cursor-pointer' : 'cursor-default'
+            className={`bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] transition-all duration-300 relative overflow-hidden group ${
+                canViewTeams ? 'hover:shadow-xl hover:border-[var(--accent-color)]/30 cursor-pointer' : 'cursor-default'
             }`}
             dir={isArabic ? "rtl" : "ltr"}
             onClick={canViewTeams ? handleCardClick : undefined}
         >
-            {/* Department Header */}
-            <div className={`flex items-start justify-between mb-4 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    <div className={`${isArabic ? 'text-right' : 'text-left'}`}>
-                        <h3 className="text-lg font-semibold text-[var(--text-color)]">
-                            {department.name}
-                        </h3>
-                        {/* Supervisor - Only show if user has permission to view supervisor */}
-                        {canViewSupervisor && (
-                            <div className="mt-1 text-xs text-[var(--sub-text-color)]">
-                                <span className="mr-1">Supervisor:</span>
-                                {isSupervisorLoading ? (
-                                    <span>Loading...</span>
-                                ) : supervisor ? (
-                                    <span className="text-[var(--text-color)] font-medium">
-                                        {`${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim() || supervisor.email || '-'}
-                                        {supervisor.jobTitle && <span className="text-[var(--sub-text-color)] ml-1">({supervisor.jobTitle})</span>}
+            {/* Gradient Accent Bar */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-color)]/60"></div>
+            
+            <div className="p-6">
+                {/* Department Header */}
+                <div className={`flex items-start justify-between mb-5 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className={`flex items-start gap-4 flex-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        {/* Department Icon */}
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/10 to-[var(--accent-color)]/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                            <img src={GroupDepartmentIcon} alt="Department" className="w-7 h-7 opacity-80" />
+                        </div>
+                        
+                        <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'} min-w-0`}>
+                            <h3 className="text-lg font-semibold text-[var(--text-color)] mb-1 truncate">
+                                {department.name}
+                            </h3>
+                            
+                            {/* Supervisor - Only show if user has permission to view supervisor */}
+                            {canViewSupervisor && (
+                                <div className="flex items-center gap-2 text-xs text-[var(--sub-text-color)] flex-wrap">
+                                    <span className="px-2 py-0.5 rounded-md bg-[var(--container-color)] font-medium">
+                                        {t("allDepartments.departmentCard.supervisor", "Supervisor")}
                                     </span>
-                                ) : (
-                                    <span className="text-[var(--sub-text-color)]">None</span>
+                                    {isSupervisorLoading ? (
+                                        <span className="text-[var(--sub-text-color)]">Loading...</span>
+                                    ) : supervisor ? (
+                                        <span className="text-[var(--text-color)] font-medium truncate">
+                                            {`${supervisor.firstName || ''} ${supervisor.lastName || ''}`.trim() || supervisor.email || '-'}
+                                            {supervisor.jobTitle && (
+                                                <span className="text-[var(--sub-text-color)] ml-1">• {supervisor.jobTitle}</span>
+                                            )}
+                                        </span>
+                                    ) : (
+                                        <span className="text-[var(--sub-text-color)] italic">No supervisor assigned</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Actions and Status */}
+                    <div className={`flex items-start gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        {/* Status Badge */}
+                        <div 
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 transition-all duration-200`}
+                            style={{
+                                backgroundColor: isInactive ? 'var(--status-inactive-bg)' : 'var(--status-active-bg)',
+                                borderColor: isInactive ? 'var(--status-inactive-border)' : 'var(--status-active-border)',
+                            }}
+                        >
+                            <div 
+                                className="w-1.5 h-1.5 rounded-full animate-pulse"
+                                style={{
+                                    backgroundColor: isInactive ? 'var(--status-inactive-text)' : 'var(--status-active-text)',
+                                }}
+                            ></div>
+                            <span 
+                                className="text-xs font-semibold"
+                                style={{
+                                    color: isInactive ? 'var(--status-inactive-text)' : 'var(--status-active-text)',
+                                }}
+                            >
+                                {isInactive ? 'Inactive' : 'Active'}
+                            </span>
+                        </div>
+                        
+                        {/* Three Dot Menu - Only show if user has any action permissions */}
+                        {(canUpdate || canDelete || canRestore) && (
+                            <div className="relative">
+                                <button
+                                    onClick={handleMenuToggle}
+                                    className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-all duration-200 hover:scale-110"
+                                >
+                                    <MoreVertical className="text-[var(--sub-text-color)]" size={18} />
+                                </button>
+
+                                {isMenuOpen && (
+                                    <div className={`absolute top-full mt-2 w-40 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-xl shadow-xl z-10 overflow-hidden ${isArabic ? 'right-0' : 'left-0'}`}>
+                                        {canUpdate && (
+                                            <button
+                                                onClick={handleEditDepartment}
+                                                className="w-full px-4 py-3 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-3 text-[var(--text-color)] border-b border-[var(--border-color)]"
+                                            >
+                                                <Edit size={16} className="text-[var(--accent-color)]" />
+                                                <span className="font-medium">Edit</span>
+                                            </button>
+                                        )}
+                                        {!isInactive && canDelete && (
+                                            <button
+                                                onClick={handleDeleteDepartment}
+                                                disabled={isDeleting}
+                                                className="w-full px-4 py-3 text-left hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3 text-red-600 dark:text-red-400 disabled:opacity-50"
+                                            >
+                                                <Trash2 size={16} />
+                                                <span className="font-medium">{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                                            </button>
+                                        )}
+                                        {isInactive && canRestore && (
+                                            <button
+                                                onClick={handleRestoreDepartment}
+                                                disabled={isRestoring}
+                                                className="w-full px-4 py-3 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-3 text-[var(--text-color)] disabled:opacity-50"
+                                            >
+                                                <RotateCcw size={16} className="text-[var(--accent-color)]" />
+                                                <span className="font-medium">{isRestoring ? 'Restoring...' : 'Restore'}</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* Avatars and Three Dot Menu */}
-                <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    {/* Member Avatars - Only show if user has Team.ViewMembers permission */}
-                    {canViewMembers && (
-                        <div className={`flex items-center ${isArabic ? 'flex-row-reverse' : ''}`}>
-                            {department.memberAvatars?.slice(0, 3).map((avatar, index) => (
-                                <img
-                                    key={index}
-                                    src={avatar}
-                                    alt={`Member ${index + 1}`}
-                                    className="w-8 h-8 rounded-full border-2 border-[var(--bg-color)]"
-                                    style={{ marginLeft: isArabic ? '0' : index > 0 ? '-8px' : '0', marginRight: isArabic ? index > 0 ? '-8px' : '0' : '0' }}
-                                />
-                            ))}
-                            {department.totalMembers > 3 && (
-                                <div className="w-8 h-8 rounded-full bg-[var(--container-color)] border-2 border-[var(--bg-color)] flex items-center justify-center text-xs font-medium text-[var(--sub-text-color)]"
-                                    style={{ marginLeft: isArabic ? '0' : '-8px', marginRight: isArabic ? '-8px' : '0' }}>
-                                    +{department.totalMembers - 3}
+                
+                {/* Teams Section - Only show if user has Team.View permission */}
+                {canViewTeams && (
+                    <>
+                        {/* Divider */}
+                        <div className="my-5 border-t border-[var(--border-color)]"></div>
+                        
+                        {/* Teams Header */}
+                        <div className={`flex flex-col gap-2 mb-4 ${isArabic ? '' : ''}`}>
+                            <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 flex items-center justify-center">
+                                        <img src={GroupDepartmentIcon} alt="Teams" className="w-5 h-5 opacity-70" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-[var(--text-color)]">
+                                        {isLoadingTeams ? (
+                                            <span>Loading teams...</span>
+                                        ) : (
+                                            <>
+                                                {t("allDepartments.departmentCard.teams", "Teams")} ({teams.length})
+                                            </>
+                                        )}
+                                    </span>
                                 </div>
-                            )}
-                        </div>
-                    )}
-                    {/* Status Indicator */}
-                    <div className={`relative ${isArabic ? 'left-1' : 'right-1'}`}>
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${isInactive ? 'bg-red-100 dark:bg-red-900/30' : 'bg-green-100 dark:bg-green-900/30'}`}>
-                            <div className={`w-2 h-2 rounded-full ${isInactive ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                            <span className={`text-xs font-medium ${isInactive ? 'text-red-700 dark:text-red-400' : 'text-green-700 dark:text-green-400'}`}>
-                                {isInactive ? 'Inactive' : 'Active'}
-                            </span>
-                        </div>
-                    </div>
-                    {/* Three Dot Menu - Only show if user has any action permissions */}
-                    {(canUpdate || canDelete || canRestore) && (
-                        <div className="relative">
-                            <button
-                                onClick={handleMenuToggle}
-                                className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-colors"
-                            >
-                                <MoreVertical className="text-[var(--sub-text-color)]" size={16} />
-                            </button>
-
-                            {isMenuOpen && (
-                                <div className={`absolute top-full mt-1 w-32 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg z-10 ${isArabic ? 'right-0' : 'left-0'}`}>
-                                    {canUpdate && (
-                                        <button
-                                            onClick={handleEditDepartment}
-                                            className="w-full px-3 py-2 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-2 text-[var(--text-color)]"
-                                        >
-                                            <Edit size={14} />
-                                            <span>Edit</span>
-                                        </button>
-                                    )}
-                                    {!isInactive && canDelete && (
-                                        <button
-                                            onClick={handleDeleteDepartment}
-                                            disabled={isDeleting}
-                                            className="w-full px-3 py-2 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-2 text-red-500 disabled:opacity-50"
-                                        >
-                                            <Trash2 size={14} />
-                                            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                                        </button>
-                                    )}
-                                    {isInactive && canRestore && (
-                                        <button
-                                            onClick={handleRestoreDepartment}
-                                            disabled={isRestoring}
-                                            className="w-full px-3 py-2 text-left hover:bg-[var(--hover-color)] transition-colors flex items-center gap-2 text-[var(--text-color)] disabled:opacity-50"
-                                        >
-                                            <RotateCcw size={14} />
-                                            <span>{isRestoring ? 'Restoring...' : 'Restore'}</span>
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-            {/* Teams Section - Only show if user has Team.View permission */}
-            {canViewTeams && (
-                <>
-                    <hr className="border-[var(--border-color)] my-4" />
-                    {/* Teams Count */}
-                    <div className={`flex items-center mb-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        <span className="text-sm text-[var(--sub-text-color)]">
-                            {isLoadingTeams ? (
-                                <span>Loading teams...</span>
-                            ) : (
-                                <>
-                                    {teams.length} {t("allDepartments.departmentCard.teams", "Teams")}
-                                </>
-                            )}
-                        </span>
-                    </div>
-
-                    {/* Teams List */}
-                    {isLoadingTeams ? (
-                        <div className="space-y-3">
-                            <div className="text-xs text-[var(--sub-text-color)] p-3 text-center">Loading teams...</div>
-                        </div>
-                    ) : teams.length > 0 ? (
-                        <div className="space-y-3">
-                            {teams.slice(0, 4).map((team) => (
-                                <div
-                                    key={team.id}
-                                    className={`flex items-center justify-between p-3 bg-[var(--bg-color)] rounded-lg hover:bg-[var(--hover-color)] transition-colors cursor-pointer ${isArabic ? 'flex-row-reverse' : ''}`}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (canViewTeams) {
+                                
+                                {teams.length > 0 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
                                             navigate(`/pages/admin/all-teams?departmentId=${department.id}`);
-                                        }
-                                    }}
-                                >
-                                    <div className={`flex items-center gap-3 flex-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                        <div className="w-10 h-10 bg-[var(--menu-active-bg)] rounded-full flex items-center justify-center flex-shrink-0">
-                                            <img src={GroupDepartmentIcon} alt="Team" className="w-7 h-7" />
+                                        }}
+                                        className="px-3 py-1.5 text-xs font-medium text-[var(--accent-color)] bg-[var(--accent-color)]/10 rounded-lg hover:bg-[var(--accent-color)]/20 hover:scale-105 transition-all duration-200"
+                                    >
+                                        {t("allDepartments.departmentCard.viewAll", "View All")}
+                                    </button>
+                                )}
+                            </div>
+                            
+                            {/* Hint Text */}
+                            {teams.length > 0 && (
+                                <p className="text-xs text-[var(--sub-text-color)] italic px-1">
+                                    {t("allDepartments.departmentCard.clickTeamHint", "Click any team for quick view")}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Teams List */}
+                        {isLoadingTeams ? (
+                            <div className="space-y-2">
+                                {[1, 2].map((i) => (
+                                    <div key={i} className="animate-pulse flex items-center gap-3 p-3 bg-[var(--container-color)]/30 rounded-xl">
+                                        <div className="w-10 h-10 bg-[var(--container-color)] rounded-lg"></div>
+                                        <div className="flex-1 space-y-2">
+                                            <div className="h-3 bg-[var(--container-color)] rounded w-1/2"></div>
+                                            <div className="h-2 bg-[var(--container-color)] rounded w-1/3"></div>
                                         </div>
-                                        <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'}`}>
-                                            <p className="text-sm font-medium text-[var(--text-color)]">
-                                                {team.name}
-                                            </p>
-                                            {team.teamLeader && (
-                                                <p className="text-xs text-[var(--sub-text-color)] mt-0.5">
-                                                    {t("allDepartments.departmentCard.leadBy", "Lead by")} <span className="text-[var(--text-color)] font-medium">{team.teamLeader}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : teams.length > 0 ? (
+                            <div className="space-y-2">
+                                {teams.slice(0, 3).map((team) => (
+                                    <div
+                                        key={team.id}
+                                        className={`group/team flex items-center justify-between p-3 bg-[var(--container-color)]/30 rounded-xl hover:bg-[var(--accent-color)]/5 border border-transparent hover:border-[var(--accent-color)]/20 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.98] ${isArabic ? 'flex-row-reverse' : ''}`}
+                                        onClick={(e) => handleTeamClick(e, team)}
+                                        title={t("allDepartments.departmentCard.clickToView", "Click to view team details")}
+                                    >
+                                        <div className={`flex items-center gap-3 flex-1 min-w-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                            <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover/team:scale-110 group-hover/team:rotate-3 transition-all duration-200">
+                                                <img src={GroupDepartmentIcon} alt="Team" className="w-6 h-6 opacity-70 group-hover/team:opacity-100 transition-opacity duration-200" />
+                                            </div>
+                                            <div className={`flex-1 min-w-0 ${isArabic ? 'text-right' : 'text-left'}`}>
+                                                <p className="text-sm font-semibold text-[var(--text-color)] truncate group-hover/team:text-[var(--accent-color)] transition-colors">
+                                                    {team.name}
                                                 </p>
+                                                {team.teamLeader && (
+                                                    <p className="text-xs text-[var(--sub-text-color)] mt-0.5 truncate">
+                                                        <span className="opacity-70">{t("allDepartments.departmentCard.leadBy", "Lead by")}</span> 
+                                                        <span className="text-[var(--text-color)] font-medium ml-1">{team.teamLeader}</span>
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className={`flex items-center gap-3 flex-shrink-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                            {canViewMembers && (
+                                                <div className="px-2 py-1 rounded-md bg-[var(--bg-color)] group-hover/team:bg-[var(--accent-color)]/10 transition-all duration-200">
+                                                    <TeamMemberCount team={team} />
+                                                </div>
                                             )}
+                                            <ChevronRight 
+                                                size={16} 
+                                                className={`text-[var(--sub-text-color)] group-hover/team:text-[var(--accent-color)] transition-all duration-200 ${isArabic ? 'rotate-180 group-hover/team:-translate-x-1' : 'group-hover/team:translate-x-1'}`} 
+                                            />
                                         </div>
                                     </div>
-
-                                    <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                        {canViewMembers && <TeamMemberCount team={team} />}
-                                        <ChevronRight size={14} className={`text-[var(--sub-text-color)] flex-shrink-0 ${isArabic ? 'rotate-180' : ''}`} />
-                                    </div>
+                                ))}
+                                
+                                {/* Show more indicator if there are more than 3 teams */}
+                                {teams.length > 3 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/pages/admin/all-teams?departmentId=${department.id}`);
+                                        }}
+                                        className="w-full p-3 text-center text-sm font-medium text-[var(--accent-color)] hover:bg-[var(--accent-color)]/5 rounded-xl transition-all duration-200 border border-dashed border-[var(--accent-color)]/30 hover:border-[var(--accent-color)]/50 hover:scale-[1.02]"
+                                    >
+                                        +{teams.length - 3} more {t("allDepartments.departmentCard.teams", "teams")}
+                                    </button>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-[var(--container-color)]/30 flex items-center justify-center">
+                                    <img src={GroupDepartmentIcon} alt="No Teams" className="w-8 h-8 opacity-30" />
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            <div className="text-xs text-[var(--sub-text-color)] p-3 text-center">No teams yet</div>
-                        </div>
-                    )}
-                </>
-            )}
-
+                                <p className="text-sm text-[var(--sub-text-color)]">
+                                    {t("allDepartments.departmentCard.noTeams", "No teams in this department yet")}
+                                </p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
 
+        {/* Team Details Popup */}
+        {isTeamPopupOpen && selectedTeam && (
+            <TeamDetailsPopup
+                isOpen={isTeamPopupOpen}
+                onClose={handleCloseTeamPopup}
+                team={selectedTeam}
+            />
+        )}
+
         {isDeleteModalOpen && (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn">
                 <div
-                    className="bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] p-6 max-w-md w-full shadow-2xl"
+                    className="bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] p-6 max-w-md w-full shadow-2xl animate-slideUp"
                     style={{ direction: isArabic ? 'rtl' : 'ltr' }}
                     role="dialog"
                     aria-modal="true"
                 >
-                    <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
+                    {/* Icon Header */}
+                    <div className="flex justify-center mb-4">
+                        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <Trash2 className="text-red-600 dark:text-red-400" size={28} />
+                        </div>
+                    </div>
+                    
+                    <h3 className={`text-xl font-bold text-[var(--text-color)] mb-3 text-center`}>
                         {t("allDepartments.departmentCard.deleteTitle", "Delete Department")}
                     </h3>
-                    <p className={`text-sm text-[var(--sub-text-color)] mb-4 ${isArabic ? 'text-right' : 'text-left'}`}>
+                    <p className={`text-sm text-[var(--sub-text-color)] mb-5 text-center leading-relaxed`}>
                         {t("allDepartments.departmentCard.deleteMessage", {
                             defaultValue: 'Are you sure you want to delete "{{name}}"? This action cannot be undone.',
                             name: departmentToDelete?.name || t("allDepartments.departmentCard.untitled", "this department"),
                         })}
                     </p>
+                    
                     {deleteError && (
-                        <div className="mb-4 px-3 py-2 rounded-lg text-sm" style={{ backgroundColor: 'var(--rejected-leave-box-bg)', color: 'var(--error-color)' }}>
-                            {deleteError}
+                        <div className="mb-5 px-4 py-3 rounded-xl text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 text-red-700 dark:text-red-400">
+                            <div className="flex items-start gap-2">
+                                <span className="text-lg">⚠️</span>
+                                <span className="flex-1">{deleteError}</span>
+                            </div>
                         </div>
                     )}
+                    
                     <div className={`flex gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                         <button
                             onClick={closeDeleteModal}
-                            className="flex-1 px-4 py-2 border rounded-lg font-medium transition-all"
+                            className="flex-1 px-5 py-3 border-2 border-[var(--border-color)] rounded-xl font-semibold transition-all hover:bg-[var(--hover-color)] hover:border-[var(--accent-color)]/30"
                             style={{
-                                borderColor: 'var(--border-color)',
                                 color: 'var(--text-color)',
                                 backgroundColor: 'var(--bg-color)',
                             }}
@@ -464,10 +576,11 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                         <button
                             onClick={confirmDeleteDepartment}
                             disabled={isDeleting}
-                            className="flex-1 px-4 py-2 rounded-lg text-white font-semibold transition-all flex items-center justify-center gap-2"
+                            className="flex-1 px-5 py-3 rounded-xl text-white font-bold transition-all flex items-center justify-center gap-2 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
                             style={{ background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)' }}
                         >
                             {isDeleting && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
+                            <Trash2 size={16} />
                             <span>{t("allDepartments.departmentCard.deleteAction", "Delete")}</span>
                         </button>
                     </div>

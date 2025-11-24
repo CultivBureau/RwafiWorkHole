@@ -1078,7 +1078,11 @@
       "deleteMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
       "deleteAction": "Delete",
       "deleteFailed": "Failed to delete department. Please try again.",
-      "deleteHasDependencies": "This department cannot be deleted because it has related teams, employees, or other dependencies. Please remove them first."
+      "deleteHasDependencies": "This department cannot be deleted because it has related teams, employees, or other dependencies. Please remove them first.",
+      "clickTeamHint": "Click any team for quick view",
+      "clickToView": "Click to view team details",
+      "leadBy": "Lead by",
+      "noTeams": "No teams in this department yet"
     }
   },
   "allTeams": {
@@ -1135,8 +1139,12 @@
       "lead": "Team Lead",
       "view": "View Details",
       "edit": "Edit",
+      "delete": "Delete",
       "tasks": "Tasks",
-      "performance": "Performance"
+      "performance": "Performance",
+      "noMembers": "No members yet",
+      "moreMembers": "more members",
+      "noPermissionViewMembers": "You don't have permission to view team members"
     }
   },
   "walletCards": {

@@ -69,6 +69,13 @@ body {
   --pending-leave-box-bg: #FED7AA;
   --approved-leave-box-bg: #BBF7D0;
 
+  /* Status Badge Colors - Light Mode */
+  --status-active-bg: #D1FAE5;
+  --status-active-border: #A7F3D0;
+  --status-active-text: #065F46;
+  --status-inactive-bg: #FEE2E2;
+  --status-inactive-border: #FECACA;
+  --status-inactive-text: #991B1B;
 
 }
 
@@ -169,6 +176,14 @@ body {
   --rejected-leave-box-bg: #991B1B;
   --pending-leave-box-bg: #A16207;
   --approved-leave-box-bg: #166534;
+
+  /* Status Badge Colors - Dark Mode */
+  --status-active-bg: #064E3B;
+  --status-active-border: #059669;
+  --status-active-text: #6EE7B7;
+  --status-inactive-bg: #7F1D1D;
+  --status-inactive-border: #DC2626;
+  --status-inactive-text: #FCA5A5;
 }
 
 /* Custom Scrollbar Styles */

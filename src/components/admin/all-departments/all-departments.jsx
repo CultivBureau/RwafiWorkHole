@@ -161,19 +161,43 @@ export default function AllDepartments() {
             </div>
 
             {/* Departments Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {isLoading ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                        <div className="w-16 h-16 bg-[var(--container-color)] rounded-full flex items-center justify-center mb-4" />
-                        <h3 className="text-lg font-medium text-[var(--text-color)] mb-2">Loading...</h3>
-                    </div>
+                    // Loading skeleton
+                    <>
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="bg-[var(--bg-color)] rounded-2xl border border-[var(--border-color)] p-6 animate-pulse">
+                                <div className="flex items-start justify-between mb-5">
+                                    <div className="flex items-start gap-4 flex-1">
+                                        <div className="w-12 h-12 rounded-xl bg-[var(--container-color)]"></div>
+                                        <div className="flex-1 space-y-3">
+                                            <div className="h-5 bg-[var(--container-color)] rounded w-3/4"></div>
+                                            <div className="h-3 bg-[var(--container-color)] rounded w-1/2"></div>
+                                        </div>
+                                    </div>
+                                    <div className="w-20 h-7 bg-[var(--container-color)] rounded-full"></div>
+                                </div>
+                                <div className="border-t border-[var(--border-color)] my-5"></div>
+                                <div className="space-y-3">
+                                    <div className="h-4 bg-[var(--container-color)] rounded w-1/3"></div>
+                                    <div className="h-12 bg-[var(--container-color)] rounded-xl"></div>
+                                    <div className="h-12 bg-[var(--container-color)] rounded-xl"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </>
                 ) : isError ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                        <div className="w-16 h-16 bg-[var(--container-color)] rounded-full flex items-center justify-center mb-4">
-                            <Search className="text-[var(--sub-text-color)]" size={24} />
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-20 h-20 bg-red-50 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
+                            <Search className="text-red-500" size={32} />
                         </div>
-                        <h3 className="text-lg font-medium text-[var(--text-color)] mb-2">Failed to load departments</h3>
-                        <button onClick={() => refetch()} className="btn-secondary">Retry</button>
+                        <h3 className="text-xl font-bold text-[var(--text-color)] mb-2">Failed to load departments</h3>
+                        <p className="text-[var(--sub-text-color)] mb-6 max-w-sm">
+                            We couldn't load the departments. Please check your connection and try again.
+                        </p>
+                        <button onClick={() => refetch()} className="btn-primary">
+                            Retry
+                        </button>
                     </div>
                 ) : filteredDepartments.length > 0 ? (
                     filteredDepartments.map((department) => (
@@ -190,28 +214,44 @@ export default function AllDepartments() {
                         />
                     ))
                 ) : (
-                    <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
-                        <div className="w-16 h-16 bg-[var(--container-color)] rounded-full flex items-center justify-center mb-4">
-                            <Search className="text-[var(--sub-text-color)]" size={24} />
+                    <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-24 h-24 bg-[var(--container-color)]/30 rounded-full flex items-center justify-center mb-4">
+                            <Search className="text-[var(--sub-text-color)]" size={40} />
                         </div>
-                        <h3 className="text-lg font-medium text-[var(--text-color)] mb-2">
+                        <h3 className="text-xl font-bold text-[var(--text-color)] mb-2">
                             No departments found
                         </h3>
-                        <p className="text-[var(--sub-text-color)] max-w-sm">
+                        <p className="text-[var(--sub-text-color)] max-w-md mb-6 leading-relaxed">
                             {searchTerm 
-                                ? `No departments match "${searchTerm}". Try adjusting your search.`
-                                : "No departments available at the moment."
+                                ? `No departments match "${searchTerm}". Try adjusting your search or filter.`
+                                : `No ${statusFilter} departments available at the moment.`
                             }
                         </p>
+                        {canCreate && !searchTerm && (
+                            <button 
+                                onClick={handleAddNewDepartment}
+                                className="btn-primary"
+                            >
+                                <Plus size={16} className="mr-2" />
+                                Add New Department
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
 
             {/* Results Summary */}
             {filteredDepartments.length > 0 && (
-                <div className={`text-sm text-[var(--sub-text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
-                    Showing {filteredDepartments.length} {statusFilter === "active" ? "active" : "inactive"} department{filteredDepartments.length !== 1 ? "s" : ""}
-                    {searchTerm && ` matching "${searchTerm}"`}
+                <div className={`flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--container-color)]/20 border border-[var(--border-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <span className="text-sm font-medium text-[var(--text-color)]">
+                        Showing <span className="font-bold text-[var(--accent-color)]">{filteredDepartments.length}</span> {statusFilter === "active" ? "active" : "inactive"} department{filteredDepartments.length !== 1 ? "s" : ""}
+                        {searchTerm && ` matching "${searchTerm}"`}
+                    </span>
+                    {departmentsFromApi.length > filteredDepartments.length && (
+                        <span className="text-xs text-[var(--sub-text-color)]">
+                            {departmentsFromApi.length - filteredDepartments.length} hidden by filters
+                        </span>
+                    )}
                 </div>
             )}
         </div>
