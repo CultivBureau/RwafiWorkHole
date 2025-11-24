@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2, RotateCcw, Loader2 } from "lucide-react";
 import EmployeeCard from "./employee-card";
 import EditEmployeePopup from "./edit-employee";
-import { useGetAllUsersQuery } from "../../../services/apis/UserApi";
+import toast from "react-hot-toast";
+import { useGetAllUsersQuery, useDeleteUserMutation, useRestoreUserMutation } from "../../../services/apis/UserApi";
 import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
 import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
 import { useHasPermission } from "../../../hooks/useHasPermission";
@@ -71,6 +72,9 @@ const EmployeesTable = () => {
     }, [departmentFilter, searchTerm]);
 
     const { data: usersResponse, isLoading: isLoadingUsers, isError: isErrorUsers } = useGetAllUsersQuery(userQueryParams);
+    const [deleteUserMutation, { isLoading: isDeleting }] = useDeleteUserMutation();
+    const [restoreUserMutation, { isLoading: isRestoring }] = useRestoreUserMutation();
+    const [pendingAction, setPendingAction] = useState(null); // { employee, action: 'delete' | 'restore' }
     const { data: departmentsResponse } = useGetAllDepartmentsQuery({ pageNumber: 1, pageSize: 100 });
     const { data: rolesResponse } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 100 });
 
@@ -239,8 +243,66 @@ const EmployeesTable = () => {
         </div>
     );
 
+    // Action confirmation helpers
+    const isProcessingAction = isDeleting || isRestoring;
+
+    const requestEmployeeAction = (employee, forcedAction = null) => {
+        const isActive = (employee.status || "").toLowerCase() === "active";
+        setPendingAction({
+            employee,
+            action: forcedAction || (isActive ? "delete" : "restore")
+        });
+    };
+
+    const handleDeleteOrRestoreEmployee = async () => {
+        if (!pendingAction) return;
+        const { employee, action } = pendingAction;
+        const userId = employee?.id;
+        if (!userId) {
+            toast.error(t("employees.messages.missingId", "Employee ID not found"));
+            return;
+        }
+
+        const isDeleteAction = action === "delete";
+
+        const toastId = toast.loading(isDeleteAction
+            ? t("employees.messages.deleting", "Deleting employee...")
+            : t("employees.messages.restoring", "Restoring employee..."));
+
+        try {
+            if (isDeleteAction) {
+                await deleteUserMutation(userId).unwrap();
+            } else {
+                await restoreUserMutation(userId).unwrap();
+            }
+            toast.success(
+                isDeleteAction
+                    ? t("employees.messages.deleteSuccess", "Employee deleted successfully")
+                    : t("employees.messages.restoreSuccess", "Employee restored successfully")
+            );
+        } catch (error) {
+            const errorMessage =
+                error?.data?.errorMessage ||
+                error?.data?.message ||
+                error?.message ||
+                (isDeleteAction
+                    ? t("employees.messages.deleteFailed", "Failed to delete employee")
+                    : t("employees.messages.restoreFailed", "Failed to restore employee"));
+            toast.error(errorMessage);
+        } finally {
+            toast.dismiss(toastId);
+            setPendingAction(null);
+        }
+    };
+
     // Enhanced Action buttons for table
-    const ActionButtons = ({ employee }) => (
+    const ActionButtons = ({ employee }) => {
+        const isActiveEmployee = (employee.status || "").toLowerCase() === "active";
+        const actionTitle = isActiveEmployee
+            ? t("employees.actions.delete", "Delete")
+            : t("employees.actions.restore", "Restore");
+
+        return (
         <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
             {canViewAllProfiles && (
                 <button
@@ -262,14 +324,23 @@ const EmployeesTable = () => {
             )}
             {canDelete && (
                 <button
-                    className="p-2 rounded-lg hover:bg-red-50 transition-all hover:scale-110"
-                    title={t("employees.actions.delete", "Delete")}
+                    className={`p-2 rounded-lg transition-all hover:scale-110 ${isActiveEmployee ? 'hover:bg-red-50' : 'hover:bg-[var(--hover-color)]'}`}
+                    title={actionTitle}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        requestEmployeeAction(employee);
+                    }}
                 >
-                    <Trash2 className="w-5 h-5" style={{ color: 'var(--error-color)' }} />
+                    {isActiveEmployee ? (
+                        <Trash2 className="w-5 h-5" style={{ color: 'var(--error-color)' }} />
+                    ) : (
+                        <RotateCcw className="w-5 h-5" style={{ color: 'var(--accent-color)' }} />
+                    )}
                 </button>
             )}
         </div>
-    );
+        );
+    };
 
     const handleAddNewEmployee = () => {
         navigate("/pages/admin/new-employee");
@@ -556,6 +627,7 @@ const EmployeesTable = () => {
                                             onCardClick={() => handleViewEmployee(employee)}
                                             onView={() => handleViewEmployee(employee)}
                                             onEdit={() => { setSelectedEmployee(employee); setIsEditOpen(true); }}
+                                            onDelete={(action) => requestEmployeeAction(employee, action)}
                                             canViewAllProfiles={canViewAllProfiles}
                                             canUpdate={canUpdate}
                                             canDelete={canDelete}
@@ -907,6 +979,56 @@ const EmployeesTable = () => {
             onClose={() => setIsEditOpen(false)}
             onSave={(updated) => { console.log('Updated employee', updated); }}
         />
+        {pendingAction && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }}>
+                <div
+                    className="w-full max-w-sm rounded-2xl border shadow-2xl p-6 space-y-4"
+                    style={{ backgroundColor: "var(--bg-color)", borderColor: "var(--border-color)" }}
+                >
+                    <h3 className="text-lg font-bold" style={{ color: "var(--text-color)" }}>
+                        {pendingAction.action === "delete"
+                            ? t("employees.actions.delete", "Delete")
+                            : t("employees.actions.restore", "Restore")}
+                    </h3>
+                    <p className="text-sm" style={{ color: "var(--sub-text-color)" }}>
+                        {pendingAction.action === "delete"
+                            ? t("employees.messages.deleteConfirm", "Are you sure you want to delete this employee?")
+                            : t("employees.messages.restoreConfirm", "Are you sure you want to restore this employee?")}
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            className="flex-1 px-4 py-2 rounded-xl border text-sm font-semibold transition-all"
+                            style={{
+                                borderColor: "var(--border-color)",
+                                color: "var(--text-color)",
+                                backgroundColor: "var(--bg-color)"
+                            }}
+                            onClick={() => setPendingAction(null)}
+                            disabled={isProcessingAction}
+                        >
+                            {t("common.cancel", "Cancel")}
+                        </button>
+                        <button
+                            className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all flex items-center justify-center gap-2"
+                            style={{
+                                background: pendingAction.action === "delete"
+                                    ? "linear-gradient(135deg, #F87171 0%, #EF4444 100%)"
+                                    : "linear-gradient(135deg, #15919B 0%, #09D1C7 100%)"
+                            }}
+                            onClick={handleDeleteOrRestoreEmployee}
+                            disabled={isProcessingAction}
+                        >
+                            {isProcessingAction && <Loader2 className="w-4 h-4 animate-spin" />}
+                            <span>
+                                {pendingAction.action === "delete"
+                                    ? t("employees.actions.delete", "Delete")
+                                    : t("employees.actions.restore", "Restore")}
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </>
     );
 };

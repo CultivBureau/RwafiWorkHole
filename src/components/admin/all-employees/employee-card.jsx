@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Eye, Edit, Trash2, MoreHorizontal, RotateCcw } from "lucide-react";
 
 const EmployeeCard = ({
     name,
@@ -25,6 +25,7 @@ const EmployeeCard = ({
     const isArabic = i18n.language === "ar";
     const textAlign = isArabic ? "text-right" : "text-left";
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const isActive = (status || "").toLowerCase() === "active";
     const dropdownRef = useRef(null);
 
     // Close dropdown when clicking outside
@@ -94,14 +95,14 @@ const EmployeeCard = ({
         console.log("Edit employee:", name);
     };
 
-    const handleDelete = (e) => {
+    const handleDeleteAction = (e) => {
         e.stopPropagation();
         setIsDropdownOpen(false);
         if (onDelete) {
-            onDelete();
+            onDelete(isActive ? "delete" : "restore");
             return;
         }
-        console.log("Delete employee:", name);
+        console.log(isActive ? "Delete employee:" : "Restore employee:", name);
     };
 
     const toggleDropdown = (e) => {
@@ -186,12 +187,20 @@ const EmployeeCard = ({
                                             <div className="border-t" style={{ borderColor: 'var(--border-color)' }} />
                                         )}
                                         <button
-                                            onClick={handleDelete}
-                                            className={`w-full px-4 py-2.5 text-sm flex items-center gap-3 hover:bg-red-50 transition-colors ${isArabic ? 'flex-row-reverse text-right' : 'text-left'}`}
-                                            style={{ color: 'var(--error-color)' }}
+                                            onClick={handleDeleteAction}
+                                            className={`w-full px-4 py-2.5 text-sm flex items-center gap-3 transition-colors ${isArabic ? 'flex-row-reverse text-right' : 'text-left'} ${isActive ? 'hover:bg-red-50' : 'hover:bg-[var(--hover-color)]'}`}
+                                            style={{ color: isActive ? 'var(--error-color)' : 'var(--accent-color)' }}
                                         >
-                                            <Trash2 className="w-4 h-4" />
-                                            <span className="font-medium">{t("employees.actions.delete", "Delete")}</span>
+                                            {isActive ? (
+                                                <Trash2 className="w-4 h-4" />
+                                            ) : (
+                                                <RotateCcw className="w-4 h-4" />
+                                            )}
+                                            <span className="font-medium">
+                                                {isActive
+                                                    ? t("employees.actions.delete", "Delete")
+                                                    : t("employees.actions.restore", "Restore")}
+                                            </span>
                                         </button>
                                     </>
                                 )}

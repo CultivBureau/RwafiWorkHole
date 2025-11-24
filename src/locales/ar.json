@@ -688,7 +688,19 @@
     "actions": {
       "view": "عرض",
       "edit": "تعديل",
-      "delete": "حذف"
+      "delete": "حذف",
+      "restore": "استعادة"
+    },
+    "messages": {
+      "deleteConfirm": "هل أنت متأكد من رغبتك في حذف هذا الموظف؟",
+      "restoreConfirm": "هل أنت متأكد من رغبتك في استعادة هذا الموظف؟",
+      "deleteSuccess": "تم حذف الموظف بنجاح",
+      "restoreSuccess": "تمت استعادة الموظف بنجاح",
+      "deleteFailed": "فشل حذف الموظف",
+      "restoreFailed": "فشلت استعادة الموظف",
+      "deleting": "جاري حذف الموظف...",
+      "restoring": "جاري استعادة الموظف...",
+      "missingId": "معرف الموظف غير موجود"
     },
     "newEmployeeForm": {
       "title": "إضافة موظف جديد",
