@@ -16,11 +16,10 @@ const StatusCards = () => {
     const isArabic = i18n.language === "ar";
     const { data: statsData, isLoading } = useGetRoleStatisticsQuery();
 
-    // Extract statistics from API response
-    const stats = statsData?.value || {};
-
     // Dynamically create cards from API response fields
     const statusCards = useMemo(() => {
+        const stats = statsData?.value || {};
+        const currentLanguage = i18n.language;
         const iconMap = {
             usersWithAdminAccess: <img src="/assets/RolesAndPermissions/custom.svg" alt="Users With Admin Access" className="w-6 h-6" />,
             totalRoles: <img src="/assets/RolesAndPermissions/total.svg" alt="Total Roles" className="w-6 h-6" />,
@@ -29,12 +28,27 @@ const StatusCards = () => {
         };
 
         // Create cards for each field in the API response
-        return Object.entries(stats).map(([key, value]) => ({
-            header: formatHeader(key),
-            title: isLoading ? "..." : (value ?? 0).toString(),
-            rightIcon: iconMap[key] || <img src="/assets/RolesAndPermissions/total.svg" alt={formatHeader(key)} className="w-6 h-6" />,
-        }));
-    }, [stats, isLoading]);
+        return Object.entries(stats).map(([key, value]) => {
+            const translationKey = `roles.statusCards.${key}`;
+            const translatedHeader = t(translationKey);
+            const header =
+                translatedHeader === translationKey ? formatHeader(key) : translatedHeader;
+
+            return {
+                id: `${currentLanguage}-${key}`,
+                header,
+                title: isLoading ? "..." : (value ?? 0).toString(),
+                rightIcon:
+                    iconMap[key] || (
+                        <img
+                            src="/assets/RolesAndPermissions/total.svg"
+                            alt={formatHeader(key)}
+                            className="w-6 h-6"
+                        />
+                    ),
+            };
+        });
+    }, [statsData, isLoading, t, i18n.language]);
 
     const gridColsClass = statusCards.length === 1 ? "lg:grid-cols-1" : 
                           statusCards.length === 2 ? "lg:grid-cols-2" : 
@@ -44,7 +58,7 @@ const StatusCards = () => {
         <section className={`w-full grid grid-cols-1 md:grid-cols-2 ${gridColsClass} gap-4 mb-6`} dir={isArabic ? 'rtl' : 'ltr'}>
             {statusCards.map((card, index) => (
                 <Card
-                    key={index}
+                    key={card.id || index}
                     header={card.header}
                     title={card.title}
                     rightIcon={card.rightIcon}

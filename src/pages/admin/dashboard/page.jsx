@@ -55,7 +55,7 @@ const DashboardAdmin = () => {
       icon: <img src="/assets/AdminDashboard/leavee.svg" alt="employees" />
     },
     {
-      title: t("adminDashboard.cards.averageWorkingHours", "Avg Working Hours"),
+      title: t("adminDashboard.cards.AvgWorkingHours", "Avg Working Hours"),
       value: isLoadingStatistics ? "..." : (adminStatistics?.averageWorkingHoursThisWeek || 0),
       icon: <img src="/assets/AdminDashboard/task.svg" alt="hours" />
     }

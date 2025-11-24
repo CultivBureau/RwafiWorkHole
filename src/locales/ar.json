@@ -930,6 +930,12 @@
     "close": "إغلاق"
   },
   "roles": {
+    "statusCards": {
+      "usersWithAdminAccess": "المستخدمون بصلاحيات إدارية",
+      "totalRoles": "إجمالي الأدوار",
+      "activeRoles": "الأدوار النشطة",
+      "usersWithoutRole": "المستخدمون بدون دور"
+    },
     "title": "الأدوار والصلاحيات",
     "pageDescription": "السماح لهذا الموظف بالوصول إلى ووركهول",
     "searchPlaceholder": "بحث عن دور",
@@ -1057,7 +1063,7 @@
       "usersWithoutRole": "المستخدمون بدون الدور",
       "usersWithRole": "المستخدمون مع الدور"
     },
-    "statusCards": {
+    "statusCardsDetailed": {
       "totalRoles": "إجمالي الأدوار",
       "activeRoles": "الأدوار النشطة",
       "customRoles": "الأدوار المخصصة",
@@ -1085,7 +1091,7 @@
       "activeEmployees": "الموظفون النشطون",
       "todayAttendance": "حضور اليوم",
       "leaveRequests": "طلبات الإجازة",
-      "overdueTasks": "المهام المتأخرة"
+      "AvgWorkingHours": "متوسط ساعات العمل"
     },
     "buttons": {
       "addNewEmployee": "إضافة موظف جديد",
@@ -1121,6 +1127,15 @@
       "title": "النشاط الأخير",
       "today": "اليوم",
       "approvedLeaveRequest": "وافق على طلب إجازة"
+    }
+  },
+  "allEmployees": {
+    "statusCards": {
+      "totalEmployees": "إجمالي الموظفين",
+      "activeEmployees": "الموظفون النشطون",
+      "inactiveEmployees": "الموظفون غير النشطين",
+      "newHiresLast30Days": "الموظفون الجدد (آخر 30 يوم)",
+      "pendingInvitations": "الدعوات المعلقة"
     }
   },
   "adminLeaves": {

@@ -19,6 +19,11 @@ const StatusCards = () => {
     const stats = statsData?.value || {};
 
     // Dynamically create cards from API response fields
+    const getHeaderLabel = React.useCallback(
+        (key) => t(`allEmployees.statusCards.${key}`, formatHeader(key)),
+        [t]
+    );
+
     const statusCards = useMemo(() => {
         const iconMap = {
             totalEmployees: <img src="/assets/all_employees/employees.svg" alt="Total Employees" className="w-6 h-6" />,
@@ -27,11 +32,11 @@ const StatusCards = () => {
 
         // Create cards for each field in the API response
         return Object.entries(stats).map(([key, value]) => ({
-            header: formatHeader(key),
+            header: getHeaderLabel(key),
             title: isLoading ? "..." : (value ?? 0).toString(),
             rightIcon: iconMap[key] || <img src="/assets/all_employees/employees.svg" alt={formatHeader(key)} className="w-6 h-6" />,
         }));
-    }, [stats, isLoading]);
+    }, [stats, isLoading, getHeaderLabel]);
 
     const gridColsClass = statusCards.length === 1 ? "lg:grid-cols-1" : 
                           statusCards.length === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3";

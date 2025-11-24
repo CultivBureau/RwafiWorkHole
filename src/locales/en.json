@@ -170,9 +170,9 @@
   "adminDashboard": {
     "cards": {
       "activeEmployees": "Active Employees",
-      "todayAttendance": "Today Attendance",
+      "todayAttendance": "Today's Attendance",
       "leaveRequests": "Leave Requests",
-      "overdueTasks": "Overdue Tasks"
+      "AvgWorkingHours": "Average Working Hours"
     },
     "buttons": {
       "addNewEmployee": "Add New Employee",
@@ -208,6 +208,15 @@
       "title": "Recent Activity",
       "today": "Today",
       "approvedLeaveRequest": "approved a leave request"
+    }
+  },
+  "allEmployees": {
+    "statusCards": {
+      "totalEmployees": "Total Employees",
+      "activeEmployees": "Active Employees",
+      "inactiveEmployees": "Inactive Employees",
+      "newHiresLast30Days": "New Hires (Last 30 Days)",
+      "pendingInvitations": "Pending Invitations"
     }
   },
   "adminAttendance": {
@@ -1189,6 +1198,12 @@
     "close": "Close"
   },
   "roles": {
+    "statusCards": {
+      "usersWithAdminAccess": "Users With Admin Access",
+      "totalRoles": "Total Roles",
+      "activeRoles": "Active Roles",
+      "usersWithoutRole": "Users Without Role"
+    },
     "title": "Roles & Permissions",
     "pageDescription": "Allow this employee to access Workhole",
     "searchPlaceholder": "Search Role",
@@ -1316,7 +1331,7 @@
       "usersWithoutRole": "Users Without Role",
       "usersWithRole": "Users With Role"
     },
-    "statusCards": {
+    "statusCardsDetailed": {
       "totalRoles": "Total Roles",
       "activeRoles": "Active Roles",
       "customRoles": "Custom Roles",
