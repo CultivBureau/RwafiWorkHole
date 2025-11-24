@@ -123,6 +123,20 @@ export const authApi = createApi({
         return response;
       },
     }),
+    forgotPassword: builder.mutation({
+      query: (body) => ({
+        url: "/api/v1/Authentication/ForgotPassword",
+        method: "POST",
+        body,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (body) => ({
+        url: "/api/v1/Authentication/ResetPassword",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -130,4 +144,6 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useMeQuery,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

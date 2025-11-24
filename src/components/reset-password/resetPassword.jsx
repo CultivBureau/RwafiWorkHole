@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Lock, Mail, Key, ArrowLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import { useResetPasswordMutation } from "../../services/apis/AuthApi";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const ResetPassword = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ 
     email: location.state?.email || "", 
-    code: "", 
+    otpCode: "", 
     newPassword: "" 
   });
 
@@ -20,12 +21,45 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const email = form.email.trim();
+    const otpCode = form.otpCode.trim();
+    const newPassword = form.newPassword.trim();
+
+    if (!email) {
+      toast.error("Email is required");
+      return;
+    }
+
+    if (!otpCode || otpCode.length < 4) {
+      toast.error("Please enter the reset code you received");
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters");
+      return;
+    }
+
     try {
-      await resetPassword(form).unwrap();
+      await resetPassword({ email, otpCode, newPassword }).unwrap();
       toast.success("Password reset successful! Please login with your new password.");
       navigate("/");
     } catch (err) {
-      toast.error(err?.data?.message || "Something went wrong. Please try again.");
+
+      let errorMessage =
+        err?.data?.errorMessage ||
+        err?.data?.message ||
+        err?.data?.error ||
+        err?.error ||
+        null;
+
+      if (!errorMessage && err?.data?.errors) {
+        const firstError = Object.values(err.data.errors)[0];
+        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+      }
+
+      toast.error(errorMessage || "Invalid code or password. Please try again.");
     }
   };
 
@@ -89,19 +123,19 @@ const ResetPassword = () => {
             {/* Reset Code Input */}
             <div className="space-y-2">
               <label 
-                htmlFor="code" 
+                htmlFor="otpCode" 
                 className="block text-sm font-medium"
                 style={{ color: "var(--text-color)" }}
               >
-                Reset Code
+                Reset Code (OTP)
               </label>
               <div className="relative">
                 <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[var(--sub-text-color)]" />
                 <input
-                  id="code"
-                  name="code"
+                  id="otpCode"
+                  name="otpCode"
                   type="text"
-                  value={form.code}
+                  value={form.otpCode}
                   onChange={handleChange}
                   placeholder="Enter 6-digit code"
                   required
