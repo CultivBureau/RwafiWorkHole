@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { X, ChevronDown, Check, Save, Search } from "lucide-react";
+import { X, ChevronDown, Check, Save, Search, Users, Crown, UserPlus, AlertCircle, Sparkles, User } from "lucide-react";
 import { useGetAllRolesQuery, useGetRoleUsersQuery } from "../../../../services/apis/RoleApi";
 import { useUpdateTeamMutation, useUpdateUsersInTeamMutation, useGetTeamUsersQuery } from "../../../../services/apis/TeamApi";
 export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData, departmentId }) {
@@ -20,6 +20,8 @@ export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData,
     const [isMembersOpen, setIsMembersOpen] = useState(false);
     const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
     const [membersSearchTerm, setMembersSearchTerm] = useState("");
+    const [formErrors, setFormErrors] = useState({});
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Get departmentId from teamData if not provided
     const teamDepartmentId = departmentId || teamData?.departmentId;
@@ -175,6 +177,27 @@ export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData,
         setIsLeaderUserOpen(false);
     };
 
+    // Validation function
+    const validateForm = () => {
+        const errors = {};
+        
+        if (!editTeam.name?.trim()) {
+            errors.name = t("allTeams.editTeam.errors.enterTeamName", "Team name is required");
+        }
+        
+        if (!editTeam.teamLeader) {
+            errors.teamLeader = t("allTeams.editTeam.errors.selectTeamLeader", "Team leader is required");
+        }
+        
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    // Check if form is valid for enabling/disabling save button
+    const isFormValid = useMemo(() => {
+        return editTeam.name?.trim() && editTeam.teamLeader;
+    }, [editTeam.name, editTeam.teamLeader]);
+
     const handleUpdateTeam = async () => {
         // Extract team leader ID (try multiple property names) - same as step 3 in adding department
         const teamLeadId = editTeam.teamLeader?.id || 
@@ -288,119 +311,522 @@ export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData,
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div 
-                className="bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)] w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+                className="bg-[var(--bg-color)] rounded-2xl border-2 border-[var(--border-color)] w-full max-w-3xl max-h-[90vh] flex flex-col shadow-2xl animate-in zoom-in-95 duration-300"
                 dir={isArabic ? "rtl" : "ltr"}
             >
-                {/* Modal Header */}
-                <div className="flex items-center justify-between p-6 border-b border-[var(--border-color)]">
-                    <h2 className="text-xl font-bold text-[var(--text-color)]">
-                        {t("allTeams.editTeam.title")}
-                    </h2>
-                    <button
-                        onClick={handleCancel}
-                        className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-colors"
-                    >
-                        <X className="text-[var(--sub-text-color)]" size={20} />
-                    </button>
+                {/* Enhanced Gradient Header */}
+                <div className="relative bg-gradient-to-r from-[#15919B] via-[#09D1C7] to-[#15919B] p-6 rounded-t-2xl pb-14 overflow-hidden">
+                    {/* Decorative background pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                        <div className={`absolute ${isArabic ? '-left-10' : '-right-10'} -top-10 w-40 h-40 bg-white rounded-full blur-3xl`}></div>
+                        <div className={`absolute ${isArabic ? '-right-10' : '-left-10'} -bottom-10 w-40 h-40 bg-white rounded-full blur-3xl`}></div>
+                    </div>
+                    
+                    <div className={`flex items-center justify-between relative z-10 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex items-center gap-4 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white/20">
+                                <Users className="text-white w-7 h-7" />
+                            </div>
+                            <div className={isArabic ? 'text-right' : 'text-left'}>
+                                <div className={`flex items-center gap-2 mb-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <Sparkles className="text-white/80 w-4 h-4" />
+                                    <span className="text-white/90 text-xs font-semibold uppercase tracking-wider">
+                                        {t("allTeams.editTeam.subtitle", "Team Management")}
+                                    </span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-1">
+                                    {t("allTeams.editTeam.title", "Edit Team")}
+                                </h2>
+                                {teamData?.name && (
+                                    <p className="text-white/90 text-sm font-medium">
+                                        {teamData.name}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleCancel}
+                            className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 hover:scale-110 group relative backdrop-blur-sm"
+                            aria-label={t("common.close", "Close")}
+                        >
+                            <X className="text-white group-hover:rotate-90 transition-transform duration-300" size={24} />
+                        </button>
+                    </div>
+                    
+                    {/* Progress indicator */}
+                    {hasUnsavedChanges && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                            <div className="h-full bg-white animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.5)]" style={{ width: '100%' }}></div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Modal Content */}
-                <div className="p-6 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)] space-y-4 m-6">
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6">
                     {isLoadingMembers ? (
-                        <div className="text-center py-8">
-                            <div className="text-[var(--sub-text-color)]">{t("allTeams.editTeam.loadingTeamData")}</div>
+                        <div className="space-y-4 animate-pulse">
+                            <div className="h-12 bg-[var(--container-color)] rounded-lg"></div>
+                            <div className="h-32 bg-[var(--container-color)] rounded-lg"></div>
+                            <div className="h-24 bg-[var(--container-color)] rounded-lg"></div>
                         </div>
                     ) : (
-                        <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                            className="form-input"
-                            placeholder={t("departments.newDepartmentForm.setupTeams.teamName")}
-                            type="text"
-                            value={editTeam.name}
-                            onChange={(e) => setEditTeam(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                        
-                                {/* Team Leader: Role then User */}
+                    <>
+                        {/* Section 1: Team Information */}
+                        <div className="space-y-4 p-5 bg-gradient-to-br from-[var(--accent-color)]/5 to-transparent rounded-xl border-2 border-[var(--border-color)] hover:border-[var(--accent-color)]/30 transition-all duration-300">
+                            <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 flex items-center justify-center">
+                                    <Users className="w-5 h-5 text-[var(--accent-color)]" />
+                                </div>
+                                <div className={isArabic ? 'text-right' : 'text-left'}>
+                                    <h3 className="text-sm font-bold text-[var(--text-color)] uppercase tracking-wide">
+                                        {t("allTeams.editTeam.teamInfo", "Team Information")}
+                                    </h3>
+                                    <p className="text-xs text-[var(--sub-text-color)]">
+                                        {t("allTeams.editTeam.teamInfoDesc", "Basic team details")}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Team Name */}
+                            <div className="space-y-2">
+                                <label className={`block text-sm font-semibold text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                    {t("allTeams.editTeam.teamNameLabel", "Team Name")} <span className="text-[var(--error-color)]">*</span>
+                                </label>
+                                <input
+                                    className={`form-input w-full transition-all duration-200 ${
+                                        formErrors.name 
+                                            ? 'border-[var(--error-color)] ring-2 ring-[var(--error-color)]/20' 
+                                            : 'focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)]'
+                                    }`}
+                                    placeholder={t("allTeams.editTeam.teamNamePlaceholder", "Enter team name...")}
+                                    type="text"
+                                    value={editTeam.name}
+                                    onChange={(e) => {
+                                        setEditTeam(prev => ({ ...prev, name: e.target.value }));
+                                        setHasUnsavedChanges(true);
+                                        if (formErrors.name) setFormErrors(prev => ({ ...prev, name: null }));
+                                    }}
+                                />
+                                {formErrors.name && (
+                                    <div className={`flex items-center gap-2 text-xs text-[var(--error-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                        <AlertCircle size={14} />
+                                        <span>{formErrors.name}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Team Description */}
+                            <div className="space-y-2">
+                                <label className={`block text-sm font-semibold text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                    {t("allTeams.editTeam.descriptionLabel", "Team Description")}
+                                </label>
+                                <textarea
+                                    className="form-input w-full resize-none focus:ring-2 focus:ring-[var(--accent-color)]/50 focus:border-[var(--accent-color)] transition-all duration-200"
+                                    placeholder={t("allTeams.editTeam.descriptionPlaceholder", "Describe the team's purpose and responsibilities...")}
+                                    rows="3"
+                                    value={editTeam.description}
+                                    onChange={(e) => {
+                                        setEditTeam(prev => ({ ...prev, description: e.target.value }));
+                                        setHasUnsavedChanges(true);
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Section 2: Team Leader */}
+                        <div className="space-y-4 p-5 bg-gradient-to-br from-[#09D1C7]/5 to-transparent rounded-xl border-2 border-[var(--border-color)] hover:border-[#09D1C7]/30 transition-all duration-300">
+                            <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#09D1C7]/20 to-[#09D1C7]/10 flex items-center justify-center">
+                                        <Crown className="w-5 h-5 text-[#09D1C7]" />
+                                    </div>
+                                    <div className={isArabic ? 'text-right' : 'text-left'}>
+                                        <h3 className="text-sm font-bold text-[var(--text-color)] uppercase tracking-wide">
+                                            {t("allTeams.editTeam.teamLeaderTitle", "Team Leader")} <span className="text-[var(--error-color)] text-xs">*</span>
+                                        </h3>
+                                        <p className="text-xs text-[var(--sub-text-color)]">
+                                            {t("allTeams.editTeam.teamLeaderDesc", "Choose who will lead this team")}
+                                        </p>
+                                    </div>
+                                </div>
+                                {editTeam.teamLeader && (
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#09D1C7]/10 border border-[#09D1C7]/30">
+                                        <Check className="w-3 h-3 text-[#09D1C7]" />
+                                        <span className="text-xs font-semibold text-[#09D1C7]">
+                                            {t("allTeams.editTeam.assigned", "Assigned")}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Current Team Leader Display */}
+                            {editTeam.teamLeader && (
+                                <div className="p-4 bg-gradient-to-r from-[#09D1C7]/10 to-[#09D1C7]/5 rounded-lg border border-[#09D1C7]/20">
+                                    <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[#09D1C7]/30 to-[#09D1C7]/20 flex items-center justify-center flex-shrink-0">
+                                            <User className="w-6 h-6 text-[#09D1C7]" />
+                                        </div>
+                                        <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                                            <p className="text-sm font-bold text-[var(--text-color)]">
+                                                {editTeam.teamLeader.name || `${editTeam.teamLeader.firstName || ''} ${editTeam.teamLeader.lastName || ''}`.trim() || editTeam.teamLeader.email}
+                                            </p>
+                                            <p className="text-xs text-[var(--sub-text-color)]">
+                                                {editTeam.teamLeader.email || editTeam.teamLeader.userName || t("allTeams.editTeam.teamLeaderRole", "Team Leader")}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setEditTeam(prev => ({ ...prev, teamLeader: null }));
+                                                setLeaderRole(null);
+                                                setHasUnsavedChanges(true);
+                                            }}
+                                            className="p-2 hover:bg-[var(--error-color)]/10 rounded-lg transition-colors group"
+                                            title={t("allTeams.editTeam.removeLeader", "Remove leader")}
+                                        >
+                                            <X size={16} className="text-[var(--error-color)] group-hover:text-[var(--error-color)]" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Leader Selection */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Step 1: Select Role */}
                                 <div className="space-y-2">
-                        <div className="relative">
-                                        <div className="form-input cursor-pointer flex items-center justify-between" onClick={(e) => {
-                                            e.stopPropagation();
-                                            setIsLeaderRoleOpen(!isLeaderRoleOpen);
-                                        }}>
-                                            <span className="text-[var(--sub-text-color)]">{leaderRole ? leaderRole.name : t("departments.newDepartmentForm.assignSupervisor.chooseRole")}</span>
-                                            <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isLeaderRoleOpen ? 'rotate-180' : ''}`} size={16} />
+                                    <label className={`block text-sm font-medium text-[var(--sub-text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                        {t("allTeams.editTeam.step1", "Step 1: Select Role")}
+                                    </label>
+                                    <div className="relative">
+                                        <div 
+                                            className={`form-input cursor-pointer flex items-center justify-between group transition-all duration-200 ${
+                                                isLeaderRoleOpen 
+                                                    ? 'ring-2 ring-[var(--warning-color)]/50 border-[var(--warning-color)]' 
+                                                    : 'hover:border-[var(--warning-color)]/50'
+                                            }`}
+                                            onClick={() => setIsLeaderRoleOpen(!isLeaderRoleOpen)}
+                                        >
+                                            <span className={leaderRole ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
+                                                {leaderRole ? leaderRole.name : t("allTeams.editTeam.selectRole", "Select a role...")}
+                                            </span>
+                                            <ChevronDown className={`transition-transform duration-300 ${isLeaderRoleOpen ? 'rotate-180 text-[var(--warning-color)]' : 'text-[var(--sub-text-color)]'}`} size={18} />
                                         </div>
                                         {isLeaderRoleOpen && (
-                                            <div 
-                                                className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                {(roles || []).map(role => (
-                                                    <div key={role.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => { 
-                                                        e.stopPropagation();
-                                                        setLeaderRole(role); 
-                                                        setIsLeaderRoleOpen(false); 
-                                                        setIsLeaderUserOpen(true); 
-                                                    }}>
-                                                        <div className="text-sm text-[var(--text-color)]">{role.name}</div>
+                                            <div className={`absolute top-full ${isArabic ? 'right-0 left-0' : 'left-0 right-0'} z-30 mt-2 bg-[var(--bg-color)] border-2 border-[var(--warning-color)]/30 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200`}>
+                                                {roles && roles.length > 0 ? (
+                                                    roles.map((role, index) => (
+                                                        <div 
+                                                            key={role.id} 
+                                                            className={`p-3 cursor-pointer transition-all duration-200 hover:bg-[var(--warning-color)]/10 ${
+                                                                index !== 0 ? 'border-t border-[var(--border-color)]' : ''
+                                                            } ${leaderRole?.id === role.id ? 'bg-[var(--pending-leave-box-bg)]' : ''}`}
+                                                            onClick={() => { 
+                                                                setLeaderRole(role); 
+                                                                setIsLeaderRoleOpen(false); 
+                                                                setIsLeaderUserOpen(true);
+                                                                setHasUnsavedChanges(true);
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--warning-color)]/20 to-[var(--warning-color)]/10 flex items-center justify-center">
+                                                                    <Users className="w-4 h-4 text-[var(--warning-color)]" />
+                                                                </div>
+                                                                <span className="text-sm font-medium text-[var(--text-color)]">{role.name}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-center text-[var(--sub-text-color)]">
+                                                        {t("allTeams.editTeam.noRolesFound", "No roles available")}
                                                     </div>
-                                                ))}
-                                                {(!roles || roles.length === 0) && <div className="p-3 text-[var(--sub-text-color)]">{t("allTeams.editTeam.noRolesFound")}</div>}
+                                                )}
                                             </div>
                                         )}
-                                            </div>
+                                    </div>
+                                </div>
+
+                                {/* Step 2: Select User */}
+                                <div className="space-y-2">
+                                    <label className={`block text-sm font-medium text-[var(--sub-text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                        {t("allTeams.editTeam.step2", "Step 2: Select Leader")}
+                                    </label>
                                     <div className="relative">
-                                        <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => {
-                                            if (leaderRole) {
-                                                setIsLeaderUserOpen(!isLeaderUserOpen);
-                                            } else {
-                                                setIsLeaderRoleOpen(true);
-                                            }
-                                        }}>
-                                            <span className="text-[var(--sub-text-color)]">
+                                        <div 
+                                            className={`form-input cursor-pointer flex items-center justify-between group transition-all duration-200 ${
+                                                !leaderRole ? 'opacity-50 cursor-not-allowed' : ''
+                                            } ${isLeaderUserOpen ? 'ring-2 ring-[var(--warning-color)]/50 border-[var(--warning-color)]' : 'hover:border-[var(--warning-color)]/50'}
+                                            ${formErrors.teamLeader ? 'border-[var(--error-color)] ring-2 ring-[var(--error-color)]/20' : ''}`}
+                                            onClick={() => {
+                                                if (leaderRole) {
+                                                    setIsLeaderUserOpen(!isLeaderUserOpen);
+                                                }
+                                            }}
+                                        >
+                                            <span className={editTeam.teamLeader ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
                                                 {editTeam.teamLeader 
-                                                    ? (editTeam.teamLeader.name || `${editTeam.teamLeader.firstName || ''} ${editTeam.teamLeader.lastName || ''}`.trim() || editTeam.teamLeader.email || editTeam.teamLeader.userName)
-                                                    : t("departments.newDepartmentForm.assignSupervisor.chooseSupervisor")
+                                                    ? (editTeam.teamLeader.name || `${editTeam.teamLeader.firstName || ''} ${editTeam.teamLeader.lastName || ''}`.trim() || editTeam.teamLeader.email)
+                                                    : (leaderRole ? t("allTeams.editTeam.selectUser", "Select a user...") : t("allTeams.editTeam.selectRoleFirst", "Select role first"))
                                                 }
                                             </span>
-                                            <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isLeaderUserOpen ? 'rotate-180' : ''}`} size={16} />
+                                            <ChevronDown className={`transition-transform duration-300 ${isLeaderUserOpen ? 'rotate-180 text-[var(--warning-color)]' : 'text-[var(--sub-text-color)]'}`} size={18} />
                                         </div>
                                         {isLeaderUserOpen && leaderRole && (
-                                            <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
-                                                {/* Search Input */}
-                                                <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                                            <div className={`absolute top-full ${isArabic ? 'right-0 left-0' : 'left-0 right-0'} z-30 mt-2 bg-[var(--bg-color)] border-2 border-[var(--warning-color)]/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
+                                                {/* Search Bar */}
+                                                <div className="p-3 border-b-2 border-[var(--border-color)] bg-gradient-to-r from-[var(--pending-leave-box-bg)]/50 to-transparent sticky top-0 z-10">
                                                     <div className="relative">
-                                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                                        <Search className={`absolute ${isArabic ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--warning-color)]`} />
                                                         <input
                                                             type="text"
                                                             value={leaderSearchTerm}
                                                             onChange={(e) => setLeaderSearchTerm(e.target.value)}
-                                                            placeholder={t("departments.newDepartmentForm.assignSupervisor.searchUsers") || "Search users..."}
-                                                            className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                                            placeholder={t("allTeams.editTeam.searchPlaceholder", "Search by name or email...")}
+                                                            className={`w-full ${isArabic ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 text-sm border-2 border-[var(--border-color)] rounded-lg bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--warning-color)]/50 focus:border-[var(--warning-color)]`}
                                                             onClick={(e) => e.stopPropagation()}
-                                                            dir={isArabic ? 'rtl' : 'ltr'}
+                                                            autoFocus
                                                         />
                                                     </div>
+                                                    <p className="text-xs text-[var(--sub-text-color)] mt-2">
+                                                        {filteredLeaderUsers.length} {t("allTeams.editTeam.usersFound", "user(s) found")}
+                                                    </p>
                                                 </div>
                                                 {/* Users List */}
-                                                <div className="overflow-y-auto max-h-[240px]">
+                                                <div className="max-h-64 overflow-y-auto">
                                                     {filteredLeaderUsers.length > 0 ? (
-                                                        filteredLeaderUsers.map(u => (
-                                                            <div key={u.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                selectTeamLeader(u);
-                                                                setLeaderSearchTerm("");
-                                                            }}>
-                                                                <div className="text-sm text-[var(--text-color)]">{u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}</div>
-                                                                <div className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</div>
+                                                        filteredLeaderUsers.map((u, index) => {
+                                                            const userId = u?.id || u?.userId || u?.userID || u?.email || `leader-${index}`;
+                                                            return (
+                                                            <div 
+                                                                key={userId} 
+                                                                className={`p-3 cursor-pointer transition-all duration-200 hover:bg-[var(--warning-color)]/10 ${
+                                                                    index !== 0 ? 'border-t border-[var(--border-color)]' : ''
+                                                                }`}
+                                                                onClick={() => {
+                                                                    selectTeamLeader(u);
+                                                                    setLeaderSearchTerm("");
+                                                                    setHasUnsavedChanges(true);
+                                                                    if (formErrors.teamLeader) setFormErrors(prev => ({ ...prev, teamLeader: null }));
+                                                                }}
+                                                            >
+                                                                <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[var(--warning-color)]/20 to-[var(--warning-color)]/10 flex items-center justify-center flex-shrink-0">
+                                                                        <User className="w-5 h-5 text-[var(--warning-color)]" />
+                                                                    </div>
+                                                                    <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                                                                        <p className="text-sm font-semibold text-[var(--text-color)]">
+                                                                            {u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown'}
+                                                                        </p>
+                                                                        <p className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</p>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        ))
+                                                            );
+                                                        })
                                                     ) : (
-                                                        <div className="p-3 text-[var(--sub-text-color)]">
-                                                            {leaderSearchTerm ? "No users found matching your search" : t("allTeams.editTeam.noUsersFound")}
+                                                        <div className="p-8 text-center">
+                                                            <User className="w-12 h-12 mx-auto mb-3 text-[var(--sub-text-color)] opacity-30" />
+                                                            <p className="text-sm text-[var(--sub-text-color)]">
+                                                                {leaderSearchTerm 
+                                                                    ? t("allTeams.editTeam.noResults", "No users match your search") 
+                                                                    : t("allTeams.editTeam.noUsersInRole", "No users in this role")}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {formErrors.teamLeader && (
+                                        <div className={`flex items-center gap-2 text-xs text-[var(--error-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                            <AlertCircle size={14} />
+                                            <span>{formErrors.teamLeader}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Team Members */}
+                        <div className="space-y-4 p-5 bg-gradient-to-br from-[#15919B]/5 to-transparent rounded-xl border-2 border-[var(--border-color)] hover:border-[#15919B]/30 transition-all duration-300">
+                            <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#15919B]/20 to-[#15919B]/10 flex items-center justify-center">
+                                        <UserPlus className="w-5 h-5 text-[#15919B]" />
+                                    </div>
+                                    <div className={isArabic ? 'text-right' : 'text-left'}>
+                                        <h3 className="text-sm font-bold text-[var(--text-color)] uppercase tracking-wide">
+                                            {t("allTeams.editTeam.teamMembersTitle", "Team Members")}
+                                        </h3>
+                                        <p className="text-xs text-[var(--sub-text-color)]">
+                                            {t("allTeams.editTeam.teamMembersDesc", "Add team members to collaborate")}
+                                        </p>
+                                    </div>
+                                </div>
+                                {editTeam.selectedEmployees.length > 0 && (
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-[#15919B]/10 border border-[#15919B]/30">
+                                        <Users className="w-3 h-3 text-[#15919B]" />
+                                        <span className="text-xs font-bold text-[#15919B]">
+                                            {editTeam.selectedEmployees.length} {t("allTeams.editTeam.members", "Members")}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Member Selection */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Step 1: Select Role */}
+                                <div className="space-y-2">
+                                    <label className={`block text-sm font-medium text-[var(--sub-text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                        {t("allTeams.editTeam.step1", "Step 1: Select Role")}
+                                    </label>
+                                    <div className="relative">
+                                        <div 
+                                            className={`form-input cursor-pointer flex items-center justify-between group transition-all duration-200 ${
+                                                isMembersRoleOpen 
+                                                    ? 'ring-2 ring-[#15919B]/50 border-[#15919B]' 
+                                                    : 'hover:border-[#15919B]/50'
+                                            }`}
+                                            onClick={() => setIsMembersRoleOpen(!isMembersRoleOpen)}
+                                        >
+                                            <span className={membersRole ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
+                                                {membersRole ? membersRole.name : t("allTeams.editTeam.selectRole", "Select a role...")}
+                                            </span>
+                                            <ChevronDown className={`transition-transform duration-300 ${isMembersRoleOpen ? 'rotate-180 text-[#15919B]' : 'text-[var(--sub-text-color)]'}`} size={18} />
+                                        </div>
+                                        {isMembersRoleOpen && (
+                                            <div className={`absolute top-full ${isArabic ? 'right-0 left-0' : 'left-0 right-0'} z-20 mt-2 bg-[var(--bg-color)] border-2 border-[#15919B]/30 rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200`}>
+                                                {roles && roles.length > 0 ? (
+                                                    roles.map((role, index) => (
+                                                        <div 
+                                                            key={role.id} 
+                                                            className={`p-3 cursor-pointer transition-all duration-200 hover:bg-[#15919B]/10 ${
+                                                                index !== 0 ? 'border-t border-[var(--border-color)]' : ''
+                                                            } ${membersRole?.id === role.id ? 'bg-[#15919B]/10' : ''}`}
+                                                            onClick={() => { 
+                                                                setMembersRole(role); 
+                                                                setIsMembersRoleOpen(false); 
+                                                                setIsMembersOpen(true);
+                                                                setHasUnsavedChanges(true);
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 flex items-center justify-center">
+                                                                    <Users className="w-4 h-4 text-[var(--success-color)]" />
+                                                                </div>
+                                                                <span className="text-sm font-medium text-[var(--text-color)]">{role.name}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-4 text-center text-[var(--sub-text-color)]">
+                                                        {t("allTeams.editTeam.noRolesFound", "No roles available")}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Step 2: Select Users */}
+                                <div className="space-y-2">
+                                    <label className={`block text-sm font-medium text-[var(--sub-text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
+                                        {t("allTeams.editTeam.step2Members", "Step 2: Select Members")}
+                                    </label>
+                                    <div className="relative">
+                                        <div 
+                                            className={`form-input cursor-pointer flex items-center justify-between group transition-all duration-200 ${
+                                                !membersRole ? 'opacity-50 cursor-not-allowed' : ''
+                                            } ${isMembersOpen ? 'ring-2 ring-[#15919B]/50 border-[#15919B]' : 'hover:border-[#15919B]/50'}`}
+                                            onClick={() => {
+                                                if (membersRole) {
+                                                    setIsMembersOpen(!isMembersOpen);
+                                                }
+                                            }}
+                                        >
+                                            <span className={editTeam.selectedEmployees.length > 0 ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
+                                                {editTeam.selectedEmployees.length > 0 
+                                                    ? `${editTeam.selectedEmployees.length} ${t("allTeams.editTeam.selected", "selected")}` 
+                                                    : (membersRole ? t("allTeams.editTeam.selectUsers", "Select users...") : t("allTeams.editTeam.selectRoleFirst", "Select role first"))
+                                                }
+                                            </span>
+                                            <ChevronDown className={`transition-transform duration-300 ${isMembersOpen ? 'rotate-180 text-[#15919B]' : 'text-[var(--sub-text-color)]'}`} size={18} />
+                                        </div>
+                                        {isMembersOpen && membersRole && (
+                                            <div className={`absolute top-full ${isArabic ? 'right-0 left-0' : 'left-0 right-0'} z-20 mt-2 bg-[var(--bg-color)] border-2 border-[#15919B]/30 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
+                                                {/* Search Bar */}
+                                                <div className="p-3 border-b-2 border-[var(--border-color)] bg-gradient-to-r from-[#15919B]/5 to-transparent sticky top-0 z-10">
+                                                    <div className="relative">
+                                                        <Search className={`absolute ${isArabic ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-[#15919B]`} />
+                                                        <input
+                                                            type="text"
+                                                            value={membersSearchTerm}
+                                                            onChange={(e) => setMembersSearchTerm(e.target.value)}
+                                                            placeholder={t("allTeams.editTeam.searchPlaceholder", "Search by name or email...")}
+                                                            className={`w-full ${isArabic ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 text-sm border-2 border-[var(--border-color)] rounded-lg bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[#15919B]/50 focus:border-[#15919B]`}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-[var(--sub-text-color)] mt-2">
+                                                        {filteredMemberUsers.length} {t("allTeams.editTeam.usersFound", "user(s) found")}
+                                                    </p>
+                                                </div>
+                                                {/* Users List */}
+                                                <div className="max-h-64 overflow-y-auto">
+                                                    {filteredMemberUsers.length > 0 ? (
+                                                        filteredMemberUsers.map((u, index) => {
+                                                            const userId = u?.id || u?.userId || u?.userID || u?.UserId || u?._id;
+                                                            const isSelected = userId && editTeam.selectedEmployees.some(emp => {
+                                                                const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?.Id || emp?._id;
+                                                                return String(empId) === String(userId) && empId != null && userId != null;
+                                                            });
+                                                            
+                                                            return (
+                                                                <div 
+                                                                    key={`user-${userId || u?.id || u?.email || `member-${index}`}`} 
+                                                                    className={`p-3 cursor-pointer transition-all duration-200 ${
+                                                                        isSelected 
+                                                                            ? 'bg-[#15919B]/10' 
+                                                                            : 'hover:bg-[#15919B]/5'
+                                                                    } ${index !== 0 ? 'border-t border-[var(--border-color)]' : ''}`}
+                                                                    onClick={() => {
+                                                                        toggleEmployee(u);
+                                                                        setHasUnsavedChanges(true);
+                                                                    }}
+                                                                >
+                                                                    <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                                                            isSelected 
+                                                                                ? 'bg-gradient-to-br from-[#15919B]/30 to-[#15919B]/20' 
+                                                                                : 'bg-gradient-to-br from-[#15919B]/10 to-[#15919B]/5'
+                                                                        }`}>
+                                                                            <User className={`w-5 h-5 ${isSelected ? 'text-[#15919B]' : 'text-[var(--sub-text-color)]'}`} />
+                                                                        </div>
+                                                                        <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                                                                            <p className="text-sm font-semibold text-[var(--text-color)]">
+                                                                                {u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Unknown'}
+                                                                            </p>
+                                                                            <p className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</p>
+                                                                        </div>
+                                                                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+                                                                            isSelected 
+                                                                                ? 'border-[#15919B] bg-[#15919B] scale-110' 
+                                                                                : 'border-[var(--border-color)]'
+                                                                        }`}>
+                                                                            {isSelected && <Check className="text-white" size={14} strokeWidth={3} />}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="p-8 text-center">
+                                                            <UserPlus className="w-12 h-12 mx-auto mb-3 text-[var(--sub-text-color)] opacity-30" />
+                                                            <p className="text-sm text-[var(--sub-text-color)]">
+                                                                {membersSearchTerm 
+                                                                    ? t("allTeams.editTeam.noResults", "No users match your search") 
+                                                                    : t("allTeams.editTeam.noUsersInRole", "No users in this role")}
+                                                            </p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -409,187 +835,109 @@ export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData,
                                     </div>
                                 </div>
                             </div>
-                            
-                            {/* Team Members multi-select (choose role then users) */}
-                            <div className="space-y-2">
-                                <div className="relative">
-                                    <div className="form-input cursor-pointer flex items-center justify-between" onClick={(e) => {
-                                        e.stopPropagation();
-                                        setIsMembersRoleOpen(!isMembersRoleOpen);
-                                    }}>
-                                        <span className="text-[var(--sub-text-color)]">{membersRole ? membersRole.name : t("departments.newDepartmentForm.assignSupervisor.chooseRole")}</span>
-                                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isMembersRoleOpen ? 'rotate-180' : ''}`} size={16} />
-                                    </div>
-                                    {isMembersRoleOpen && (
-                                        <div 
-                                            className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                                            onClick={(e) => e.stopPropagation()}
+
+                            {/* Selected Members Display */}
+                            {editTeam.selectedEmployees.length > 0 && (
+                                <div className="space-y-3 pt-2">
+                                    <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
+                                        <h4 className="text-sm font-semibold text-[var(--text-color)]">
+                                            {t("allTeams.editTeam.selectedMembersTitle", "Selected Members")} ({editTeam.selectedEmployees.length})
+                                        </h4>
+                                        <button
+                                            onClick={() => {
+                                                setEditTeam(prev => ({ ...prev, selectedEmployees: [] }));
+                                                setHasUnsavedChanges(true);
+                                            }}
+                                            className="text-xs text-[var(--error-color)] hover:underline font-medium"
                                         >
-                                            {(roles || []).map(role => (
-                                                <div key={role.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => { 
-                                                    e.stopPropagation();
-                                                    setMembersRole(role); 
-                                                    setIsMembersRoleOpen(false); 
-                                                    setIsMembersOpen(true); 
-                                                }}>
-                                                    <div className="text-sm text-[var(--text-color)]">{role.name}</div>
-                                                </div>
-                                            ))}
-                                            {(!roles || roles.length === 0) && <div className="p-3 text-[var(--sub-text-color)]">No roles found</div>}
-                                        </div>
-                                    )}
-                                </div>
-                    <div className="relative">
-                                    <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => {
-                                        if (membersRole) {
-                                            setIsMembersOpen(!isMembersOpen);
-                                        } else {
-                                            setIsMembersRoleOpen(true);
-                                        }
-                                    }}>
-                            <span className="text-[var(--sub-text-color)]">
-                                            {editTeam.selectedEmployees.length > 0 ? `${editTeam.selectedEmployees.length} ${t("allTeams.editTeam.selected")}` : t("departments.newDepartmentForm.setupTeams.chooseEmployee")}
-                            </span>
-                                        <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isMembersOpen ? 'rotate-180' : ''}`} size={16} />
-                            </div>
-                                    {isMembersOpen && (
-                                        <div 
-                                            className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            {/* Search Input */}
-                                            <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
-                                                <div className="relative">
-                                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
-                                                    <input
-                                                        type="text"
-                                                        value={membersSearchTerm}
-                                                        onChange={(e) => setMembersSearchTerm(e.target.value)}
-                                                        placeholder={t("departments.newDepartmentForm.assignSupervisor.searchUsers") || "Search users..."}
-                                                        className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                        dir={isArabic ? 'rtl' : 'ltr'}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {/* Users List */}
-                                            <div className="overflow-y-auto max-h-[240px]">
-                                                {membersRole && filteredMemberUsers.length > 0 ? (
-                                                    filteredMemberUsers.map(u => {
-                                                        // Get user ID for comparison - same as add team
-                                                        const userId = u?.id || u?.userId || u?.userID || u?.UserId || u?._id;
-                                                        const isSelected = userId && editTeam.selectedEmployees.some(emp => {
-                                                            const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?.Id || emp?._id;
-                                                            // Use strict comparison with string conversion to handle different types
-                                                            return String(empId) === String(userId) && empId != null && userId != null;
-                                                        });
-                                                        
-                                                        return (
-                                                            <div 
-                                                                key={`user-${userId || u.id || u.email || Math.random()}`} 
-                                                                className={`p-3 cursor-pointer flex items-center justify-between ${
-                                                                    isSelected ? 'bg-[var(--accent-color)] bg-opacity-10' : 'hover:bg-[var(--hover-color)]'
-                                                                }`}
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    toggleEmployee(u);
-                                                                }}
-                                                            >
-                                                                <div className="text-sm text-[var(--text-color)]">{u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}</div>
-                                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                                                    isSelected 
-                                                                        ? 'border-[var(--accent-color)] bg-[var(--accent-color)]' 
-                                                                        : 'border-[var(--border-color)]'
-                                                                }`}>
-                                                                    {isSelected && <Check className="text-white" size={12} />}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <div className="p-3 text-[var(--sub-text-color)]">
-                                                        {membersRole ? (membersSearchTerm ? "No users found matching your search" : t("allTeams.editTeam.noUsersFound")) : "Select a role first"}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                        </div>
-                            </div>
-                            
-                            {/* Display selected members */}
-                            {editTeam.selectedEmployees && editTeam.selectedEmployees.length > 0 && (
-                                <div className="space-y-2">
-                                    <div className="text-sm font-medium text-[var(--text-color)]">
-                                        {t("allTeams.editTeam.selectedMembers")} ({editTeam.selectedEmployees.length}):
+                                            {t("allTeams.editTeam.clearAll", "Clear all")}
+                                        </button>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 p-3 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-4 bg-[var(--bg-color)] rounded-xl border-2 border-dashed border-[var(--border-color)]">
                                         {editTeam.selectedEmployees.map((emp, idx) => {
                                             const empId = emp.id || emp.userId || emp.userID || emp.Id || `emp-${idx}`;
                                             return (
                                                 <div 
                                                     key={empId} 
-                                                    className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-color)] rounded-lg border border-[var(--border-color)] text-sm hover:border-[var(--accent-color)] transition-colors"
+                                                    className="group flex items-center gap-2 px-3 py-2 bg-[#15919B]/10 rounded-lg border border-[#15919B]/30 hover:border-[#15919B]/50 hover:shadow-sm transition-all duration-200"
                                                 >
-                                                    <span className="text-[var(--text-color)] font-medium">
-                                                        {emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()}
-                                                    </span>
-                                                    <span className="text-xs text-[var(--sub-text-color)]">
-                                                        {emp.email || emp.username || ''}
-                                                    </span>
-                                                    <X 
-                                                        size={14} 
-                                                        className="text-[var(--sub-text-color)] cursor-pointer hover:text-red-500 ml-1" 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
+                                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#15919B]/20 to-[#15919B]/10 flex items-center justify-center flex-shrink-0">
+                                                        <User className="w-4 h-4 text-[#15919B]" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm font-semibold text-[var(--text-color)] truncate">
+                                                            {emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()}
+                                                        </p>
+                                                        {(emp.email || emp.username) && (
+                                                            <p className="text-xs text-[var(--sub-text-color)] truncate">
+                                                                {emp.email || emp.username}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
                                                             toggleEmployee(emp);
+                                                            setHasUnsavedChanges(true);
                                                         }}
-                                                        title={t("allTeams.editTeam.removeMember")}
-                                                    />
+                                                        className="p-1.5 hover:bg-[var(--rejected-leave-box-bg)] rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                        title={t("allTeams.editTeam.removeMember", "Remove")}
+                                                    >
+                                                        <X size={14} className="text-[var(--error-color)]" />
+                                                    </button>
                                                 </div>
                                             );
                                         })}
                                     </div>
-                            </div>
-                        )}
-                    
-                    {/* Team Description - Full Width */}
-                    <textarea
-                        className="form-input w-full"
-                        placeholder={t("departments.newDepartmentForm.setupTeams.description")}
-                        rows="3"
-                        value={editTeam.description}
-                        onChange={(e) => setEditTeam(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                    
-                    <div className="flex gap-3">
+                                </div>
+                            )}
+                        </div>
+                    </>
+                    )}
+                </div>
+
+                {/* Sticky Footer with Action Buttons */}
+                <div className="flex-shrink-0 border-t-2 border-[var(--border-color)] bg-[var(--bg-color)] p-6">
+                    <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                         <button 
                             type="button" 
-                            className="btn-secondary"
+                            className="flex-1 px-6 py-3 rounded-xl border-2 border-[var(--border-color)] text-[var(--text-color)] font-semibold hover:bg-[var(--hover-color)] hover:border-[var(--accent-color)]/30 transition-all duration-200 hover:scale-105"
                             onClick={handleCancel}
+                            disabled={isUpdating || isUpdatingUsers}
                         >
                             {t("allTeams.editTeam.cancel")}
                         </button>
                         <button 
                             type="button" 
-                            className="btn-primary flex items-center gap-2"
-                            onClick={handleUpdateTeam}
-                                    disabled={!editTeam.name.trim() || !editTeam.teamLeader || isUpdating || isUpdatingUsers}
-                                >
-                                    {(isUpdating || isUpdatingUsers) ? (
-                                        <>
-                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                            <span>{isUpdating ? t("allTeams.editTeam.updatingTeam") : t("allTeams.editTeam.updatingMembers")}</span>
-                                        </>
-                                    ) : (
-                                        <>
-                            <Save size={16} />
-                            {t("allTeams.editTeam.saveChanges")}
-                                        </>
-                                    )}
+                            className={`flex-1 px-6 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-300 ${
+                                isFormValid && !isUpdating && !isUpdatingUsers
+                                    ? 'bg-gradient-to-r from-[var(--accent-color)] to-[var(--accent-color)]/80 text-white hover:shadow-lg hover:scale-105 border-2 border-[var(--accent-color)]'
+                                    : 'bg-[var(--container-color)] text-[var(--sub-text-color)] border-2 border-[var(--border-color)] cursor-not-allowed opacity-60'
+                            }`}
+                            onClick={() => {
+                                if (validateForm()) {
+                                    handleUpdateTeam();
+                                }
+                            }}
+                            disabled={!isFormValid || isUpdating || isUpdatingUsers}
+                        >
+                            {(isUpdating || isUpdatingUsers) ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    <span>{isUpdating ? t("allTeams.editTeam.updatingTeam") : t("allTeams.editTeam.updatingMembers")}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={18} />
+                                    {t("allTeams.editTeam.saveChanges")}
+                                </>
+                            )}
                         </button>
                     </div>
-                        </>
+                    {!isFormValid && !isLoadingMembers && (
+                        <div className={`mt-3 flex items-center gap-2 text-xs text-[var(--sub-text-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <AlertCircle size={12} />
+                            <span>{t("allTeams.editTeam.fillRequiredFields", "Please fill in all required fields (Team Name and Team Leader)")}</span>
+                        </div>
                     )}
                 </div>
             </div>
