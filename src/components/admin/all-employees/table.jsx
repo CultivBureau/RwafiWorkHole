@@ -410,198 +410,247 @@ const EmployeesTable = () => {
         <>
         <style>{DATE_PICKER_HIDE_ICON_CSS}</style>
         <div className="w-full" dir={isArabic ? "rtl" : "ltr"}>
-            {/* Filters and Controls Container */}
-            <div
-                className="rounded-xl border shadow-sm p-3 md:p-3 mb-2"
-                style={{
-                    backgroundColor: 'var(--bg-color)',
-                    borderColor: 'var(--border-color)',
-                    boxShadow: 'var(--shadow-color)'
-                }}
-            >
-                {/* First Row - Search and Filter Buttons */}
-                <div className={`grid grid-cols-1 md:grid-cols-8 gap-2 md:gap-3 mb-4 items-center ${isArabic ? 'direction-rtl' : ''}`}>
-                    {/* Search - Takes 3 columns on desktop, full width on mobile */}
-                    <div className="md:col-span-3 col-span-1 w-full mb-2 md:mb-0 relative">
-                        <Search
-                            className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 ${isArabic ? 'right-3' : 'left-3'}`}
-                            style={{ color: 'var(--sub-text-color)' }}
-                        />
-                        <input
-                            type="text"
-                            placeholder={t("employees.search.placeholder", "Search employees...")}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full border rounded-xl py-2 text-sm focus:outline-none focus:ring-2 focus:ring-opacity-50 transition-all duration-200"
-                            style={{
-                                borderColor: 'var(--border-color)',
-                                backgroundColor: 'var(--bg-color)',
-                                color: 'var(--text-color)',
-                                paddingLeft: isArabic ? '16px' : '40px',
-                                paddingRight: isArabic ? '40px' : '16px',
-                                focusRingColor: 'var(--accent-color)'
-                            }}
-                        />
+            {/* Enhanced Header Container */}
+            <div className="mb-4">
+                {/* Main Controls Row */}
+                <div className="flex flex-col gap-4">
+                    {/* Search and Filters Row */}
+                    <div className="flex flex-col xl:flex-row gap-3">
+                        {/* Search Input - Takes more space */}
+                        <div className="relative flex-1 min-w-0">
+                            <div className={`absolute inset-y-0 ${isArabic ? 'right-3' : 'left-3'} flex items-center pointer-events-none`}>
+                                <Search className="w-4 h-4" style={{ color: 'var(--sub-text-color)' }} />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder={t("employees.search.placeholder", "Search employees...")}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full h-[44px] rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+                                style={{
+                                    backgroundColor: 'var(--bg-color)',
+                                    borderColor: 'var(--border-color)',
+                                    color: 'var(--text-color)',
+                                    fontSize: '13px',
+                                    direction: isArabic ? 'rtl' : 'ltr',
+                                    paddingLeft: isArabic ? '1rem' : '2.5rem',
+                                    paddingRight: isArabic ? '2.5rem' : '1rem',
+                                }}
+                            />
+                        </div>
+
+                        {/* Filters Group */}
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                            {/* Join Date Filter */}
+                            <div
+                                className="relative w-full sm:w-[160px] cursor-pointer"
+                                onClick={() => {
+                                    if (joinDateInputRef.current) {
+                                        if (typeof joinDateInputRef.current.showPicker === 'function') {
+                                            joinDateInputRef.current.showPicker();
+                                        } else {
+                                            joinDateInputRef.current.focus();
+                                            joinDateInputRef.current.click();
+                                        }
+                                    }
+                                }}
+                            >
+                                <Calendar
+                                    className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-color)] pointer-events-none ${isArabic ? 'right-3' : 'left-3'}`}
+                                />
+                                {!joinDateFilter && (
+                                    <span
+                                        className={`pointer-events-none font-semibold gradient-text absolute top-1/2 -translate-y-1/2 text-xs ${isArabic ? 'right-10' : 'left-10'}`}
+                                    >
+                                        {t("employees.filters.joinDate")}
+                                    </span>
+                                )}
+                                <input
+                                    ref={joinDateInputRef}
+                                    type="date"
+                                    value={joinDateFilter}
+                                    onChange={(e) => setJoinDateFilter(e.target.value)}
+                                    className={`w-full h-[44px] border rounded-xl px-10 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-[var(--bg-color)] ${isArabic ? 'text-right' : 'text-left'} ${joinDateFilter ? 'text-[var(--accent-color)] font-semibold' : 'text-transparent'}`}
+                                    style={{
+                                        borderColor: 'var(--border-color)',
+                                        colorScheme: 'var(--theme)',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none',
+                                        backgroundImage: 'none'
+                                    }}
+                                />
+                            </div>
+
+                            {/* Department Filter */}
+                            <div className="relative w-full sm:w-[140px]">
+                                <select
+                                    value={departmentFilter || ""}
+                                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                                    className="w-full h-[44px] px-3 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer text-center"
+                                    style={{
+                                        backgroundColor: 'var(--bg-color)',
+                                        borderColor: 'var(--border-color)',
+                                        color: departmentFilter ? 'var(--accent-color)' : 'var(--sub-text-color)',
+                                        direction: isArabic ? 'rtl' : 'ltr',
+                                    }}
+                                >
+                                    <option value="" disabled className="gradient-text">
+                                        {t("employees.filters.department")}
+                                    </option>
+                                    {activeDepartments.map((dept) => (
+                                        <option key={dept} value={dept} style={{ color: 'var(--text-color)' }}>
+                                            {dept}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none gradient-text ${isArabic ? 'left-3' : 'right-3'}`}
+                                />
+                            </div>
+
+                            {/* Role Filter */}
+                            <div className="relative w-full sm:w-[130px]">
+                                <select
+                                    value={roleFilter || ""}
+                                    onChange={(e) => setRoleFilter(e.target.value)}
+                                    className="w-full h-[44px] px-3 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer text-center"
+                                    style={{
+                                        backgroundColor: 'var(--bg-color)',
+                                        borderColor: 'var(--border-color)',
+                                        color: roleFilter ? 'var(--accent-color)' : 'var(--sub-text-color)',
+                                        direction: isArabic ? 'rtl' : 'ltr',
+                                    }}
+                                >
+                                    <option value="" disabled className="gradient-text">
+                                        {t("employees.filters.role")}
+                                    </option>
+                                    {uniqueRoles.map((role) => (
+                                        <option key={role} value={role} style={{ color: 'var(--text-color)' }}>
+                                            {role}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none gradient-text ${isArabic ? 'left-3' : 'right-3'}`}
+                                />
+                            </div>
+
+                            {/* Status Filter */}
+                            <div className="relative w-full sm:w-[120px]">
+                                <select
+                                    value={statusFilter || ""}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="w-full h-[44px] px-3 rounded-xl border text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none cursor-pointer text-center"
+                                    style={{
+                                        backgroundColor: 'var(--bg-color)',
+                                        borderColor: 'var(--border-color)',
+                                        color: statusFilter ? 'var(--accent-color)' : 'var(--sub-text-color)',
+                                        direction: isArabic ? 'rtl' : 'ltr',
+                                    }}
+                                >
+                                    <option value="" disabled className="gradient-text">
+                                        {t("employees.filters.status")}
+                                    </option>
+                                    {STATUS_OPTIONS.map((status) => (
+                                        <option key={status} value={status} style={{ color: 'var(--text-color)' }}>
+                                            {status}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown
+                                    className={`absolute top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none gradient-text ${isArabic ? 'left-3' : 'right-3'}`}
+                                />
+                            </div>
+
+                            {/* Clear All Button */}
+                            {activeFiltersCount > 0 && (
+                                <button
+                                    onClick={clearAllFilters}
+                                    className="w-full sm:w-auto h-[44px] px-4 rounded-xl text-xs font-medium transition-all duration-200 gradient-bg text-white hover:shadow-md shadow-sm"
+                                >
+                                    {t("employees.clearAll", "Clear All")}
+                                </button>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Each filter/select is full width on mobile, 1 col on desktop */}
-                    <div className="md:col-span-1 col-span-1 w-full">
-                        <div
-                            className="relative w-full cursor-pointer"
-                            onClick={() => {
-                                if (joinDateInputRef.current) {
-                                    if (typeof joinDateInputRef.current.showPicker === 'function') {
-                                        joinDateInputRef.current.showPicker();
-                                    } else {
-                                        joinDateInputRef.current.focus();
-                                        joinDateInputRef.current.click();
-                                    }
-                                }
-                            }}
-                        >
-                            <Calendar
-                                className={`absolute top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--accent-color)] pointer-events-none ${isArabic ? 'right-4' : 'left-4'}`}
-                            />
-                            {!joinDateFilter && (
-                                <span
-                                    className={`pointer-events-none font-semibold gradient-text absolute top-1/2 -translate-y-1/2 text-xs ${isArabic ? 'right-10' : 'left-10'}`}
-                                    
-                                >
-                                    {t("employees.filters.joinDate")}
+                    {/* Active Filters and Actions Row */}
+                    <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${isArabic ? 'sm:flex-row-reverse' : ''}`}>
+                        {/* Active Filters Chips */}
+                        <div className={`flex flex-wrap items-center gap-2 flex-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            {activeFilters.length === 0 && (
+                                <span className="text-xs" style={{ color: 'var(--sub-text-color)' }}>
+                                    {t("employees.noFiltersActive", "No filters applied")}
                                 </span>
                             )}
-                            <input
-                                ref={joinDateInputRef}
-                                type="date"
-                                value={joinDateFilter}
-                                onChange={(e) => setJoinDateFilter(e.target.value)}
-                                className={`w-full border rounded-full px-10 py-2 text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] bg-[var(--bg-color)] ${isArabic ? 'text-right' : 'text-left'} ${joinDateFilter ? 'text-[var(--accent-color)] font-semibold' : 'text-transparent'}`}
-                                style={{
-                                    borderColor: 'var(--border-color)',
-                                    colorScheme: 'var(--theme)',
-                                    appearance: 'none',
-                                    WebkitAppearance: 'none',
-                                    MozAppearance: 'none',
-                                    backgroundImage: 'none'
-                                }}
-                            />
+                            {activeFilters.map((filter) => (
+                                <div
+                                    key={filter.key}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border ${isArabic ? 'flex-row-reverse' : ''}`}
+                                    style={{
+                                        backgroundColor: 'var(--menu-active-bg)',
+                                        borderColor: 'var(--accent-color)',
+                                        color: 'var(--text-color)'
+                                    }}
+                                >
+                                    <span className="font-medium">{filter.value}</span>
+                                    <button
+                                        onClick={() => filter.setter("")}
+                                        className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"
+                                        style={{ color: 'var(--accent-color)' }}
+                                    >
+                                        <span className="text-sm font-bold">×</span>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                    <div className="md:col-span-1 col-span-1 w-full">
-                        <FilterSelect
-                            value={departmentFilter}
-                            onChange={(e) => setDepartmentFilter(e.target.value)}
-                            options={activeDepartments}
-                            placeholder={t("employees.filters.department")}
-                        />
-                    </div>
-                    <div className="md:col-span-1 col-span-1 w-full">
-                        <FilterSelect
-                            value={roleFilter}
-                            onChange={(e) => setRoleFilter(e.target.value)}
-                            options={uniqueRoles}
-                            placeholder={t("employees.filters.role")}
-                        />
-                    </div>
-                    <div className="md:col-span-1 col-span-1 w-full">
-                        <FilterSelect
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            options={STATUS_OPTIONS}
-                            placeholder={t("employees.filters.status")}
-                        />
-                    </div>
-                    <div className="md:col-span-1 col-span-1 w-full">
-                        {activeFiltersCount > 0 ? (
-                            <button
-                                onClick={clearAllFilters}
-                                className="w-full px-3 py-1 rounded-xl text-xs md:text-sm font-medium transition-all duration-200 border gradient-bg"
-                                style={{
-                                    color: 'white',
-                                    borderColor: 'var(--accent-color)'
-                                }}
-                            >
-                                <span className="hidden md:inline">{t("employees.clearAll", "Clear All")}</span>
-                                <span className="md:hidden">Clear</span>
-                            </button>
-                        ) : (
-                            <div className="w-full h-full"></div>
-                        )}
-                    </div>
-                </div>
 
-                {/* Second Row - View Toggle, Add Button, and Active Filters */}
-                <div className={`flex flex-col md:flex-row items-center justify-between gap-2 md:gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                    {/* Left side - Active Filters Chips */}
-                    <div className={`flex flex-wrap items-center gap-2 flex-1 w-full md:w-auto ${isArabic ? 'flex-row-reverse' : ''}`}>
-                        {activeFilters.map((filter) => (
+                        {/* View Toggle and Add Button */}
+                        <div className={`flex items-center gap-3 shrink-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            {/* View Mode Toggle */}
                             <div
-                                key={filter.key}
-                                className="flex items-center gap-2 px-2 md:px-3 py-1 rounded-full text-xs border"
+                                className="flex items-center rounded-xl p-1 shadow-sm"
                                 style={{
                                     backgroundColor: 'var(--menu-active-bg)',
-                                    borderColor: 'var(--accent-color)',
-                                    color: 'var(--text-color)'
+                                    border: '1px solid var(--border-color)'
                                 }}
                             >
-                                <span>{filter.value}</span>
                                 <button
-                                    onClick={() => filter.setter("")}
-                                    className="w-3 h-3 md:w-4 md:h-4 rounded-full flex items-center justify-center hover:bg-red-100 transition-colors"
-                                    style={{ color: 'var(--accent-color)' }}
+                                    onClick={() => setViewMode("grid")}
+                                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === "grid" ? 'shadow-sm' : ''}`}
+                                    style={{
+                                        backgroundColor: viewMode === "grid" ? 'var(--accent-color)' : 'transparent',
+                                        color: viewMode === "grid" ? 'white' : 'var(--sub-text-color)'
+                                    }}
+                                    title={t("employees.viewMode.grid", "Grid View")}
                                 >
-                                    <span className="text-xs">×</span>
+                                    <LayoutGrid className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode("table")}
+                                    className={`p-2 rounded-lg transition-all duration-200 ${viewMode === "table" ? 'shadow-sm' : ''}`}
+                                    style={{
+                                        backgroundColor: viewMode === "table" ? 'var(--accent-color)' : 'transparent',
+                                        color: viewMode === "table" ? 'white' : 'var(--sub-text-color)'
+                                    }}
+                                    title={t("employees.viewMode.table", "Table View")}
+                                >
+                                    <TableIcon className="w-4 h-4" />
                                 </button>
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Right side - View Toggle and Add Button */}
-                    <div className={`flex items-center gap-3 md:gap-4 w-full md:w-auto justify-end`}>
-                        {/* View Mode Toggle */}
-                        <div
-                            className="flex items-center rounded-xl p-1"
-                            style={{
-                                backgroundColor: 'var(--menu-active-bg)',
-                                border: '1px solid var(--border-color)'
-                            }}
-                        >
-                            <button
-                                onClick={() => setViewMode("grid")}
-                                className={`p-1.5 md:p-2 rounded-lg transition-all duration-200 ${viewMode === "grid" ? 'shadow-sm' : ''}`}
-                                style={{
-                                    backgroundColor: viewMode === "grid" ? 'var(--accent-color)' : 'transparent',
-                                    color: viewMode === "grid" ? 'white' : 'var(--sub-text-color)'
-                                }}
-                            >
-                                <LayoutGrid className="w-3 h-3 md:w-4 md:h-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode("table")}
-                                className={`p-1.5 md:p-2 rounded-lg transition-all duration-200 ${viewMode === "table" ? 'shadow-sm' : ''}`}
-                                style={{
-                                    backgroundColor: viewMode === "table" ? 'var(--accent-color)' : 'transparent',
-                                    color: viewMode === "table" ? 'white' : 'var(--sub-text-color)'
-                                }}
-                            >
-                                <TableIcon className="w-3 h-3 md:w-4 md:h-4" />
-                            </button>
+                            {/* Add New Employee Button */}
+                            {canCreate && (
+                                <button
+                                    onClick={handleAddNewEmployee}
+                                    className={`gradient-bg flex items-center gap-2 h-[44px] px-5 rounded-xl text-sm font-medium text-white transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg shadow-sm ${isArabic ? 'flex-row-reverse' : ''}`}
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    <span>{t("employees.addNew", "Add New Employee")}</span>
+                                </button>
+                            )}
                         </div>
-
-                        {/* Add New Employee Button */}
-                        {canCreate && (
-                            <button
-                                onClick={handleAddNewEmployee}
-                                className="gradient-bg flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium text-white transition-all duration-200 hover:shadow-lg"
-                                style={{
-                                    border: '1px solid var(--accent-color)'
-                                }}
-                            >
-                                <Plus className="w-3 h-3 md:w-4 md:h-4" />
-                                <span className="hidden sm:inline">{t("employees.addNew", "Add New Employee")}</span>
-                                <span className="sm:hidden">{t("employees.add", "Add")}</span>
-                            </button>
-                        )}
                     </div>
                 </div>
             </div>
