@@ -17,27 +17,22 @@ const TimerPopUp = ({
 }) => {
   const { t, i18n } = useTranslation()
   const isRtl = i18n.dir() === "rtl"
-  const [note, setNote] = useState("")
-  const [showNoteInput, setShowNoteInput] = useState(false)
-  const [actionType, setActionType] = useState("")
 
-  const handleActionWithNote = (action) => {
-    setActionType(action)
-    setShowNoteInput(true)
-  }
-
-  const executeAction = async () => {
+  const handleComplete = async () => {
     try {
-      if (actionType === 'complete') {
-        await onComplete(note)
-      } else if (actionType === 'cancel') {
-        await onCancel(note)
-      }
-      setShowNoteInput(false)
-      setNote("")
+      await onComplete('')
       onClose()
     } catch (error) {
-      console.error(`Failed to ${actionType} timer:`, error)
+      console.error('Failed to complete timer:', error)
+    }
+  }
+
+  const handleCancel = async () => {
+    try {
+      await onCancel('')
+      onClose()
+    } catch (error) {
+      console.error('Failed to cancel timer:', error)
     }
   }
 
@@ -135,98 +130,6 @@ const TimerPopUp = ({
     )
   }
 
-  if (showNoteInput) {
-    return (
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all duration-300">
-          {/* Decorative top bar */}
-          <div className={`h-2 rounded-t-3xl ${
-            actionType === 'complete' 
-              ? 'bg-gradient-to-r from-green-400 to-green-600' 
-              : 'bg-gradient-to-r from-red-400 to-red-600'
-          }`}></div>
-          
-          <div className="p-8" style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg ${
-                actionType === 'complete' 
-                  ? 'bg-gradient-to-br from-green-400 to-green-600' 
-                  : 'bg-gradient-to-br from-red-400 to-red-600'
-              }`}>
-                {actionType === 'complete' ? (
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                {actionType === 'complete' ? t("timer.completeTimer") : t("timer.cancelTimer")}
-              </h3>
-            </div>
-            
-            {/* Task Display */}
-            <div className="bg-gradient-to-r from-[#09D1C7]/10 to-[#15919B]/10 p-5 rounded-2xl border border-[#09D1C7]/20 mb-6">
-              <p className="text-sm font-medium text-gray-600 mb-2">{t("timer.task")}:</p>
-              <p className="font-bold text-[#15919B] text-lg">{timer.tag}</p>
-            </div>
-
-            {/* Note Input */}
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                {t("timer.addNote")} <span className="text-gray-400 font-normal">({t("timer.optional")})</span>
-              </label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                className="w-full border-2 border-gray-200 rounded-xl px-4 py-4 h-24 resize-none focus:border-[#15919B] focus:outline-none transition-all duration-300 bg-gray-50 hover:bg-white text-gray-800 placeholder-gray-400"
-                placeholder={t("timer.notePlaceholder") || "Add any notes about this task..."}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                className="flex-1 py-4 rounded-xl bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-all duration-300 border border-gray-200 disabled:opacity-50"
-                onClick={() => {
-                  setShowNoteInput(false)
-                  setNote("")
-                  setActionType("")
-                }}
-                disabled={isLoading[actionType]}
-              >
-                Back
-              </button>
-              <button
-                className={`flex-1 py-4 rounded-xl text-white font-semibold transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none ${
-                  actionType === 'complete' 
-                    ? 'bg-gradient-to-r from-green-400 to-green-600 hover:shadow-xl' 
-                    : 'bg-gradient-to-r from-red-400 to-red-600 hover:shadow-xl'
-                }`}
-                onClick={executeAction}
-                disabled={isLoading[actionType]}
-              >
-                {isLoading[actionType] ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Processing...
-                  </div>
-                ) : actionType === 'complete' ? (
-                  t("timer.complete")
-                ) : (
-                  t("timer.cancel")
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -318,28 +221,44 @@ const TimerPopUp = ({
               )}
 
               <button
-                className="py-4 px-4 rounded-xl bg-gradient-to-r from-[#09D1C7] to-[#15919B] text-white font-semibold hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-                onClick={() => handleActionWithNote('complete')}
+                className="py-4 px-4 rounded-xl bg-gradient-to-r from-[#09D1C7] to-[#15919B] text-white font-semibold hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
+                onClick={handleComplete}
+                disabled={isLoading.complete}
               >
-                <div className="flex items-center justify-center gap-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm">{t("timer.complete")}</span>
-                </div>
+                {isLoading.complete ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-sm">Completing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-sm">{t("timer.complete")}</span>
+                  </div>
+                )}
               </button>
             </div>
 
             <button
-              className="w-full py-4 rounded-xl bg-gradient-to-r from-red-400 to-red-600 text-white font-semibold hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-              onClick={() => handleActionWithNote('cancel')}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-red-400 to-red-600 text-white font-semibold hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:transform-none"
+              onClick={handleCancel}
+              disabled={isLoading.cancel}
             >
-              <div className="flex items-center justify-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>{t("timer.cancel")}</span>
-              </div>
+              {isLoading.cancel ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Cancelling...</span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>{t("timer.cancel")}</span>
+                </div>
+              )}
             </button>
 
             <button
