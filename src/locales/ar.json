@@ -964,7 +964,13 @@
     "confirmDelete": "تأكيد الحذف",
     "confirmDeleteMessage": "هل أنت متأكد من رغبتك في حذف هذا الدور؟",
     "roleDeleted": "تم حذف الدور بنجاح",
+    "confirmRestore": "تأكيد الاستعادة",
+    "restoreMessage": "هل أنت متأكد من رغبتك في استعادة هذا الدور؟",
+    "roleRestored": "تمت استعادة الدور بنجاح",
     "roleSaved": "تم حفظ الدور بنجاح",
+    "actions": {
+      "restore": "استعادة"
+    },
     "users": "المستخدمون",
     "lastUpdated": "آخر تحديث",
     "view": "عرض",
@@ -1082,7 +1088,8 @@
       "loadPermissionsFailed": "فشل تحميل الصلاحيات",
       "loadRolesFailed": "فشل تحميل الأدوار",
       "updateFailed": "فشل تحديث الدور",
-      "deleteFailed": "فشل حذف الدور"
+      "deleteFailed": "فشل حذف الدور",
+      "restoreFailed": "فشل استعادة الدور"
     },
     "noPermissionToViewPermissions": "لا يوجد صلاحية لعرض الصلاحيات",
     "noPermissionToViewPermissionsDesc": "ليس لديك صلاحية لعرض الصلاحيات. لا يزال بإمكانك إنشاء دور، لكن لن تتمكن من تعيين الصلاحيات له."

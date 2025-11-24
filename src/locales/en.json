@@ -1238,7 +1238,13 @@
     "confirmDelete": "Confirm Delete",
     "confirmDeleteMessage": "Are you sure you want to delete this role?",
     "roleDeleted": "Role deleted successfully",
+    "confirmRestore": "Restore Role",
+    "restoreMessage": "Are you sure you want to restore this role?",
+    "roleRestored": "Role restored successfully",
     "roleSaved": "Role saved successfully",
+    "actions": {
+      "restore": "Restore"
+    },
     "users": "Users",
     "lastUpdated": "Last Updated Date",
     "view": "View",
@@ -1356,7 +1362,8 @@
       "loadPermissionsFailed": "Failed to load permissions",
       "loadRolesFailed": "Failed to load roles",
       "updateFailed": "Failed to update role",
-      "deleteFailed": "Failed to delete role"
+      "deleteFailed": "Failed to delete role",
+      "restoreFailed": "Failed to restore role"
     },
     "noPermissionToViewPermissions": "No Permission to View Permissions",
     "noPermissionToViewPermissionsDesc": "You do not have permission to view permissions. You can still create a role, but you will not be able to assign permissions to it."

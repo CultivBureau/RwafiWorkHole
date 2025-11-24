@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Edit, Trash2, UserPlus } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, UserPlus, RotateCcw } from "lucide-react"
 import EditRole from "./edit_role"
 import { useTranslation } from "react-i18next"
-import { useGetAllRolesQuery, useDeleteRoleMutation } from "../../../services/apis/RoleApi"
+import { useGetAllRolesQuery, useDeleteRoleMutation, useRestoreRoleMutation } from "../../../services/apis/RoleApi"
 import toast from "react-hot-toast"
 import { useHasPermission } from "../../../hooks/useHasPermission"
 
@@ -14,6 +14,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
     // Permission checks
     const canUpdateRole = useHasPermission('Role.Update');
     const canDeleteRole = useHasPermission('Role.Delete');
+    const canRestoreRole = useHasPermission('Role.Restore');
 
     // Fetch roles from API
     const queryArgs = useMemo(() => ({
@@ -24,6 +25,8 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
 
     const { data: rolesResponse, isLoading, error, refetch } = useGetAllRolesQuery(queryArgs);
     const [deleteRole, { isLoading: isDeleting }] = useDeleteRoleMutation();
+    const [restoreRole, { isLoading: isRestoring }] = useRestoreRoleMutation();
+    const isProcessingAction = isDeleting || isRestoring;
 
     const defaultRoleFilter = t('roles.filters.roleType');
 
@@ -31,8 +34,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [selectedRole, setSelectedRole] = useState(null)
     const [selectedRoleId, setSelectedRoleId] = useState(null)
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [roleToDelete, setRoleToDelete] = useState(null)
+    const [pendingAction, setPendingAction] = useState(null) // { type: 'delete' | 'restore', role }
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(7)
 
@@ -128,22 +130,34 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
         setIsEditOpen(false);
     };
 
-    const handleDeleteRole = (role) => {
-        setRoleToDelete(role);
-        setIsDeleteModalOpen(true);
+    const openActionModal = (type, role) => {
+        setPendingAction({ type, role });
     };
 
-    const confirmDelete = async () => {
-        if (!roleToDelete) return;
+    const confirmAction = async () => {
+        if (!pendingAction?.role) return;
+
+        const { type, role } = pendingAction;
+        const isRestore = type === "restore";
 
         try {
-            await deleteRole(roleToDelete.id).unwrap();
-            toast.success(t('roles.roleDeleted') || 'Role deleted successfully');
-            setIsDeleteModalOpen(false);
-            setRoleToDelete(null);
+            if (isRestore) {
+                await restoreRole(role.id).unwrap();
+                toast.success(t('roles.roleRestored') || 'Role restored successfully');
+            } else {
+                await deleteRole(role.id).unwrap();
+                toast.success(t('roles.roleDeleted') || 'Role deleted successfully');
+            }
             refetch();
         } catch (error) {
-            toast.error(error?.data?.errorMessage || t('roles.errors.deleteFailed') || 'Failed to delete role');
+            toast.error(
+                error?.data?.errorMessage ||
+                (isRestore
+                    ? t('roles.errors.restoreFailed') || 'Failed to restore role'
+                    : t('roles.errors.deleteFailed') || 'Failed to delete role')
+            );
+        } finally {
+            setPendingAction(null);
         }
     };
 
@@ -188,7 +202,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                 <td className={`py-4 px-6 text-[var(--text-color)] text-sm font-medium ${isArabic ? 'text-right' : 'text-left'}`}>{role.users}</td>
                 <td className={`py-4 px-6 ${isArabic ? 'text-right' : 'text-left'}`}>{getStatusBadge(role.status)}</td>
                 {/* Actions cell - Only show if user has any action permissions */}
-                {(canUpdateRole || canDeleteRole) && (
+                {(canUpdateRole || canDeleteRole || canRestoreRole) && (
                     <td className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
                         <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
                             {canUpdateRole && (
@@ -204,17 +218,30 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                     <Edit className="w-4 h-4" />
                                 </button>
                             )}
-                            {canDeleteRole && (
+                            {role.status === "Active" && canDeleteRole && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        handleDeleteRole(role);
+                                        openActionModal("delete", role);
                                     }}
                                     className="p-2 text-[var(--error-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
                                     aria-label={t('employees.actions.delete')}
                                     title={t('employees.actions.delete')}
                                 >
                                     <Trash2 className="w-4 h-4" />
+                                </button>
+                            )}
+                            {role.status === "Inactive" && canRestoreRole && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        openActionModal("restore", role);
+                                    }}
+                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                                    aria-label={t('roles.actions.restore') || 'Restore'}
+                                    title={t('roles.actions.restore') || 'Restore'}
+                                >
+                                    <RotateCcw className="w-4 h-4" />
                                 </button>
                             )}
                         </div>
@@ -264,7 +291,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                             {t('roles.table.status')}
                                         </th>
                                         {/* Actions column - Only show if user has any action permissions */}
-                                        {(canUpdateRole || canDeleteRole) && (
+                {(canUpdateRole || canDeleteRole || canRestoreRole) && (
                                             <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
                                                 {t('roles.table.actions')}
                                             </th>
@@ -357,33 +384,44 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                     )}
             </div>
 
-            {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
+            {/* Delete / Restore Confirmation Modal */}
+            {pendingAction && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-[var(--bg-color)] rounded-lg border border-[var(--border-color)] p-6 max-w-md w-full" style={{ direction: isArabic ? 'rtl' : 'ltr' }}>
-                        <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-4 ${isArabic ? 'text-right' : 'text-left'}`} dir={isArabic ? 'rtl' : 'ltr'}>
-                            {t('roles.confirmDelete')}
+                        <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-4 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            {pendingAction.type === "restore"
+                                ? t('roles.confirmRestore') || 'Restore Role'
+                                : t('roles.confirmDelete')}
                         </h3>
-                        <p className={`text-[var(--sub-text-color)] mb-6 ${isArabic ? 'text-right' : 'text-left'}`} dir={isArabic ? 'rtl' : 'ltr'}>
-                            {t('roles.confirmDeleteMessage') || 'Are you sure you want to delete this role?'} "{roleToDelete?.role || roleToDelete?.name}"
+                        <p className={`text-[var(--sub-text-color)] mb-6 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            {pendingAction.type === "restore"
+                                ? (t('roles.restoreMessage') || 'Are you sure you want to restore this role?')
+                                : (t('roles.confirmDeleteMessage') || 'Are you sure you want to delete this role?')}
+                            {` "${pendingAction.role?.role || pendingAction.role?.name}"`}
                         </p>
                         <div className={`flex gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                             <button
-                                onClick={() => {
-                                    setIsDeleteModalOpen(false);
-                                    setRoleToDelete(null);
-                                }}
-                                disabled={isDeleting}
+                                onClick={() => setPendingAction(null)}
+                                disabled={isProcessingAction}
                                 className="flex-1 px-4 py-2 border border-[var(--border-color)] text-[var(--text-color)] rounded-lg font-medium hover:bg-[var(--hover-color)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {t('roles.cancel')}
                             </button>
                             <button
-                                onClick={confirmDelete}
-                                disabled={isDeleting}
-                                className="flex-1 px-4 py-2 bg-[var(--error-color)] text-white rounded-lg font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={confirmAction}
+                                disabled={isProcessingAction}
+                                className="flex-1 px-4 py-2 rounded-lg font-medium text-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                    background: pendingAction.type === "restore"
+                                        ? "linear-gradient(135deg, #15919B 0%, #09D1C7 100%)"
+                                        : "var(--error-color)"
+                                }}
                             >
-                                {isDeleting ? (t('common.loading') || 'Deleting...') : (t('roles.delete') || 'Delete')}
+                                {isProcessingAction
+                                    ? (t('common.loading') || 'Processing...')
+                                    : pendingAction.type === "restore"
+                                        ? (t('roles.actions.restore') || 'Restore')
+                                        : (t('roles.delete') || 'Delete')}
                             </button>
                         </div>
                     </div>
