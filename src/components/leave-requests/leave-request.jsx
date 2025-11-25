@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useTranslation } from "react-i18next"
 import { Upload, File, Loader2, AlertCircle, CheckCircle } from "lucide-react"
 import { toast } from "react-hot-toast"
 import { useGetAllLeaveTypesQuery } from "../../services/apis/LeaveTypeApi"
-import { useSubmitLeaveRequestMutation } from "../../services/apis/LeaveApi"
+import { useSubmitLeaveRequestMutation, useGetMyLeaveRequestsQuery } from "../../services/apis/LeaveApi"
 
 // Static user data
 const staticUser = {
@@ -21,6 +21,44 @@ const LeaveRequest = ({ refetch }) => {
 
   // Use static user data
   const user = staticUser;
+
+  const { data: myLeaveRequestsData } = useGetMyLeaveRequestsQuery()
+
+  const existingLeaves = useMemo(() => {
+    const list = myLeaveRequestsData?.value
+    if (!Array.isArray(list)) return []
+
+    return list
+      .map((leave) => {
+        const start = leave?.startDate || leave?.fromDate
+        const end = leave?.endDate || leave?.toDate || start
+        const status = (leave?.status || leave?.leaveStatus || "").toString().toLowerCase()
+        return { start, end, status }
+      })
+      .filter(
+        (leave) =>
+          leave.start &&
+          leave.end &&
+          !["rejected", "cancelled", "canceled"].includes(leave.status)
+      )
+  }, [myLeaveRequestsData])
+
+  const hasOverlappingLeave = useCallback(
+    (from, to) => {
+      if (!from || !to || !existingLeaves.length) return false
+      const newStart = new Date(from)
+      const newEnd = new Date(to)
+      if (Number.isNaN(newStart.getTime()) || Number.isNaN(newEnd.getTime())) return false
+
+      return existingLeaves.some(({ start, end }) => {
+        const leaveStart = new Date(start)
+        const leaveEnd = new Date(end)
+        if (Number.isNaN(leaveStart.getTime()) || Number.isNaN(leaveEnd.getTime())) return false
+        return newStart <= leaveEnd && newEnd >= leaveStart
+      })
+    },
+    [existingLeaves]
+  )
 
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
@@ -158,6 +196,21 @@ const LeaveRequest = ({ refetch }) => {
       }
     }
 
+    if (
+      !newErrors.fromDate &&
+      !newErrors.toDate &&
+      formData.fromDate &&
+      formData.toDate &&
+      hasOverlappingLeave(formData.fromDate, formData.toDate)
+    ) {
+      const overlapMessage = t(
+        "leaves.validation.overlap",
+        "You already have a leave request covering these dates"
+      )
+      newErrors.fromDate = overlapMessage
+      newErrors.toDate = overlapMessage
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -252,6 +305,24 @@ const LeaveRequest = ({ refetch }) => {
         errorMessage = t("leaves.form.unauthorized", "You are not authorized to perform this action")
       } else if (err?.status === 500) {
         errorMessage = t("leaves.form.serverError", "Server error. Please try again later")
+      }
+
+      const overlapFromServer =
+        err?.data?.errorMessage?.toLowerCase?.().includes("overlap") ||
+        err?.data?.message?.toLowerCase?.().includes("overlap") ||
+        errorMessage?.toLowerCase?.().includes("overlap")
+
+      if (overlapFromServer) {
+        const overlapMessage = t(
+          "leaves.validation.overlap",
+          "You already have a leave request covering these dates"
+        )
+        setErrors((prev) => ({
+          ...prev,
+          fromDate: overlapMessage,
+          toDate: overlapMessage,
+        }))
+        errorMessage = overlapMessage
       }
 
       toast.error(errorMessage)

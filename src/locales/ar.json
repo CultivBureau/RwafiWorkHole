@@ -193,6 +193,9 @@
       "lateArrivalsToday": "التأخيرات اليوم",
       "mostFrequentAbsentees": "الأكثر غيابًا"
     },
+    "validation": {
+      "overlap": "لديك بالفعل طلب إجازة يغطي هذه التواريخ"
+    },
     "table": {
       "sortBy": "ترتيب حسب",
       "sort": {
