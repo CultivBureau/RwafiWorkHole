@@ -19,26 +19,35 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
 
     const getColors = () => {
         switch (type) {
-            case 'danger':
+            case 'brand':
                 return {
-                    iconBg: 'var(--error-color)',
-                    iconColor: 'white',
-                    buttonBg: 'var(--error-color)',
-                    buttonHover: 'var(--error-color)/90'
+                    iconColor: 'var(--accent-color)',
+                    iconBgSoft: 'linear-gradient(135deg, rgba(21,145,155,0.15), rgba(9,209,199,0.12))',
+                    buttonBg: 'linear-gradient(135deg, #15919B, #09D1C7)',
+                    buttonText: '#ffffff',
+                    buttonShadow: '0 10px 25px rgba(21,145,155,0.35)',
+                    buttonBorder: 'transparent'
                 };
             case 'warning':
                 return {
-                    iconBg: 'var(--warning-color)',
-                    iconColor: 'white',
+                    iconColor: 'var(--warning-color)',
+                    iconBgSoft: 'color-mix(in srgb, var(--warning-color) 18%, transparent)',
                     buttonBg: 'var(--warning-color)',
-                    buttonHover: 'var(--warning-color)/90'
+                    buttonText: '#ffffff'
+                };
+            case 'danger':
+                return {
+                    iconColor: 'var(--error-color)',
+                    iconBgSoft: 'color-mix(in srgb, var(--error-color) 18%, transparent)',
+                    buttonBg: 'var(--error-color)',
+                    buttonText: '#ffffff'
                 };
             default:
                 return {
-                    iconBg: 'var(--info-color)',
-                    iconColor: 'white',
+                    iconColor: 'var(--info-color)',
+                    iconBgSoft: 'color-mix(in srgb, var(--info-color) 18%, transparent)',
                     buttonBg: 'var(--info-color)',
-                    buttonHover: 'var(--info-color)/90'
+                    buttonText: '#ffffff'
                 };
         }
     };
@@ -68,12 +77,12 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
                     <div className="p-6 border-b" style={{ borderColor: 'var(--border-color)' }}>
                         <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
                             <div
-                                className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: `${colors.iconBg}20` }}
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner"
+                                style={{ background: colors.iconBgSoft || 'var(--hover-color)' }}
                             >
                                 <AlertTriangle
                                     className="w-6 h-6"
-                                    style={{ color: colors.iconBg }}
+                                    style={{ color: colors.iconColor }}
                                 />
                             </div>
                             <div className="flex-1">
@@ -112,9 +121,12 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
                         </button>
                         <button
                             onClick={handleConfirm}
-                            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm text-white transition-all duration-200 hover:opacity-90"
+                            className="flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 hover:opacity-90 border"
                             style={{
-                                backgroundColor: colors.buttonBg
+                                background: colors.buttonBg,
+                                color: colors.buttonText || '#ffffff',
+                                borderColor: colors.buttonBorder || colors.buttonBg,
+                                boxShadow: colors.buttonShadow || 'none'
                             }}
                         >
                             {confirmText || t('confirm.confirm', 'Confirm')}

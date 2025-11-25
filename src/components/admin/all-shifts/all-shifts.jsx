@@ -571,7 +571,7 @@ export default function AllShifts() {
                 message={t('shifts.restore.confirm', 'Are you sure you want to restore this shift?')}
                 confirmText={t('shifts.restore.confirmButton', 'Restore')}
                 cancelText={t('shifts.restore.cancel', 'Cancel')}
-                type="warning"
+                type="brand"
             />
         </>
     );
