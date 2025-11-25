@@ -444,6 +444,9 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
   const isArabic = i18n.language === "ar";
   const { theme, setTheme } = useTheme();
 
+  const translateMenuLabel = (key, fallback) =>
+    t(`aside.${key}`, { defaultValue: fallback || key || "" });
+
   // Get permissions from context
   const { isAdmin, isLoading, permissions: userPermissions } = usePermissions();
   const backendPermissionCodes = getPermissions() || []; // Get backend codes for menu filtering
@@ -661,7 +664,7 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
           <button
             onClick={actualOnMobileClose}
             className="rounded-xl p-2 hover:bg-[var(--hover-color)] transition-colors"
-            title="Close"
+            title={t("aside.close")}
           >
             <X
               className="w-5 h-5"
@@ -673,7 +676,7 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
             <button
               onClick={() => setCollapsed((v) => !v)}
               className="rounded-xl p-2 hover:bg-[var(--hover-color)] transition-colors"
-              title="Collapse"
+              title={t("aside.collapse")}
             >
               <ChevronLeft
                 className="w-5 h-5 transition-transform"
@@ -690,7 +693,7 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
           <button
             onClick={() => setCollapsed((v) => !v)}
             className="rounded-2xl p-2 hover:bg-[var(--hover-color)] transition-colors"
-            title="Expand"
+            title={t("aside.expand")}
           >
             <ChevronLeft
               className="w-5 h-5 transition-transform rotate-180"
@@ -793,9 +796,9 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
                       t={t}
                       isArabic={isArabic}
                       onShowToast={showToast}
-                      customLabel={t(`aside.${item.key}`) || item.name}
+                      customLabel={translateMenuLabel(item.key, item.name)}
                       childLabels={filteredChildren ? filteredChildren.reduce((acc, child) => {
-                        acc[child.key] = child.name;
+                        acc[child.key] = translateMenuLabel(child.key, child.name);
                         return acc;
                       }, {}) : undefined}
                     />
@@ -885,7 +888,7 @@ export default function SideMenu({ isMobileOpen, onMobileClose }) {
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         }}
         onClick={() => setTempMobileOpen(!tempMobileOpen)}
-        aria-label="Toggle Menu"
+        aria-label={t("aside.toggleMenu")}
       >
         <Menu
           className="w-6 h-6 transition-colors"

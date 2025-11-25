@@ -53,7 +53,11 @@
     "user_performance": "Performance",
     "user_wallet": "Team Wallet",
     "adminMenu": "Admin",
-    "userMenu": "User Pages"
+    "userMenu": "User Pages",
+    "close": "Close",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "toggleMenu": "Toggle Menu"
   },
   "comingSoon": "Coming Soon",
   "navbar": {
