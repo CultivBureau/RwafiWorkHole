@@ -1658,7 +1658,9 @@
     "total": "Total",
     "totalTypes": "Total Types",
     "totalTime": "Total Time",
-    "mostUsed": "Most Used"
+    "mostUsed": "Most Used",
+    "noData": "No break data available yet",
+    "unknown": "Other"
   },
   "breaks": {
     "title": "Break Management",
