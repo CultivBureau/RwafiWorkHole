@@ -1,7 +1,11 @@
+import { useMemo } from "react"
 import { TrendingUp, TrendingDown } from "lucide-react"
 import Card from "../Time_Tracking_Components/Stats/Card"
 import { useTranslation } from "react-i18next"
+import { skipToken } from "@reduxjs/toolkit/query/react"
 import { useGetCurrentAttendanceSummaryQuery } from "../../services/apis/ClockinLogApi"
+import { deriveUserId } from "../../utils/userHelpers"
+import { getUserInfo } from "../../utils/page"
 
 // Helper function to format time string like "11:25:54.8350000" to "11:25 AM"
 const formatTimeString = (timeString) => {
@@ -29,16 +33,20 @@ const formatTimeString = (timeString) => {
 
 const AttendanceStats = () => {
   const { t } = useTranslation()
+
+  const userId = deriveUserId()
+  const companyId = useMemo(() => getUserInfo()?.companyId, [])
+  const queryArg = userId ? { userId, companyId } : skipToken
   
   // Fetch current attendance summary from API
-  const { data: attendanceSummary, isLoading } = useGetCurrentAttendanceSummaryQuery();
+  const { data: attendanceSummary, isLoading, isError } = useGetCurrentAttendanceSummaryQuery(queryArg);
   
   // Format the stats data
   const stats = {
-    totalDaysPresent: attendanceSummary?.totalDaysPresent ?? 0,
-    totalDaysAbsent: attendanceSummary?.totalDaysAbsent ?? 0,
-    lateArrivals: attendanceSummary?.lateArrivals ?? 0,
-    avgClockIn: formatTimeString(attendanceSummary?.averageClockInTime) ?? "--"
+    totalDaysPresent: isError ? 0 : attendanceSummary?.totalDaysPresent ?? 0,
+    totalDaysAbsent: isError ? 0 : attendanceSummary?.totalDaysAbsent ?? 0,
+    lateArrivals: isError ? 0 : attendanceSummary?.lateArrivals ?? 0,
+    avgClockIn: isError ? "--" : formatTimeString(attendanceSummary?.averageClockInTime) ?? "--"
   };
 
   const statsData = [

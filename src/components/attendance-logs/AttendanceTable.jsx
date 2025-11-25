@@ -1,33 +1,15 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { useTranslation } from "react-i18next"
-import { useGetUserClockinLogsQuery } from "../../services/apis/ClockinLogApi"
-import { getAuthToken, getUserInfo } from "../../utils/page"
-import { utcToLocalTime, utcToLocalDate, calculateDurationFromUtc, isUtcDateToday } from '../../utils/timeUtils'
+import { useLazyGetUserClockinLogsQuery } from "../../services/apis/ClockinLogApi"
+import { utcToLocalTime, utcToLocalDate, calculateDurationFromUtc } from '../../utils/timeUtils'
 import { isWithinShiftRadius } from '../../utils/locationUtils'
+import { deriveUserId } from "../../utils/userHelpers"
 
-const deriveUserId = () => {
-  const userInfo = getUserInfo()
-  if (userInfo?.id) return userInfo.id
-  if (userInfo?.userId) return userInfo.userId
-  const msKey = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-  if (userInfo?.[msKey]) return userInfo[msKey]
-
-  const token = getAuthToken()
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]))
-      if (payload?.sub) return payload.sub
-      if (payload?.nameid) return payload.nameid
-      if (payload?.userId) return payload.userId
-    } catch {
-      return null
-    }
-  }
-  return null
-}
+const SERVER_PAGE_SIZE = 50
+const MAX_PAGES = 40
 
 const formatDate = (iso, locale) => {
   // API returns UTC time, convert to local date for display
@@ -94,6 +76,16 @@ const deriveLocation = (log) => {
   return "unknown"
 }
 
+const extractLogsFromResponse = (response) => {
+  if (!response) return []
+  if (Array.isArray(response)) return response
+  if (Array.isArray(response?.value)) return response.value
+  if (Array.isArray(response?.data)) return response.data
+  if (Array.isArray(response?.items)) return response.items
+  if (Array.isArray(response?.results)) return response.results
+  return []
+}
+
 const AttendanceTable = () => {
 	const { t, i18n } = useTranslation()
 	const isArabic = i18n.language === "ar"
@@ -106,40 +98,80 @@ const AttendanceTable = () => {
 	const [dateTo, setDateTo] = useState("")
 	const [currentPage, setCurrentPage] = useState(1)
 	const pageSize = 8
+	const [rawLogs, setRawLogs] = useState([])
+	const [isFetchingLogs, setIsFetchingLogs] = useState(false)
+	const [fetchError, setFetchError] = useState(null)
+	const [reloadKey, setReloadKey] = useState(0)
+	const [fetchLogsTrigger] = useLazyGetUserClockinLogsQuery()
 
 	useEffect(() => {
 		setCurrentPage(1)
 	}, [sortBy, location, status, dateFrom, dateTo])
 
+	useEffect(() => {
+		setCurrentPage(1)
+	}, [rawLogs])
+
 	const userId = useMemo(() => deriveUserId(), [])
-	const {
-		data,
-		isLoading,
-		isError,
-		error,
-		refetch,
-	} = useGetUserClockinLogsQuery(
-		{ userId, pageNumber: currentPage, pageSize },
-		{ skip: !userId }
-	)
 
-	const attendanceLogs = useMemo(() => {
-		if (!data) return []
+	useEffect(() => {
+		let isCancelled = false
+		const fetchAllLogs = async () => {
+			if (!userId) {
+				setRawLogs([])
+				setFetchError(null)
+				setIsFetchingLogs(false)
+				return
+			}
 
-		let items = []
-		if (Array.isArray(data)) {
-			items = data
-		} else if (data?.value && Array.isArray(data.value)) {
-			items = data.value
-		} else if (data?.data && Array.isArray(data.data)) {
-			items = data.data
-		} else if (data?.items && Array.isArray(data.items)) {
-			items = data.items
-		} else if (data?.results && Array.isArray(data.results)) {
-			items = data.results
+			setIsFetchingLogs(true)
+			setFetchError(null)
+			const aggregated = []
+			let page = 1
+
+			try {
+				while (!isCancelled && page <= MAX_PAGES) {
+					const response = await fetchLogsTrigger(
+						{ userId, pageNumber: page, pageSize: SERVER_PAGE_SIZE },
+						true
+					).unwrap()
+
+					const pageLogs = extractLogsFromResponse(response)
+					aggregated.push(...pageLogs)
+
+					if (pageLogs.length < SERVER_PAGE_SIZE) {
+						break
+					}
+					page += 1
+				}
+
+				if (!isCancelled) {
+					setRawLogs(aggregated)
+				}
+			} catch (err) {
+				if (!isCancelled) {
+					if (aggregated.length > 0) {
+						setRawLogs(aggregated)
+					}
+					setFetchError(err)
+				}
+			} finally {
+				if (!isCancelled) {
+					setIsFetchingLogs(false)
+				}
+			}
 		}
 
-		return items.map((log) => {
+		fetchAllLogs()
+		return () => {
+			isCancelled = true
+		}
+	}, [userId, fetchLogsTrigger, reloadKey])
+
+	const attendanceLogs = useMemo(() => {
+		if (!rawLogs?.length) return []
+
+		return rawLogs.map((log) => {
 			const primaryDateIso = log?.clockinTime || log?.clockoutTime || log?.createdAt || log?.updatedAt
 			const dateObj = primaryDateIso ? new Date(primaryDateIso) : null
 			const duration = calculateDuration(log?.clockinTime, log?.clockoutTime)
@@ -161,32 +193,10 @@ const AttendanceTable = () => {
 				breakDuration: log?.breakDuration || null,
 			}
 		})
-	}, [data, locale])
-
-	const pagination = useMemo(() => {
-		const total = data?.totalCount ?? data?.total ?? data?.pagination?.total ?? attendanceLogs.length
-		const totalPages =
-			data?.totalPages ??
-			data?.pagination?.totalPages ??
-			(total ? Math.max(1, Math.ceil(total / pageSize)) : (attendanceLogs.length === pageSize ? currentPage + 1 : currentPage))
-
-		return {
-			page: currentPage,
-			limit: pageSize,
-			total,
-			totalPages,
-		}
-	}, [attendanceLogs.length, currentPage, data, pageSize])
-
-	useEffect(() => {
-		if (pagination.totalPages && currentPage > pagination.totalPages) {
-			setCurrentPage(Math.max(1, pagination.totalPages))
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [pagination.totalPages])
+	}, [rawLogs, locale])
 
 	// Client-side filters (on current page only)
-	const filtered = useMemo(() => {
+	const filteredRecords = useMemo(() => {
 		let result = [...attendanceLogs]
 
 		if (location !== "all") {
@@ -213,6 +223,22 @@ const AttendanceTable = () => {
 		)
 		return result
 	}, [attendanceLogs, location, status, dateFrom, dateTo, sortBy])
+
+	const totalRecords = filteredRecords.length
+	const totalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / pageSize)
+	const startIndex = Math.max(0, (currentPage - 1) * pageSize)
+	const paginatedRecords = filteredRecords.slice(startIndex, startIndex + pageSize)
+	const showingFrom = totalRecords === 0 ? 0 : startIndex + 1
+	const showingTo = totalRecords === 0 ? 0 : startIndex + paginatedRecords.length
+
+	useEffect(() => {
+		const computedTotalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / pageSize)
+		if (currentPage > computedTotalPages) {
+			setCurrentPage(computedTotalPages)
+		}
+	}, [currentPage, pageSize, totalRecords])
+
+	const handleRefresh = () => setReloadKey((prev) => prev + 1)
 
 	const getStatusBadge = (value) => {
 		switch (value) {
@@ -392,8 +418,28 @@ const AttendanceTable = () => {
 						/>
 					</div>
 
-					<div className={`text-sm font-medium ${isArabic ? 'text-right' : 'text-left'}`} style={{ color: 'var(--sub-text-color)' }}>
-						{t("attendanceTable.showing", { count: filtered.length, total: pagination.total })}
+					<div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+						<div className={`text-sm font-medium ${isArabic ? 'text-right' : 'text-left'}`} style={{ color: 'var(--sub-text-color)' }}>
+							{t("attendanceTable.showing", { count: paginatedRecords.length, total: totalRecords })}
+							{totalRecords > 0 && (
+								<span className="block text-xs mt-0.5" style={{ color: 'var(--sub-text-color)' }}>
+									{`${showingFrom}-${showingTo}`}
+								</span>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={handleRefresh}
+							className="px-3 py-1.5 rounded-full border text-xs font-medium transition-colors duration-200 disabled:opacity-60"
+							style={{
+								borderColor: 'var(--border-color)',
+								color: 'var(--text-color)',
+								backgroundColor: 'var(--bg-color)'
+							}}
+							disabled={isFetchingLogs}
+						>
+							{t("attendanceTable.refresh", "Refresh")}
+						</button>
 					</div>
 				</div>
 			</div>
@@ -442,34 +488,34 @@ const AttendanceTable = () => {
 						</tr>
 					</thead>
 					<tbody>
-						{isLoading ? (
+						{isFetchingLogs ? (
 							<tr>
 								<td colSpan={9} className="text-center py-8">{t("attendanceTable.loading")}</td>
 							</tr>
-						) : isError ? (
+						) : fetchError ? (
 							<tr>
 								<td colSpan={9} className="text-center py-8">
 									<div className="flex flex-col items-center gap-2">
 										<span>{t("attendanceTable.errorLoading", "Failed to load attendance logs")}</span>
-										{error && (
+										{fetchError && (
 											<span className="text-sm text-[var(--sub-text-color)]">
-												{error?.data?.message || error?.message || "An error occurred"}
+												{fetchError?.data?.errorMessage || fetchError?.error || fetchError?.message || "An error occurred"}
 											</span>
 										)}
-										<button onClick={() => refetch()} className="btn-secondary">
+										<button onClick={handleRefresh} className="btn-secondary">
 											{t("attendanceTable.retry", "Retry")}
 										</button>
 									</div>
 								</td>
 							</tr>
-						) : filtered.length === 0 ? (
+						) : paginatedRecords.length === 0 ? (
 							<tr>
 								<td colSpan={9} className="text-center py-8">{t("attendanceTable.noData")}</td>
 							</tr>
 						) : (
-							filtered.map((record, index) => (
+							paginatedRecords.map((record, index) => (
 								<tr
-									key={index}
+									key={record.id || `${record.dateIso}-${index}`}
 									className="transition-colors duration-200 cursor-pointer hover:shadow-sm"
 									style={{
 										borderBottom: '1px solid var(--table-border)',
@@ -532,13 +578,13 @@ const AttendanceTable = () => {
 				style={{ borderColor: 'var(--divider-color)' }}
 			>
 				<div className="text-sm font-medium" style={{ color: 'var(--sub-text-color)' }}>
-					{t("attendanceTable.pageOf", { page: pagination.page, total: pagination.totalPages })}
+					{t("attendanceTable.pageOf", { page: currentPage, total: totalPages })}
 				</div>
 				<div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
 					<button
 						className="p-2 rounded-lg border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-						onClick={() => setCurrentPage(Math.max(1, pagination.page - 1))}
-						disabled={pagination.page === 1}
+						onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+						disabled={currentPage === 1 || totalRecords === 0}
 						style={{
 							borderColor: 'var(--border-color)',
 							backgroundColor: 'var(--bg-color)',
@@ -549,8 +595,8 @@ const AttendanceTable = () => {
 					</button>
 					<button
 						className="p-2 rounded-lg border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-						onClick={() => setCurrentPage(Math.min(pagination.totalPages, pagination.page + 1))}
-						disabled={pagination.page === pagination.totalPages}
+						onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+						disabled={currentPage >= totalPages || totalRecords === 0}
 						style={{
 							borderColor: 'var(--border-color)',
 							backgroundColor: 'var(--bg-color)',

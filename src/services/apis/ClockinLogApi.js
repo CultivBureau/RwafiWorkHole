@@ -231,10 +231,16 @@ export const clockinLogApi = createApi({
 
     // Get current attendance summary
     getCurrentAttendanceSummary: builder.query({
-      query: () => ({
-        url: "/api/v1/ClockinLogs/GetCurrentAttendanceSummary/summary/current",
-        method: "GET",
-      }),
+      query: ({ userId, companyId } = {}) => {
+        const params = {};
+        if (userId) params.userId = userId;
+        if (companyId) params.companyId = companyId;
+        return {
+          url: "/api/v1/ClockinLogs/GetCurrentAttendanceSummary/summary/current",
+          method: "GET",
+          params,
+        };
+      },
       transformResponse: (response) => {
         // API returns { value: {...}, statusCode: 200, ... }
         // Extract the value object which contains the summary data
@@ -254,6 +260,7 @@ export const {
   useGetDepartmentClockinLogsQuery,
   useGetTeamClockinLogsQuery,
   useGetUserClockinLogsQuery,
+  useLazyGetUserClockinLogsQuery,
   useGetClockinLogByIdQuery,
   useGetUserProfileClockInLogsQuery,
   useGetAttendanceSummaryQuery,
