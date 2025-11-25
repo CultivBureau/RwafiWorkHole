@@ -134,7 +134,7 @@ export const clockinLogApi = createApi({
     }),
 
     clockIn: builder.mutation({
-      query: ({ latitude, longitude, reason }) => {
+      query: ({ latitude, longitude, reason, utcDateTime }) => {
         // Ensure latitude and longitude are valid numbers
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
@@ -143,15 +143,15 @@ export const clockinLogApi = createApi({
           throw new Error("Invalid latitude or longitude");
         }
         
-        // Get current UTC time
-        const utcDateTime = new Date().toISOString();
+        // Allow callers to pass explicit UTC timestamp so retries use same moment
+        const timestamp = utcDateTime || new Date().toISOString();
         
         // According to Swagger docs, the API expects camelCase fields directly in the body (not wrapped in "request")
         const requestBody = {
           latitude: String(lat),
           longitude: String(lng),
           reason: reason || null, // Use null instead of empty string for optional fields
-          utcDateTime: utcDateTime, // Send UTC time to backend
+          utcDateTime: timestamp, // Send UTC time to backend
         };
         
         return {

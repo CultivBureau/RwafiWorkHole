@@ -283,13 +283,13 @@ const NavBar = () => {
 
   // Handle location confirmation from modal
   const handleLocationConfirm = (coords) => {
-    setPendingLocation(coords);
     setShowLocationModal(false);
     
     if (currentStatus === "Clocked In") {
       handleClockOutWithLocation(coords);
     } else {
-      handleClockInWithLocation(coords, "");
+      // For clock in, try without reason first (will show reason modal if late)
+      handleClockInWithLocation(coords, null);
     }
   };
 
@@ -305,67 +305,63 @@ const NavBar = () => {
       }
     ) : null;
 
+    // Store UTC timestamp for retry (use same timestamp if retrying)
+    const utcTimestamp = pendingLocation?.utcDateTime || new Date().toISOString();
+
     try {
       const result = await clockInMutation({
         latitude: coords.lat,
         longitude: coords.lng,
-        reason: reason || ""
+        reason: reason || null, // Send null if no reason (on time), or the reason string if late
+        utcDateTime: utcTimestamp
       }).unwrap();
 
       if (loadingToast) toast.dismiss(loadingToast);
 
-      const isLate = result?.value?.isLate || result?.isLate || false;
+      // If status is 200, clock-in was successful
+      const isSuccess = result?.statusCode === 200 || !result?.statusCode || result?.statusCode === undefined;
 
-      if (isLate && !reason) {
-        setPendingLocation(coords);
-        setShowLateReasonModal(true);
-        return;
+      if (isSuccess) {
+        // Success - clock-in completed
+        toast.success(
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5" />
+            <span>
+              {reason
+                ? (isArabic ? 'تم تسجيل الحضور المتأخر بنجاح' : 'Successfully clocked in (late)')
+                : (isArabic ? 'تم تسجيل الحضور بنجاح' : 'Successfully clocked in')
+              }
+            </span>
+          </div>,
+          {
+            duration: 3000,
+            style: {
+              background: '#10B981',
+              color: '#fff',
+            },
+          }
+        );
+
+        refetchDashboard();
+        setPendingLocation(null);
       }
-
-      toast.success(
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5" />
-          <span>
-            {isLate
-              ? (isArabic ? 'تم تسجيل الحضور المتأخر بنجاح' : 'Successfully clocked in (late)')
-              : (isArabic ? 'تم تسجيل الحضور بنجاح' : 'Successfully clocked in')
-            }
-          </span>
-        </div>,
-        {
-          duration: 3000,
-          style: {
-            background: '#10B981',
-            color: '#fff',
-          },
-        }
-      );
-
-      refetchDashboard();
-      setPendingLocation(null);
     } catch (error) {
       console.error('Clock in error:', error);
       if (loadingToast) toast.dismiss(loadingToast);
       
-      // Check if this is a late clock-in error (400 with specific error message)
-      const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.data?.error || error?.data?.title || error?.message;
-      const isLateError = error?.status === 400 && (
-        errorMessage?.toLowerCase().includes('late') || 
-        errorMessage?.toLowerCase().includes('reason') ||
-        error?.data?.errorMessage?.toLowerCase().includes('late')
-      );
-      
-      // If it's a late error and no reason was provided, show the late reason modal
-      if (isLateError && !reason) {
-        setPendingLocation(coords);
+      // If error and no reason provided yet, user is late - show reason modal
+      // Store the UTC timestamp for retry
+      if (!reason) {
+        setPendingLocation({ ...coords, utcDateTime: utcTimestamp });
         setShowLateReasonModal(true);
         return;
       }
       
-      // Get error message from API response
-      let displayErrorMessage = errorMessage;
+      // If we already have a reason but still got an error, show the error message
+      const errorMessage = error?.data?.errorMessage || error?.data?.message || error?.data?.error || error?.data?.title || error?.message;
       
       // If there are validation errors, format them nicely
+      let displayErrorMessage = errorMessage;
       if (error?.data?.errors && typeof error.data.errors === 'object') {
         const validationErrors = Object.entries(error.data.errors)
           .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
@@ -399,7 +395,12 @@ const NavBar = () => {
   const handleLateReasonConfirm = async (reason) => {
     setShowLateReasonModal(false);
     if (pendingLocation) {
-      await handleClockInWithLocation(pendingLocation, reason, true);
+      // Retry clock-in with reason (preserve the same UTC timestamp)
+      await handleClockInWithLocation(
+        { lat: pendingLocation.lat, lng: pendingLocation.lng }, 
+        reason, 
+        true
+      );
     }
   };
 
