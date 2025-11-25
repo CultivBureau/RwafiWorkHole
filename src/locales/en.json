@@ -189,6 +189,9 @@
       "viewAttendance": "View Attendance",
       "manageRolesPermissions": "Manage Permissions"
     },
+    "validation": {
+      "overlap": "You already have a leave request covering these dates"
+    },
     "table": {
       "attendanceOverview": "Attendance Overview",
       "search": "Search",
