@@ -749,7 +749,7 @@ function EditSetupTeamsStep({
         setActiveTeam(team);
         setIsTeamFormOpen(true);
     };
-    
+
     const closeTeamForm = () => {
         setIsTeamFormOpen(false);
         setActiveTeam(null);

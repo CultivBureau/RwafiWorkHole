@@ -206,7 +206,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                 {/* Header */}
                 <div className={`flex items-center justify-between mb-6 ${isRtl ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-center gap-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
-                        <div className="w-12 h-12 gradient-bg rounded-lg flex items-center justify-center">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#15919B] via-[#09D1C7] to-[#15919B] flex items-center justify-center shadow-lg shadow-[#15919b22] ring-2 ring-[#09D1C7]/30">
                             <Users className="text-white" size={24} />
                         </div>
                         <div className={isRtl ? 'text-right' : 'text-left'}>
@@ -234,7 +234,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                         {/* Left Column - Team Information */}
                         <div className="space-y-4">
                             {/* Team Leader Section */}
-                            <div className="bg-[var(--bg-color)] rounded-xl p-5 border border-[var(--border-color)]">
+                            <div className="rounded-2xl p-5 border border-[var(--accent-color)]/20 bg-gradient-to-br from-[#15919B]/8 via-transparent to-[#09D1C7]/10 shadow-sm">
                                 <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-4 ${isRtl ? 'text-right' : 'text-left'}`}>
                                     {t('teamDetails.teamLeader', 'Team Leader')}
                                 </h3>
@@ -244,10 +244,10 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                             <img
                                                 src={teamLeader.avatar}
                                                 alt={teamLeader.name}
-                                                className="w-16 h-16 rounded-full object-cover border-2 border-[var(--accent-color)]"
+                                                className="w-16 h-16 rounded-full object-cover border-2 border-[#09D1C7]"
                                             />
                                         ) : (
-                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#15919B] to-[#09D1C7] flex items-center justify-center text-white font-bold text-xl shadow-inner shadow-[#0f4e57]">
                                                 {teamLeader.name ? teamLeader.name.substring(0, 2).toUpperCase() :
                                                     (teamLeader.firstName ? teamLeader.firstName.substring(0, 1).toUpperCase() : 'TL')}
                                             </div>
@@ -280,7 +280,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                             </div>
 
                             {/* Team Members Section */}
-                            <div className="bg-[var(--bg-color)] rounded-xl p-5 border border-[var(--border-color)]">
+                            <div className="rounded-2xl p-5 border border-[var(--accent-color)]/15 bg-gradient-to-br from-[#09D1C7]/8 via-transparent to-[#15919B]/8">
                                 <div className={`flex items-center justify-between mb-4 ${isRtl ? 'flex-row-reverse' : ''}`}>
                                     <h3 className="text-lg font-semibold text-[var(--text-color)]">
                                         {t('teamDetails.teamMembers', 'Team Members')} ({memberSearchTerm ? `${filteredMembers.length} / ${teamMembers.length}` : teamMembers.length})
@@ -295,7 +295,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                         placeholder={t('teamDetails.searchMembers', 'Search members...')}
                                         value={memberSearchTerm}
                                         onChange={(e) => setMemberSearchTerm(e.target.value)}
-                                        className={`w-full ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3 text-left'} py-2 bg-[var(--container-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)]`}
+                                        className={`w-full ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3 text-left'} py-2 bg-[var(--bg-color)] border border-[var(--accent-color)]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)] shadow-sm`}
                                     />
                                 </div>
 
@@ -314,7 +314,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                         filteredMembers.map((member, index) => (
                                         <div
                                             key={member.userId || index}
-                                            className={`flex items-center gap-3 p-3 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)] hover:shadow-md transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] ${isRtl ? 'flex-row-reverse' : ''}`}
+                                            className={`flex items-center gap-3 p-3 rounded-2xl bg-[var(--container-color)]/80 border border-[var(--border-color)] hover:border-[var(--accent-color)]/40 hover:bg-[var(--accent-color)]/5 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]/70 ${isRtl ? 'flex-row-reverse' : ''}`}
                                             role="button"
                                             tabIndex={0}
                                             onClick={() => {
@@ -353,10 +353,10 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                                     <img
                                                         src={member.avatar}
                                                         alt={member.name}
-                                                        className="w-12 h-12 rounded-full object-cover"
+                                                        className="w-12 h-12 rounded-full object-cover border border-[#09D1C7]/60"
                                                     />
                                                 ) : (
-                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-semibold">
+                                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#15919B] to-[#09D1C7] flex items-center justify-center text-white font-semibold shadow-inner shadow-[#0f4e57]">
                                                         {member.name ? member.name.substring(0, 2).toUpperCase() :
                                                             (member.firstName ? member.firstName.substring(0, 1).toUpperCase() :
                                                                 member.userId?.substring(0, 2).toUpperCase() || 'M')}
@@ -377,8 +377,8 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                                         </p>
                                                     )}
                                                 </div>
-                                                <div className="px-3 py-1 bg-[var(--accent-color)]/10 rounded-full">
-                                                    <span className="text-xs font-medium text-[var(--accent-color)]">
+                                                <div className="px-3 py-1 rounded-full bg-[var(--accent-color)]/15 border border-[var(--accent-color)]/20">
+                                                    <span className="text-xs font-semibold text-[var(--accent-color)]">
                                                         {t('teamDetails.active', 'Active')}
                                                     </span>
                                                 </div>
@@ -390,7 +390,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                         </div>
 
                         {/* Right Column - Attendance Table */}
-                        <div className="bg-[var(--bg-color)] rounded-xl p-5 border border-[var(--border-color)]">
+                        <div className="rounded-2xl p-5 border border-[var(--accent-color)]/20 bg-[var(--bg-color)] shadow-sm">
                             <h3 className={`text-lg font-semibold text-[var(--text-color)] mb-4 ${isRtl ? 'text-right' : 'text-left'}`}>
                                 {t('teamDetails.attendance', 'Team Attendance')}
                             </h3>
@@ -405,7 +405,7 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                         placeholder={t('teamDetails.searchAttendance', 'Search attendance...')}
                                         value={attendanceSearchTerm}
                                         onChange={(e) => setAttendanceSearchTerm(e.target.value)}
-                                        className={`w-full ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3 text-left'} py-2 bg-[var(--container-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)]`}
+                                        className={`w-full ${isRtl ? 'pr-10 pl-3 text-right' : 'pl-10 pr-3 text-left'} py-2 bg-[var(--bg-color)] border border-[var(--accent-color)]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)]`}
                                     />
                                 </div>
 
@@ -416,16 +416,16 @@ const TeamDetailsPopup = ({ isOpen, onClose, team }) => {
                                         type="date"
                                         value={selectedDate}
                                         onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="px-3 py-2 bg-[var(--container-color)] border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)]"
+                                        className="px-3 py-2 bg-[var(--bg-color)] border border-[var(--accent-color)]/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] text-[var(--text-color)]"
                                         style={{ colorScheme: 'var(--theme)' }}
                                     />
                                 </div>
                             </div>
 
                             {/* Attendance Table */}
-                            <div className="rounded-lg border border-[var(--border-color)] overflow-hidden">
+                            <div className="rounded-2xl border border-[var(--accent-color)]/25 overflow-hidden shadow-inner shadow-black/5">
                                 <table className="w-full">
-                                    <thead className="bg-[var(--container-color)]">
+                                    <thead className="bg-gradient-to-r from-[#15919B]/20 to-[#09D1C7]/20">
                                         <tr>
                                             <th className={`${isRtl ? 'text-right' : 'text-left'} py-3 px-4 text-sm font-semibold text-[var(--text-color)]`}>
                                                 {t('teamDetails.employeeName', 'Employees Name')}
