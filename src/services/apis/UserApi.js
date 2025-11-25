@@ -107,6 +107,7 @@ export const {
   useDeleteUserMutation,
   useRestoreUserMutation,
   useGetUserByIdQuery,
+  useLazyGetUserByIdQuery,
   useGetUsersByIdsQuery,
   useGetUserProfileByIdQuery,
   useGetUserStatisticsQuery,

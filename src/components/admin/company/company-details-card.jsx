@@ -161,12 +161,12 @@ const CompanyDetailsCard = () => {
 
   const getPlanTypeName = (planType) => {
     const plans = {
-      0: "Free",
-      1: "Basic",
-      2: "Professional",
-      3: "Enterprise",
+      0: t("company.planTypes.free"),
+      1: t("company.planTypes.basic"),
+      2: t("company.planTypes.professional"),
+      3: t("company.planTypes.enterprise"),
     };
-    return plans[planType] || "Unknown";
+    return plans[planType] || t("company.planTypes.unknown");
   };
 
   const getPlanTypeColor = (planType) => {
@@ -235,7 +235,7 @@ const CompanyDetailsCard = () => {
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <span className="font-semibold">Failed to load company details</span>
+            <span className="font-semibold">{t("company.error.loadFailed")}</span>
           </div>
         </div>
       </div>

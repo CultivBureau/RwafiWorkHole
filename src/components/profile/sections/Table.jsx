@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from "react-i18next"
 
 const Table = ({ 
   data, 
@@ -7,6 +8,8 @@ const Table = ({
   emptyMessage = "No data available",
   statusConfig = null 
 }) => {
+  const { t } = useTranslation()
+
   if (!data || data.length === 0) {
     return (
       <div 
@@ -72,7 +75,7 @@ const Table = ({
             className="text-xs sm:text-sm font-medium"
             style={{ color: 'var(--sub-text-color)' }}
           >
-            {data.length} records found
+            {t("profile.recordsFound", { count: data.length, defaultValue: "{{count}} records found" })}
           </p>
         </div>
       )}
@@ -98,7 +101,7 @@ const Table = ({
                 {columns.map((column, index) => (
                   <th 
                     key={index} 
-                    className="text-left py-3 sm:py-4 px-3 sm:px-6 font-semibold text-xs sm:text-sm tracking-wide"
+                    className="text-center py-3 sm:py-4 px-3 sm:px-6 font-semibold text-xs sm:text-sm tracking-wide"
                     style={{ color: 'var(--sub-text-color)' }}
                   >
                     {column.header}

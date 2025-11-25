@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { User, Briefcase, Lock } from "lucide-react"
+import { User, Briefcase, Building2, Lock } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
 export default function ProfileTabs({ activeTab, onTabChange, isAdmin = false }) {
@@ -10,6 +10,7 @@ export default function ProfileTabs({ activeTab, onTabChange, isAdmin = false })
   const tabs = [
     { id: "personal", label: t("profile.personalInformation"), shortLabel: t("profile.personalInformation"), icon: <User className="w-4 h-4 sm:w-5 sm:h-5" /> },
     { id: "professional", label: t("profile.professionalInformation"), shortLabel: t("profile.professionalInformation"), icon: <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" /> },
+    { id: "departments", label: t("profile.departmentsTeams"), shortLabel: t("profile.departmentsTeams"), icon: <Building2 className="w-4 h-4 sm:w-5 sm:h-5" /> },
     // Only show account tab if user is admin
     ...(isAdmin ? [{ id: "account", label: t("employees.newEmployeeForm.steps.accountAccess"), shortLabel: t("employees.newEmployeeForm.steps.accountAccess"), icon: <Lock className="w-4 h-4 sm:w-5 sm:h-5" /> }] : []),
   ]

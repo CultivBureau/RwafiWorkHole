@@ -331,12 +331,17 @@
   "breakTime": {
     "title": "Break Time",
     "selectReason": "Select Reason",
+    "selectBreakReasonFirst": "Please select a break reason first!",
+    "reasonRequired": "Break Reason Required",
     "startBreak": "Start Break",
+    "endBreak": "End Break",
     "breakSummary": "Break Summary",
     "breakPatterns": "Your break patterns this day",
     "dailyAverage": "Daily average",
     "total": "total",
     "minutes": "minutes",
+    "breakTime": "Break Time",
+    "remaining": "Remaining",
     "reasons": {
       "prayer": "Prayer",
       "lunch": "Lunch",
@@ -363,7 +368,12 @@
     "totalHoursWorked": "Total Hours Worked",
     "breaksTaken": "Breaks Taken",
     "totalOvertime": "Total Overtime",
-    "extraHoursThisMonth": "This month's extra hours worked"
+    "extraHoursThisMonth": "This month's extra hours worked",
+    "averageWorkingHoursPerDay": "Average Working Hours Per Day",
+    "averagePerDay": "Average per day",
+    "totalHoursWorkedThisWeek": "Total Hours Worked This Week",
+    "overtimeHoursThisWeek": "Overtime Hours This Week",
+    "extraHoursThisWeek": "Extra hours this week"
   },
   "timeUnits": {
     "am": "AM",
@@ -433,13 +443,34 @@
     "projectManager": "Project Manager",
     "teamLead": "Team lead",
     "srProjectManager": "Sr. Project Manager",
-    "editProfile": "Edit Profile"
+    "editProfile": "Edit Profile",
+    "departmentsTeams": "Departments & Teams",
+    "departmentsTeamsDescription": "Explore where this user currently sits across your organization.",
+    "departmentsHeader": "Departments",
+    "recordsFound": "{{count}} record found",
+    "recordsFound_one": "{{count}} record found",
+    "recordsFound_other": "{{count}} records found",
+    "noDepartmentsAssigned": "No departments assigned yet.",
+    "noDepartmentsAssignedHint": "Once this user joins a department, its teams will appear here.",
+    "noTeamsInDepartment": "No teams inside this department yet.",
+    "teamsCount": "{{count}} teams",
+    "singleTeamCount": "1 team",
+    "notAssigned": "Not assigned",
+    "team": "Team",
+    "department": "Department"
   },
   "breakStats": {
     "todaysBreakTime": "Today's Break Time",
     "mostUsedBreak": "Most Used Break",
     "avgBreakPerDay": "Avg. Break per Day",
     "breaksOverLimit": "Breaks Over Limit",
+    "breaksTakenToday": "Breaks Taken Today",
+    "breaksToday": "Number of breaks today",
+    "totalBreakTimeToday": "Total Break Time Today",
+    "remainingBreakAllowance": "Remaining Break Allowance",
+    "remainingTime": "Remaining time available",
+    "averageBreakDurationThisWeek": "Avg Break Duration This Week",
+    "averageThisWeek": "Average this week",
     "timeTakenToday": "Time taken today",
     "mostCommonThisWeek": "Most common this week",
     "basedOnLast7Days": "Based on last 7 days",
@@ -522,6 +553,7 @@
       "step1Title": "Step 1 - Leave Details",
       "step2Title": "Step 2 - Reason & Attachment",
       "step3Title": "Step 3 - Review & Submit",
+      "selectDate": "Select Date:",
       "fromDate": "From",
       "toDate": "To",
       "numberOfDays": "No of Days",
@@ -1405,6 +1437,7 @@
     },
     "filters": {
       "roleType": "Role Type",
+      "status": "Status",
       "allStatus": "All Status",
       "active": "Active",
       "inactive": "Inactive"
@@ -1469,6 +1502,12 @@
   },
   "adminLeaves": {
     "manageLeaveTypes": "Manage Leave Types",
+    "statusCards": {
+      "totalRequests": "Total Requests",
+      "pendingApprovals": "Pending Approvals",
+      "approvedRequests": "Approved Requests",
+      "rejectedRequests": "Rejected Requests"
+    },
     "cards": {
       "totalLeaveRequests": "Total Leave Requests",
       "pendingApprovals": "Pending Approvals",
@@ -1804,6 +1843,7 @@
       "workingDays": "Working Days"
     },
     "gracePeriod": "Grace Period",
+    "grace": "Grace",
     "minutes": "minutes",
     "overtime": "Overtime",
     "hours": "hours",
@@ -1997,6 +2037,133 @@
     "empty": {
       "title": "No leave types found",
       "message": "No leave types available at the moment."
+    }
+  },
+  "company": {
+    "companyName": "Company Name",
+    "enterName": "Enter company name",
+    "active": "Active",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "planStart": "Plan Start",
+    "planEnd": "Plan End",
+    "expired": "Expired",
+    "planTier": "Current Plan",
+    "companyId": "Company ID",
+    "attachments": "Attachments",
+    "attachmentsSubtitle": "Manage documents",
+    "attachmentsEmpty": "No documents yet",
+    "addAttachment": "Add Attachment",
+    "noAttachments": "No attachments",
+    "file": "File",
+    "changeFile": "Change File",
+    "uploadFile": "Upload File",
+    "noFile": "No file",
+    "fileNameLabel": "File Name",
+    "fileNamePlaceholder": "Enter file name",
+    "attachmentId": "Attachment ID",
+    "enterId": "Enter ID",
+    "expiryDate": "Expiry Date",
+    "fileRequired": "Please select a file",
+    "fileNameRequired": "Please enter a file name",
+    "attachmentAdded": "Attachment added successfully",
+    "attachmentAddError": "Failed to add attachment",
+    "selectFile": "Select a file",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "updateSuccess": "Company details updated successfully",
+    "updateError": "Failed to update company details",
+    "daysRemainingShort": "{{count}} days left",
+    "statusCards": {
+      "companyName": "Company Name",
+      "registeredOrganization": "Registered Organization",
+      "activeStatus": "Active Status",
+      "currentPlan": "Current Plan",
+      "planType": "Plan Type",
+      "startEndDate": "Start - End Date",
+      "departmentsLinked": "Departments Linked",
+      "totalDepartments": "Total Departments under this company"
+    },
+    "planTypes": {
+      "free": "Free",
+      "basic": "Basic",
+      "professional": "Professional",
+      "enterprise": "Enterprise",
+      "unknown": "Unknown"
+    },
+    "table": {
+      "view": "View",
+      "edit": "Edit",
+      "delete": "Delete",
+      "name": "Name",
+      "position": "Position",
+      "department": "Department",
+      "joinDate": "Join Date",
+      "status": "Status"
+    },
+    "customFields": {
+      "title": "Custom Fields",
+      "addNewField": "Add New Field",
+      "fieldName": "Field Name",
+      "fieldNamePlaceholder": "Field Name",
+      "fieldType": "Field Type",
+      "assignTo": "Assign To",
+      "requiredField": "Required Field",
+      "fieldTypes": {
+        "text": "Text",
+        "number": "Number",
+        "date": "Date",
+        "email": "Email",
+        "phone": "Phone",
+        "dropdown": "Dropdown",
+        "checkbox": "Checkbox"
+      },
+      "assignToOptions": {
+        "employeeProfile": "Employee Profile",
+        "department": "Department",
+        "team": "Team",
+        "project": "Project"
+      },
+      "requiredOptions": {
+        "yes": "Yes",
+        "no": "No"
+      }
+    },
+    "departments": {
+      "title": "Departments",
+      "members": "Members",
+      "teams": "Teams",
+      "presentToday": "Present Today"
+    },
+    "addDepartment": "Add Department",
+    "addUser": "Add User",
+    "viewLog": "View Log",
+    "companyInfo": "Company Info",
+    "editCompany": "Edit Company",
+    "status": "Status",
+    "startPlanDate": "Start Plan Date",
+    "endPlanDate": "End Plan Date",
+    "addField": "Add Field",
+    "assignedTo": "Assigned To",
+    "type": "Type",
+    "required": "Required",
+    "yes": "Yes",
+    "no": "No",
+    "departmentsOverview": "Departments Overview",
+    "viewAll": "View All",
+    "fieldType": "Field Type",
+    "fieldTypePlaceholder": "Field Type",
+    "assignTo": "Assign To",
+    "assignToPlaceholder": "Assign To",
+    "requiredFieldPlaceholder": "Required Field",
+    "reject": "Reject",
+    "approve": "Approve",
+    "suspended": "Suspended",
+    "error": {
+      "loadFailed": "Failed to load company details"
     }
   }
 }

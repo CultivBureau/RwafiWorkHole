@@ -171,14 +171,17 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
 
     const getStatusBadge = (status) => {
         const baseClasses = "px-3 py-1 rounded-full text-xs font-medium inline-block border"
-        switch (status) {
-            case "Active":
-                return <span className={`${baseClasses} bg-[var(--approved-leave-box-bg)] text-[var(--success-color)] border-[var(--success-color)]`}>{t('roles.filters.active')}</span>
-            case "Inactive":
-                return <span className={`${baseClasses} bg-[var(--rejected-leave-box-bg)] text-[var(--error-color)] border-[var(--error-color)]`}>{t('roles.filters.inactive')}</span>
-            default:
-                return <span className={`${baseClasses} bg-[var(--container-color)] text-[var(--sub-text-color)] border-[var(--border-color)]`}>{status}</span>
+        const statusLower = String(status || '').toLowerCase().trim()
+        
+        if (statusLower === 'active' || status === true || status === 1) {
+            return <span className={`${baseClasses} bg-[var(--approved-leave-box-bg)] text-[var(--success-color)] border-[var(--success-color)]`}>{t('roles.filters.active')}</span>
         }
+        if (statusLower === 'inactive' || status === false || status === 0) {
+            return <span className={`${baseClasses} bg-[var(--rejected-leave-box-bg)] text-[var(--error-color)] border-[var(--error-color)]`}>{t('roles.filters.inactive')}</span>
+        }
+        
+        // Fallback: try to translate if it's a known status, otherwise show raw value
+        return <span className={`${baseClasses} bg-[var(--container-color)] text-[var(--sub-text-color)] border-[var(--border-color)]`}>{t(`roles.filters.${statusLower}`, status)}</span>
     }
 
     // Create empty rows to maintain consistent table height

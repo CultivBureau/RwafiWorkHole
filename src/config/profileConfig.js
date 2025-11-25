@@ -6,7 +6,6 @@ export const getFieldLabels = (isRtl) => ({
       lastName: isRtl ? "الاسم الأخير" : "Last Name",
       email: isRtl ? "البريد الإلكتروني" : "Email",
       userName: isRtl ? "اسم المستخدم" : "User Name",
-      hireDate: isRtl ? "تاريخ التوظيف" : "Hire Date",
       mobileNumber: isRtl ? "رقم الهاتف المحمول" : "Mobile Number",
       dateOfBirth: isRtl ? "تاريخ الميلاد" : "Date of Birth",
       maritalStatus: isRtl ? "الحالة الاجتماعية" : "Marital Status",
@@ -18,11 +17,11 @@ export const getFieldLabels = (isRtl) => ({
       zipCode: isRtl ? "الرمز البريدي" : "Zip Code"
     },
     professional: {
-      role: isRtl ? "الدور" : "Role",
-      department: isRtl ? "القسم" : "Department",
-      team: isRtl ? "الفريق" : "Team",
-      shift: isRtl ? "الوردية" : "Shift",
       jobTitle: isRtl ? "المسمى الوظيفي" : "Job Title",
+      role: isRtl ? "الدور" : "Role",
+      team: isRtl ? "الفريق" : "Team",
+      department: isRtl ? "القسم" : "Department",
+      shift: isRtl ? "الوردية" : "Shift",
       hireDate: isRtl ? "تاريخ التوظيف" : "Hire Date",
       employeeId: isRtl ? "رقم الموظف" : "Employee ID",
       employeeType: isRtl ? "نوع الموظف" : "Employee Type",

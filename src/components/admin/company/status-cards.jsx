@@ -7,28 +7,28 @@ const CompanyStatusCards = () => {
 
     const statusCards = [
         {
-            header: "Company Name",
+            header: t("company.statusCards.companyName"),
             title: "WorkHole",
-            subTitle: "Registered Organization",
-            rightIcon: <img src="/assets/company/name.svg" alt="Company Name" className="w-6 h-6" />,
+            subTitle: t("company.statusCards.registeredOrganization"),
+            rightIcon: <img src="/assets/company/name.svg" alt={t("company.statusCards.companyName")} className="w-6 h-6" />,
         },
         {
-            header: "Active Status",
-            title: "Active",
-            subTitle: "Current Plan",
-            rightIcon: <img src="/assets/company/status.svg" alt="Active Status" className="w-6 h-6" />,
+            header: t("company.statusCards.activeStatus"),
+            title: t("company.active"),
+            subTitle: t("company.statusCards.currentPlan"),
+            rightIcon: <img src="/assets/company/status.svg" alt={t("company.statusCards.activeStatus")} className="w-6 h-6" />,
         },
         {
-            header: "Plan Type",
+            header: t("company.statusCards.planType"),
             title: "Enterprise",
-            subTitle: "Start - End Date",
-            rightIcon: <img src="/assets/company/plan.svg" alt="Plan Type" className="w-6 h-6" />,
+            subTitle: t("company.statusCards.startEndDate"),
+            rightIcon: <img src="/assets/company/plan.svg" alt={t("company.statusCards.planType")} className="w-6 h-6" />,
         },
         {
-            header: "Departments Linked",
+            header: t("company.statusCards.departmentsLinked"),
             title: "8 Departments",
-            subTitle: "Total Departments under this company",
-            rightIcon: <img src="/assets/company/departments.svg" alt="Departments Linked" className="w-6 h-6" />,
+            subTitle: t("company.statusCards.totalDepartments"),
+            rightIcon: <img src="/assets/company/departments.svg" alt={t("company.statusCards.departmentsLinked")} className="w-6 h-6" />,
         },
     ];
 

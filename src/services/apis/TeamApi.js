@@ -218,6 +218,19 @@ export const teamApi = createApi({
       invalidatesTags: ["Teams"],
     }),
 
+    getUserTeamsAndDepartments: builder.query({
+      query: (userId) => {
+        if (!userId) {
+          throw new Error("userId is required");
+        }
+        return {
+          url: `/api/v1/Team/GetUserTeamsAndDepartments/user/${userId}/teams-departments`,
+          method: "GET",
+        };
+      },
+      providesTags: (result, error, userId) => [{ type: "Teams", id: `USER-${userId}` }],
+    }),
+
 
   }),
   tagTypes: ["Teams"],
@@ -228,6 +241,7 @@ export const {
   useCreateTeamMutation,
   useGetTeamsByDepartmentQuery,
   useGetTeamUsersQuery,
+  useGetUserTeamsAndDepartmentsQuery,
   useAddUserToTeamMutation,
   useAddUsersToTeamMutation,
   useUpdateTeamMutation,

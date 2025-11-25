@@ -88,7 +88,7 @@ const CenterContent = () => {
         }
     ];
 
-    const statusOptions = ['Active', 'Inactive', 'Suspended'];
+    const statusOptions = [t("company.active"), t("company.inactive"), t("company.suspended", "Suspended")];
 
     const handleEdit = () => {
         setIsEditing(true);
@@ -303,7 +303,7 @@ const CenterContent = () => {
                                             }}
                                         >
                                             {statusOptions.map((status) => (
-                                                <option key={status} value={status}>
+                                                <option key={status} value={status === t("company.active") ? "Active" : status === t("company.inactive") ? "Inactive" : "Suspended"}>
                                                     {status}
                                                 </option>
                                             ))}
@@ -397,7 +397,7 @@ const CenterContent = () => {
                         {/* Header */}
                         <div className={`flex items-center justify-between mb-2.5 flex-shrink-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
                             <h3 className={`text-sm font-semibold ${isArabic ? 'text-right' : 'text-left'}`} style={{ color: 'var(--text-color)' }}>
-                                {t('company.customFields', 'Custom Fields')}
+                                {t('company.customFields.title', 'Custom Fields')}
                             </h3>
                             <button
                                 onClick={() => setIsNewFieldPopupOpen(true)}
@@ -435,10 +435,10 @@ const CenterContent = () => {
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[10px]" style={{ color: 'var(--sub-text-color)' }}>
-                                                <span className="font-medium">{t('company.assignedTo', 'Assigned To')}:</span> {field.assignedTo}
+                                                <span className="font-medium">{t('company.assignTo', 'Assigned To')}:</span> {field.assignedTo}
                                             </p>
                                             <p className="text-[10px]" style={{ color: 'var(--sub-text-color)' }}>
-                                                <span className="font-medium">{t('company.type', 'Type')}:</span> {field.type} | <span className="font-medium">{t('company.required', 'Required')}:</span> {field.required ? t('company.yes', 'Yes') : t('company.no', 'No')}
+                                                <span className="font-medium">{t('company.type', 'Type')}:</span> {field.type} | <span className="font-medium">{t('company.required', 'Required')}:</span> {field.required ? t('company.customFields.requiredOptions.yes', 'Yes') : t('company.customFields.requiredOptions.no', 'No')}
                                             </p>
                                         </div>
                                     </div>
@@ -493,15 +493,15 @@ const CenterContent = () => {
 
                                         <div className="space-y-1 mb-1.5">
                                             <p className="text-[10px]" style={{ color: 'var(--sub-text-color)' }}>
-                                                <span className="font-medium">{dept.members}</span> {t('company.members', 'Members')}
+                                                <span className="font-medium">{dept.members}</span> {t('company.departments.members', 'Members')}
                                             </p>
                                             <div className={`flex items-center gap-1.5 ${isArabic ? 'flex-row-reverse' : ''}`}>
                                                 <span className="text-[10px] font-medium" style={{ color: 'var(--sub-text-color)' }}>
-                                                    {t('company.teams', 'Teams')}: {dept.teams}
+                                                    {t('company.departments.teams', 'Teams')}: {dept.teams}
                                                 </span>
                                                 <span className="mx-1" style={{ color: 'var(--sub-text-color)' }}>|</span>
                                                 <span className="text-[10px] font-medium" style={{ color: 'var(--sub-text-color)' }}>
-                                                    {t('company.presentToday', 'Present Today')}: {dept.presentToday}
+                                                    {t('company.departments.presentToday', 'Present Today')}: {dept.presentToday}
                                                 </span>
                                             </div>
                                         </div>

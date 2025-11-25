@@ -45,7 +45,7 @@ const AccountAccessSection = ({ accountAccess }) => {
             {Object.entries(groupedPermissions).map(([category, perms]) => (
               <div key={category} className="space-y-4 sm:space-y-5">
                 <h4 
-                  className="text-lg sm:text-xl font-bold capitalize pb-2 border-b text-center"
+                  className="text-lg sm:text-xl font-bold capitalize pb-2 border-b text-left"
                   style={{ 
                     color: 'var(--text-color)',
                     borderColor: 'var(--divider-color)'
@@ -53,22 +53,22 @@ const AccountAccessSection = ({ accountAccess }) => {
                 >
                   {category}
                 </h4>
-                
-                <div className="flex flex-wrap gap-4 sm:gap-6 lg:gap-8 justify-center">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {perms.map((permission, index) => (
                     <div 
                       key={index} 
-                      className="flex items-center gap-3 sm:gap-4 group cursor-pointer transition-all duration-200 hover:scale-105"
+                      className="flex items-center gap-2 sm:gap-3 group cursor-pointer transition-all duration-200 hover:translate-x-1"
                     >
                       <div 
-                        className="w-4 h-4 sm:w-5 sm:h-5 rounded-full flex-shrink-0 shadow-sm transition-all duration-200 group-hover:scale-110"
+                        className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 shadow-sm transition-all duration-200 group-hover:scale-110"
                         style={{ 
                           background: 'linear-gradient(135deg, #09D1C7 0%, #15919B 100%)',
                           boxShadow: '0 2px 8px rgba(9, 209, 199, 0.3)'
                         }}
                       />
                       <span 
-                        className="text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors duration-200 group-hover:opacity-80"
+                        className="text-xs sm:text-sm font-semibold text-left transition-colors duration-200 group-hover:opacity-80"
                         style={{ color: 'var(--text-color)' }}
                       >
                         {permission}

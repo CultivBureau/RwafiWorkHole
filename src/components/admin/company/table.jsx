@@ -165,21 +165,21 @@ const CompanyTable = () => {
         <div className="flex items-center gap-1 md:gap-2">
             <button
                 className="p-1 rounded hover:bg-gray-100 transition-colors"
-                title="View"
+                title={t("company.table.view")}
                 onClick={(e) => { e.stopPropagation(); handleViewEmployee(employee); }}
             >
                 <Eye className="w-3 h-3 md:w-4 md:h-4" style={{ color: 'var(--sub-text-color)' }} />
             </button>
             <button
                 className="p-1 rounded hover:bg-gray-100 transition-colors"
-                title="Edit"
+                title={t("company.table.edit")}
                 onClick={(e) => { e.stopPropagation(); setSelectedEmployee(employee); setIsEditOpen(true); }}
             >
                 <Edit className="w-3 h-3 md:w-4 md:h-4" style={{ color: 'var(--sub-text-color)' }} />
             </button>
             <button
                 className="p-1 rounded hover:bg-gray-100 transition-colors"
-                title="Delete"
+                title={t("company.table.delete")}
             >
                 <Trash2 className="w-3 h-3 md:w-4 md:h-4" style={{ color: '#ef4444' }} />
             </button>
@@ -279,7 +279,7 @@ const CompanyTable = () => {
                         <FilterSelect
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            options={["Active", "Inactive", "Pending"]}
+                            options={[t("company.active"), t("company.inactive"), t("common.pending", "Pending")]}
                             placeholder={t("employees.filters.status")}
                         />
                     </div>

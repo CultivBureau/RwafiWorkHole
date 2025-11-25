@@ -13,9 +13,25 @@ const NewFieldPopup = ({ isOpen, onClose, onSave }) => {
         requiredField: ''
     });
 
-    const fieldTypes = ['Text', 'Number', 'Date', 'Email', 'Phone', 'Dropdown', 'Checkbox'];
-    const assignToOptions = ['Employee Profile', 'Department', 'Team', 'Project'];
-    const requiredOptions = ['Yes', 'No'];
+    const fieldTypes = [
+        t('company.customFields.fieldTypes.text'),
+        t('company.customFields.fieldTypes.number'),
+        t('company.customFields.fieldTypes.date'),
+        t('company.customFields.fieldTypes.email'),
+        t('company.customFields.fieldTypes.phone'),
+        t('company.customFields.fieldTypes.dropdown'),
+        t('company.customFields.fieldTypes.checkbox')
+    ];
+    const assignToOptions = [
+        t('company.customFields.assignToOptions.employeeProfile'),
+        t('company.customFields.assignToOptions.department'),
+        t('company.customFields.assignToOptions.team'),
+        t('company.customFields.assignToOptions.project')
+    ];
+    const requiredOptions = [
+        t('company.customFields.requiredOptions.yes'),
+        t('company.customFields.requiredOptions.no')
+    ];
 
     const handleChange = (field, value) => {
         setFieldData(prev => ({
@@ -124,11 +140,14 @@ const NewFieldPopup = ({ isOpen, onClose, onSave }) => {
                                     <option value="" disabled>
                                         {t('company.fieldTypePlaceholder', 'Field Type')}
                                     </option>
-                                    {fieldTypes.map((type) => (
-                                        <option key={type} value={type}>
-                                            {type}
-                                        </option>
-                                    ))}
+                                    {fieldTypes.map((type, index) => {
+                                        const originalTypes = ['Text', 'Number', 'Date', 'Email', 'Phone', 'Dropdown', 'Checkbox'];
+                                        return (
+                                            <option key={type} value={originalTypes[index]}>
+                                                {type}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
@@ -153,11 +172,14 @@ const NewFieldPopup = ({ isOpen, onClose, onSave }) => {
                                     <option value="" disabled>
                                         {t('company.assignToPlaceholder', 'Assign To')}
                                     </option>
-                                    {assignToOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
+                                    {assignToOptions.map((option, index) => {
+                                        const originalOptions = ['Employee Profile', 'Department', 'Team', 'Project'];
+                                        return (
+                                            <option key={option} value={originalOptions[index]}>
+                                                {option}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
 
@@ -182,11 +204,14 @@ const NewFieldPopup = ({ isOpen, onClose, onSave }) => {
                                     <option value="" disabled>
                                         {t('company.requiredFieldPlaceholder', 'Required Field')}
                                     </option>
-                                    {requiredOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {t(`company.${option.toLowerCase()}`, option)}
-                                        </option>
-                                    ))}
+                                    {requiredOptions.map((option, index) => {
+                                        const originalOptions = ['Yes', 'No'];
+                                        return (
+                                            <option key={option} value={originalOptions[index]}>
+                                                {option}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
                             </div>
                         </div>
