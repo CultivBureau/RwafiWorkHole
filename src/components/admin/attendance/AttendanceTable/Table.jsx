@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useLang } from "../../../../contexts/LangContext";
 import { ChevronDown, ChevronUp, Users } from "lucide-react";
-import { useGetCompanyClockinLogsQuery } from "../../../../services/apis/ClockinLogApi";
+import { useLazyGetCompanyClockinLogsQuery } from "../../../../services/apis/ClockinLogApi";
 import { utcToLocalTime, utcToLocalDate, calculateDurationFromUtc } from '../../../../utils/timeUtils';
 import { isWithinShiftRadius } from '../../../../utils/locationUtils';
 
@@ -89,6 +89,19 @@ const parseBreakDuration = (duration) => {
   return 0;
 };
 
+const SERVER_PAGE_SIZE = 50;
+const MAX_PAGES = 100;
+
+const extractLogsFromResponse = (response) => {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.value)) return response.value;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.results)) return response.results;
+  return [];
+};
+
 const AttendanceTable = () => {
   const { t, i18n } = useTranslation();
   const { isRtl } = useLang();
@@ -109,28 +122,68 @@ const AttendanceTable = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  // Fetch company clock-in logs
-  const { data, isLoading, isError, error, refetch } = useGetCompanyClockinLogsQuery({
-    pageNumber: currentPage,
-    pageSize: itemsPerPage,
-  })
+  const [rawLogs, setRawLogs] = useState([])
+  const [isFetchingLogs, setIsFetchingLogs] = useState(false)
+  const [fetchError, setFetchError] = useState(null)
+  const [reloadKey, setReloadKey] = useState(0)
+  const [fetchLogsTrigger] = useLazyGetCompanyClockinLogsQuery()
+
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchAllLogs = async () => {
+      setIsFetchingLogs(true);
+      setFetchError(null);
+      const aggregated = [];
+      let page = 1;
+
+      try {
+        while (!isCancelled && page <= MAX_PAGES) {
+          const response = await fetchLogsTrigger(
+            { pageNumber: page, pageSize: SERVER_PAGE_SIZE },
+            true
+          ).unwrap();
+
+          const pageLogs = extractLogsFromResponse(response);
+          aggregated.push(...pageLogs);
+
+          if (pageLogs.length < SERVER_PAGE_SIZE) {
+            break;
+          }
+          page += 1;
+        }
+
+        if (!isCancelled) {
+          setRawLogs(aggregated);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          if (aggregated.length > 0) {
+            setRawLogs(aggregated);
+          }
+          setFetchError(err);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsFetchingLogs(false);
+        }
+      }
+    };
+
+    fetchAllLogs();
+    return () => {
+      isCancelled = true;
+    };
+  }, [fetchLogsTrigger, reloadKey]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rawLogs]);
 
   // Map API data to table format
   const companyLogs = useMemo(() => {
-    if (!data) return []
+    if (!rawLogs?.length) return []
 
-    let items = []
-    if (Array.isArray(data)) {
-      items = data
-    } else if (data?.value && Array.isArray(data.value)) {
-      items = data.value
-    } else if (data?.data && Array.isArray(data.data)) {
-      items = data.data
-    } else if (data?.items && Array.isArray(data.items)) {
-      items = data.items
-    } else if (data?.results && Array.isArray(data.results)) {
-      items = data.results
-    }
+    const items = Array.isArray(rawLogs) ? rawLogs : []
 
     return items.map((log) => {
       const userFirstName = log?.user?.firstName || ""
@@ -172,7 +225,7 @@ const AttendanceTable = () => {
         raw: log,
       }
     })
-  }, [data, locale, t])
+  }, [rawLogs, locale, t])
 
   // Handle table column sorting
   const handleTableSort = (column) => {
@@ -297,28 +350,25 @@ const AttendanceTable = () => {
   }, [companyLogs, sortBy, locationFilter, statusFilter, dateFromFilter, dateToFilter, tableSortColumn, tableSortDirection])
 
   // Pagination
-  const totalCount =
-    data?.totalCount ??
-    data?.total ??
-    data?.pagination?.total ??
-    (Array.isArray(data?.value) ? data.value.length : 0)
-
-  const reportedTotalPages = data?.totalPages ?? data?.pagination?.totalPages
-  const hasMoreFromApi = Array.isArray(companyLogs) && companyLogs.length === itemsPerPage
-  const totalPages =
-    reportedTotalPages ??
-    (totalCount
-      ? Math.max(1, Math.ceil(totalCount / itemsPerPage))
-      : hasMoreFromApi
-      ? currentPage + 1
-      : currentPage)
-
-  const currentData = filteredAndSortedData
+  const totalRecords = filteredAndSortedData.length
+  const totalPages = totalRecords === 0 ? 1 : Math.ceil(totalRecords / itemsPerPage)
+  const startIndex = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage
+  const currentData = filteredAndSortedData.slice(startIndex, startIndex + itemsPerPage)
+  const showingFrom = totalRecords === 0 ? 0 : startIndex + 1
+  const showingTo = totalRecords === 0 ? 0 : startIndex + currentData.length
 
   // Reset current page when filters change
   useEffect(() => {
     setCurrentPage(1)
   }, [sortBy, locationFilter, statusFilter, dateFromFilter, dateToFilter])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
+
+  const handleRefresh = () => setReloadKey((prev) => prev + 1)
 
   const getStatusBadge = (status) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium inline-block border";
@@ -502,6 +552,29 @@ const AttendanceTable = () => {
               </button>
             </div>
           </div>
+          <div className="flex items-center gap-3 ml-auto">
+            <div className="text-xs font-medium text-[var(--sub-text-color)]">
+              {t("attendanceTable.showing", { count: currentData.length, total: totalRecords })}
+              {totalRecords > 0 && (
+                <span className="block text-[10px] mt-0.5">
+                  {`${showingFrom}-${showingTo}`}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isFetchingLogs}
+              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold transition-colors duration-200 disabled:opacity-50"
+              style={{
+                borderColor: 'var(--border-color)',
+                backgroundColor: 'var(--bg-color)',
+                color: 'var(--text-color)',
+              }}
+            >
+              {t("attendanceTable.refresh", "Refresh")}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -603,23 +676,23 @@ const AttendanceTable = () => {
             </tr>
           </thead>
           <tbody className="bg-[var(--table-bg)]">
-            {isLoading ? (
+            {isFetchingLogs ? (
               <tr>
                 <td colSpan={10} className="py-16 px-6 text-center text-[var(--sub-text-color)]">
                   {t("adminAttendance.table.loading", "Loading attendance records...")}
                 </td>
               </tr>
-            ) : isError ? (
+            ) : fetchError ? (
               <tr>
                 <td colSpan={10} className="py-16 px-6">
                   <div className="flex flex-col items-center gap-3 text-[var(--sub-text-color)]">
                     <span>{t("adminAttendance.table.errorLoading", "Failed to load attendance records")}</span>
-                    {error && (
+                    {fetchError && (
                       <span className="text-sm text-[var(--sub-text-color)]/80">
-                        {error?.data?.message || error?.message || "An error occurred"}
+                        {fetchError?.data?.errorMessage || fetchError?.error || fetchError?.message || "An error occurred"}
                       </span>
                     )}
-                    <button onClick={() => refetch()} className="btn-secondary">
+                    <button onClick={handleRefresh} className="btn-secondary">
                       {t("adminAttendance.table.retry", "Retry")}
                     </button>
                   </div>
@@ -636,7 +709,7 @@ const AttendanceTable = () => {
                     <div className="text-sm text-center max-w-md">
                       {t("adminAttendance.table.emptyDescription", "When team members start clocking in, their activity will appear here.")}
                     </div>
-                    <button onClick={() => refetch()} className="btn-secondary">
+                    <button onClick={handleRefresh} className="btn-secondary">
                       {t("adminAttendance.table.refresh", "Refresh")}
                     </button>
                   </div>

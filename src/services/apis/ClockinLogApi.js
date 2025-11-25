@@ -257,6 +257,7 @@ export const clockinLogApi = createApi({
 
 export const {
   useGetCompanyClockinLogsQuery,
+  useLazyGetCompanyClockinLogsQuery,
   useGetDepartmentClockinLogsQuery,
   useGetTeamClockinLogsQuery,
   useGetUserClockinLogsQuery,
