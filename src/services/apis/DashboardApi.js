@@ -77,6 +77,86 @@ export const dashboardApi = createApi({
       },
       providesTags: [{ type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" }],
     }),
+
+    getCurrentWeekWorkingHours: builder.query({
+      query: () => ({
+        url: "/api/v1/Dashboard/GetCurrentWeekWorkingHours/time-tracking/working-hours/week",
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (Array.isArray(response?.data)) {
+          return response.data;
+        }
+        if (Array.isArray(response?.value)) {
+          return response.value;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Dashboard", id: "CURRENT_WEEK_WORKING_HOURS" }],
+    }),
+
+    getCurrentMonthWorkingHours: builder.query({
+      query: () => ({
+        url: "/api/v1/Dashboard/GetCurrentMonthWorkingHours/time-tracking/working-hours/month",
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (Array.isArray(response?.data)) {
+          return response.data;
+        }
+        if (Array.isArray(response?.value)) {
+          return response.value;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Dashboard", id: "CURRENT_MONTH_WORKING_HOURS" }],
+    }),
+
+    getCurrentWeekBreakUsage: builder.query({
+      query: () => ({
+        url: "/api/v1/Dashboard/GetCurrentWeekBreakUsage/breaks/week",
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (Array.isArray(response?.data)) {
+          return response.data;
+        }
+        if (Array.isArray(response?.value)) {
+          return response.value;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Dashboard", id: "CURRENT_WEEK_BREAK_USAGE" }],
+    }),
+
+    getCurrentMonthBreakUsageByType: builder.query({
+      query: () => ({
+        url: "/api/v1/Dashboard/GetCurrentMonthBreakUsageByType/breaks/month",
+        method: "GET",
+      }),
+      transformResponse: (response) => {
+        if (Array.isArray(response?.data)) {
+          return response.data;
+        }
+        if (Array.isArray(response?.value)) {
+          return response.value;
+        }
+        if (Array.isArray(response)) {
+          return response;
+        }
+        return [];
+      },
+      providesTags: [{ type: "Dashboard", id: "CURRENT_MONTH_BREAK_USAGE" }],
+    }),
   }),
 });
 
@@ -85,5 +165,9 @@ export const {
   useGetEmployeeDashboardCardsQuery,
   useGetAdminStatisticsQuery,
   useGetEmployeeLeaveSummaryQuery,
+  useGetCurrentWeekWorkingHoursQuery,
+  useGetCurrentMonthWorkingHoursQuery,
+  useGetCurrentWeekBreakUsageQuery,
+  useGetCurrentMonthBreakUsageByTypeQuery,
 } = dashboardApi;
 

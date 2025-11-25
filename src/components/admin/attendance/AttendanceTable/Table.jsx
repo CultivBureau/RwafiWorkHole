@@ -38,7 +38,7 @@ const calculateDuration = (startIso, endIso) => {
 const determineStatus = (log) => {
   if (!log?.clockinTime && !log?.clockoutTime) return "Absent";
   if (log?.isLate) return "Late arrival";
-  return "Present";
+  return "On Time";
 };
 
 const determineLocation = (log) => {
@@ -191,7 +191,7 @@ const AttendanceTable = () => {
     // Apply filters
     if (statusFilter !== "all") {
       filtered = filtered.filter(employee => {
-        if (statusFilter === "present") return employee.status === "Present"
+        if (statusFilter === "onTime") return employee.status === "On Time"
         if (statusFilter === "absent") return employee.status === "Absent"
         if (statusFilter === "late") return employee.status === "Late arrival"
         return true
@@ -323,9 +323,9 @@ const AttendanceTable = () => {
   const getStatusBadge = (status) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium inline-block border";
     switch (status) {
-      case "Present":
+      case "On Time":
         return <span className={`${baseClasses} bg-[var(--success-color)]/10 text-[var(--success-color)]/70 border-[var(--success-color)]/30`}>
-          {t("adminAttendance.table.status.present", "Present")}
+          {t("adminAttendance.table.status.onTime", "On Time")}
         </span>
       case "Absent":
         return <span className={`${baseClasses} bg-[var(--error-color)]/10 text-[var(--error-color)]/70 border-[var(--error-color)]/30`}>
@@ -433,8 +433,8 @@ const AttendanceTable = () => {
                 <option value="all">
                   {t("adminAttendance.table.status.allStatus", "All Status")}
                 </option>
-                <option value="present">
-                  {t("adminAttendance.table.status.present", "Present")}
+                <option value="onTime">
+                  {t("adminAttendance.table.status.onTime", "On Time")}
                 </option>
                 <option value="absent">
                   {t("adminAttendance.table.status.absent", "Absent")}

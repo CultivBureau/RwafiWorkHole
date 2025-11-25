@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Edit, Trash2, MoreVertical, RotateCcw } from "lucide-react";
-import GroupDepartmentIcon from '/assets/groupDepartments.svg';
+import { Building2, Layers, Users, User, ChevronRight, Edit, Trash2, MoreVertical, RotateCcw } from "lucide-react";
 import { useGetDepartmentSupervisorQuery, useDeleteDepartmentMutation, useRestoreDepartmentMutation } from "../../../services/apis/DepartmentApi";
 import { useGetTeamsByDepartmentQuery, useGetTeamUsersQuery } from "../../../services/apis/TeamApi";
 import { useHasPermission } from "../../../hooks/useHasPermission";
 import TeamDetailsPopup from "./all-teams/team-details/team-details-popup";
+import ConfirmDialog from "../all-shifts/confirm-dialog";
 
 export default function DepartmentCard({ department, onDelete, canUpdate = true, canDelete = true, canRestore = true }) {
     const { t, i18n } = useTranslation();
@@ -20,6 +20,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const [deleteError, setDeleteError] = useState("");
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [isTeamPopupOpen, setIsTeamPopupOpen] = useState(false);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+    const [departmentToRestore, setDepartmentToRestore] = useState(null);
     const menuRef = React.useRef(null);
     
     // Close menu when clicking outside
@@ -240,20 +242,26 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
         }
     };
 
-    const handleRestoreDepartment = async (e) => {
+    const handleRestoreDepartment = (e) => {
         e.stopPropagation();
         setIsMenuOpen(false);
-        
+        setDepartmentToRestore(department);
+        setShowRestoreConfirm(true);
+    };
+
+    const confirmRestoreDepartment = async () => {
+        if (!departmentToRestore?.id) return;
         try {
-            await restoreDepartment(department.id).unwrap();
-            
-            // Notify parent component to refetch if callback provided
+            await restoreDepartment(departmentToRestore.id).unwrap();
             if (onDelete) {
-                onDelete(department.id);
+                onDelete(departmentToRestore.id);
             }
         } catch (error) {
             const errorMessage = error?.data?.errorMessage || error?.message || 'Failed to restore department. Please try again.';
             alert(errorMessage);
+        } finally {
+            setShowRestoreConfirm(false);
+            setDepartmentToRestore(null);
         }
     };
 
@@ -303,8 +311,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                 <div className={`flex items-start justify-between mb-5 ${isArabic ? 'flex-row-reverse' : ''}`}>
                     <div className={`flex items-start gap-4 flex-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
                         {/* Department Icon */}
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/10 to-[var(--accent-color)]/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                            <img src={GroupDepartmentIcon} alt="Department" className="w-7 h-7 opacity-80" />
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--accent-color)]/15 via-[var(--accent-color)]/10 to-[var(--accent-color)]/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:bg-[var(--accent-color)] transition-all duration-300">
+                            <Building2 className="w-6 h-6 text-[var(--accent-color)] group-hover:text-white transition-colors duration-300" />
                         </div>
                         
                         <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'} min-w-0`}>
@@ -444,8 +452,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                         <div className={`flex flex-col gap-2 mb-4 ${isArabic ? '' : ''}`}>
                             <div className={`flex items-center justify-between ${isArabic ? 'flex-row-reverse' : ''}`}>
                                 <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/10 flex items-center justify-center">
-                                        <img src={GroupDepartmentIcon} alt="Teams" className="w-5 h-5 opacity-70" />
+                                    <div className="w-8 h-8 rounded-lg bg-[var(--accent-color)]/12 flex items-center justify-center">
+                                        <Layers className="w-4 h-4 text-[var(--accent-color)]" />
                                     </div>
                                     <span className="text-sm font-semibold text-[var(--text-color)]">
                                         {isLoadingTeams ? (
@@ -502,18 +510,19 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                                         title={t("allDepartments.departmentCard.clickToView", "Click to view team details")}
                                     >
                                         <div className={`flex items-center gap-3 flex-1 min-w-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
-                                            <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover/team:scale-110 group-hover/team:rotate-3 transition-all duration-200">
-                                                <img src={GroupDepartmentIcon} alt="Team" className="w-6 h-6 opacity-70 group-hover/team:opacity-100 transition-opacity duration-200" />
+                                            <div className="w-10 h-10 bg-gradient-to-br from-[var(--accent-color)]/20 to-[var(--accent-color)]/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover/team:scale-110 group-hover/team:-rotate-3 transition-all duration-200">
+                                                <Users className="w-5 h-5 text-[var(--accent-color)] group-hover/team:text-[var(--accent-color)]" />
                                             </div>
                                             <div className={`flex-1 min-w-0 ${isArabic ? 'text-right' : 'text-left'}`}>
                                                 <p className="text-sm font-semibold text-[var(--text-color)] truncate group-hover/team:text-[var(--accent-color)] transition-colors">
                                                     {team.name}
                                                 </p>
                                                 {team.teamLeader && (
-                                                    <p className="text-xs text-[var(--sub-text-color)] mt-0.5 truncate">
-                                                        <span className="opacity-70">{t("allDepartments.departmentCard.leadBy", "Lead by")}</span> 
-                                                        <span className="text-[var(--text-color)] font-medium ml-1">{team.teamLeader}</span>
-                                                    </p>
+                                                    <div className="flex items-center gap-1 text-xs text-[var(--sub-text-color)] mt-0.5">
+                                                        <User className="w-3 h-3 text-[var(--accent-color)]" />
+                                                        <span className="opacity-70">{t("allDepartments.departmentCard.leadBy", "Lead by")}</span>
+                                                        <span className="text-[var(--text-color)] font-medium">{team.teamLeader}</span>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -548,7 +557,7 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                         ) : (
                             <div className="text-center py-8">
                                 <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-[var(--container-color)]/30 flex items-center justify-center">
-                                    <img src={GroupDepartmentIcon} alt="No Teams" className="w-8 h-8 opacity-30" />
+                                    <Users className="w-6 h-6 text-[var(--sub-text-color)]/60" />
                                 </div>
                                 <p className="text-sm text-[var(--sub-text-color)]">
                                     {t("allDepartments.departmentCard.noTeams", "No teams in this department yet")}
@@ -629,6 +638,20 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                 </div>
             </div>
         )}
+
+        <ConfirmDialog
+            isOpen={showRestoreConfirm}
+            onClose={() => {
+                setShowRestoreConfirm(false);
+                setDepartmentToRestore(null);
+            }}
+            onConfirm={confirmRestoreDepartment}
+            title={t("departments.restore.title", "Restore Department")}
+            message={t("departments.restore.message", "Are you sure you want to restore this department?")}
+            confirmText={t("departments.restore.confirm", "Restore")}
+            cancelText={t("common.cancel", "Cancel")}
+            type="brand"
+        />
         </>
     );
 }

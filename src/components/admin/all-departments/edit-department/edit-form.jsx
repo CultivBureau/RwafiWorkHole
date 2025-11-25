@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
-import { Building2, Users, UserCheck, Eye, ChevronDown, X, Plus, Check, Save, Edit, Trash2, Search } from "lucide-react";
+import { Building2, Users, UserCheck, Eye, ChevronDown, X, Plus, Check, Save, Edit, Trash2, Search, Sparkles } from "lucide-react";
 import { useGetDepartmentByIdQuery, useGetDepartmentSupervisorQuery, useUpdateDepartmentMutation } from "../../../../services/apis/DepartmentApi";
 import { useGetAllRolesQuery, useGetRoleUsersQuery } from "../../../../services/apis/RoleApi";
 import { useCreateTeamMutation, useAddUsersToTeamMutation, useGetTeamsByDepartmentQuery, useUpdateTeamMutation, useDeleteTeamMutation, useUpdateUsersInTeamMutation, useGetTeamUsersQuery } from "../../../../services/apis/TeamApi";
 import { useHasPermission } from "../../../../hooks/useHasPermission";
+import TeamFormEmbedded from "../../new-department/team-form-embedded";
+import toast from "react-hot-toast";
 
 export default function EditDepartmentForm() {
     const { t, i18n } = useTranslation();
@@ -39,7 +41,21 @@ export default function EditDepartmentForm() {
     // Only show steps user has permission for
     const steps = allSteps.filter(step => !step.requiresPermission || step.requiresPermission);
 
-    const [departmentData, setDepartmentData] = useState({ id, name: "", description: "", supervisorId: null, teams: [] });
+    const [departmentData, setDepartmentData] = useState({
+        id,
+        name: "",
+        description: "",
+        supervisorId: null,
+        supervisor: null,
+        supervisorName: "",
+        supervisorEmail: "",
+        supervisorFirstName: "",
+        supervisorLastName: "",
+        supervisorRoleId: null,
+        supervisorRoleName: "",
+        supervisorRole: null,
+        teams: [],
+    });
     
     // Fetch department by ID
     const { data: departmentResponse, isLoading: isLoadingDepartment, isError: isErrorDepartment } = useGetDepartmentByIdQuery(id, {
@@ -66,6 +82,14 @@ export default function EditDepartmentForm() {
                 name: foundDepartment.name || "",
                 description: foundDepartment.description || "",
                 supervisorId: foundDepartment.supervisorId || null,
+                supervisor: foundDepartment.supervisor || prev.supervisor || null,
+                supervisorName: foundDepartment.supervisor?.name || foundDepartment.supervisorName || prev.supervisorName || "",
+                supervisorEmail: foundDepartment.supervisor?.email || foundDepartment.supervisorEmail || prev.supervisorEmail || "",
+                supervisorFirstName: foundDepartment.supervisor?.firstName || foundDepartment.supervisorFirstName || prev.supervisorFirstName || "",
+                supervisorLastName: foundDepartment.supervisor?.lastName || foundDepartment.supervisorLastName || prev.supervisorLastName || "",
+                supervisorRoleId: foundDepartment.supervisorRoleId || prev.supervisorRoleId || null,
+                supervisorRoleName: foundDepartment.supervisorRoleName || prev.supervisorRoleName || "",
+                supervisorRole: foundDepartment.supervisorRole || prev.supervisorRole || null,
                 teams: foundDepartment.teams || [],
             }));
         }
@@ -79,17 +103,28 @@ export default function EditDepartmentForm() {
     const [supervisorSearchTerm, setSupervisorSearchTerm] = useState("");
     
     // Fetch roles first (needed before other useEffects)
-    const { data: rolesData } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 50 });
+    const { data: rolesData } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 50, status: 0 });
     const roles = Array.isArray(rolesData?.value) ? rolesData.value : (Array.isArray(rolesData?.data) ? rolesData.data : (Array.isArray(rolesData) ? rolesData : []));
     
     // Pre-select supervisor when data is loaded
     useEffect(() => {
-        if (supervisorData && !selectedUser) {
-            setSelectedUser(supervisorData);
-            // Try to find and pre-select the role for this supervisor
-            // We'll need to fetch users for each role to find the match
+        if (selectedUser) return;
+        const fallbackSupervisor =
+            supervisorData ||
+            departmentData.supervisor ||
+            (departmentData.supervisorId
+                ? {
+                      id: departmentData.supervisorId,
+                      name: departmentData.supervisorName || `${departmentData.supervisorFirstName || ""} ${departmentData.supervisorLastName || ""}`.trim() || "Current Supervisor",
+                      email: departmentData.supervisorEmail || "",
+                      firstName: departmentData.supervisorFirstName,
+                      lastName: departmentData.supervisorLastName,
+                  }
+                : null);
+        if (fallbackSupervisor) {
+            setSelectedUser(fallbackSupervisor);
         }
-    }, [supervisorData, selectedUser]);
+    }, [supervisorData, departmentData.supervisor, departmentData.supervisorId, departmentData.supervisorName, departmentData.supervisorEmail, departmentData.supervisorFirstName, departmentData.supervisorLastName, selectedUser]);
 
     // Try to find the role for the supervisor by checking all roles
     useEffect(() => {
@@ -143,32 +178,45 @@ export default function EditDepartmentForm() {
     }
 
     return (
-        <div className="w-full mx-auto bg-[var(--bg-color)] rounded-xl border border-[var(--border-color)]" dir={isArabic ? "rtl" : "ltr"}>
-            {/* Header with Breadcrumb */}
-            <div className="p-6 border-b border-[var(--border-color)]">
-                <h1 className="text-2xl font-bold text-[var(--text-color)] mb-2">
-                    {t("departments.editDepartmentForm.title")} - {departmentData.name || foundDepartment.name || ""}
+        <div className="w-full mx-auto bg-[var(--bg-color)] rounded-2xl border-2 border-[var(--border-color)] shadow-xl overflow-hidden" dir={isArabic ? "rtl" : "ltr"}>
+            {/* Hero Header */}
+            <div className="relative bg-gradient-to-r from-[#15919B] via-[#09D1C7] to-[#15919B] p-6 overflow-hidden">
+                <div className="absolute inset-0 opacity-10">
+                    <div className={`absolute ${isArabic ? '-left-10' : '-right-10'} -top-14 w-48 h-48 bg-white rounded-full blur-3xl`}></div>
+                    <div className={`absolute ${isArabic ? '-right-10' : '-left-10'} -bottom-14 w-48 h-48 bg-white rounded-full blur-3xl`}></div>
+                </div>
+                <div className={`relative flex items-center gap-4 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg ring-2 ring-white/20">
+                        <Building2 className="text-white w-6 h-6" />
+                    </div>
+                    <div className={isArabic ? 'text-right' : 'text-left'}>
+                        <div className={`flex items-center gap-2 mb-1 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            <Sparkles className="text-white/80 w-4 h-4" />
+                            <span className="text-white/90 text-xs font-semibold uppercase tracking-wider">
+                                {t("departments.editDepartmentForm.subtitle", "Department Management")}
+                            </span>
+                        </div>
+                        <h1 className="text-3xl font-bold text-white">
+                            {t("departments.editDepartmentForm.title")} • {departmentData.name || foundDepartment.name || ""}
                 </h1>
-                <div className="flex items-center text-sm text-[var(--sub-text-color)]">
-                    <span>{t("departments.editDepartmentForm.breadcrumb.allDepartments")}</span>
-                    <span className={`mx-2 ${isArabic ? 'rotate-180' : ''}`}>›</span>
-                    <span>{t("departments.editDepartmentForm.breadcrumb.editDepartment")}</span>
+                        <p className="text-white/70 text-sm mt-1">
+                            {t("departments.editDepartmentForm.description", "Update the structure, supervisor, and teams for this department.")}
+                        </p>
+                    </div>
                 </div>
             </div>
 
             <div className="p-8">
                 {/* Progress Bar */}
                 <div className="mb-8">
-                    {/* Progress Line */}
-                    <div className="relative mb-4">
-                        <div className="w-full h-1 bg-[var(--border-color)] rounded" />
+                    <div className="relative mb-6">
+                        <div className="w-full h-2 bg-[var(--border-color)]/80 rounded-full" />
                         <div
-                            className={`absolute top-0 h-1 gradient-bg rounded transition-all duration-300 ${isArabic ? 'right-0' : 'left-0'}`}
-                            style={{ width: `${((step + 1) / 4) * 100}%` }}
+                            className={`absolute top-0 h-2 bg-gradient-to-r from-[#15919B] to-[#09D1C7] rounded-full transition-all duration-500 ${isArabic ? 'right-0' : 'left-0'}`}
+                            style={{ width: `${((step + 1) / steps.length) * 100}%` }}
                         />
                     </div>
 
-                    {/* Step Tabs */}
                     <div className="flex justify-between">
                         {steps.map((stepItem, idx) => {
                             const IconComponent = stepItem.icon;
@@ -176,20 +224,23 @@ export default function EditDepartmentForm() {
                             const isCompleted = idx < step;
 
                             return (
-                                <div
-                                    key={stepItem.label}
-                                    className="flex items-center"
-                                >
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${isArabic ? 'ml-2' : 'mr-2'} ${
-                                        isActive || isCompleted ? 'gradient-bg text-white' :
-                                        'bg-[var(--container-color)] text-[var(--sub-text-color)]'
-                                    }`}>
-                                        <IconComponent size={16} />
+                                <div key={stepItem.label} className="flex items-center">
+                                    <div
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${isArabic ? 'ml-2' : 'mr-2'} ${
+                                            isActive || isCompleted
+                                                ? 'bg-gradient-to-r from-[#15919B] to-[#09D1C7] text-white shadow-lg scale-110'
+                                                : 'bg-[var(--container-color)] text-[var(--sub-text-color)]'
+                                        }`}
+                                    >
+                                        <IconComponent size={18} />
                                     </div>
-                                    <span className={`text-sm font-medium hidden sm:block ${isActive || isCompleted
-                                        ? 'gradient-text'
+                                    <span
+                                        className={`text-sm font-semibold hidden sm:block transition-colors duration-300 ${
+                                            isActive || isCompleted
+                                                ? 'text-transparent bg-clip-text bg-gradient-to-r from-[#15919B] to-[#09D1C7]'
                                         : 'text-[var(--sub-text-color)]'
-                                        }`}>
+                                        }`}
+                                    >
                                         {stepItem.label}
                                     </span>
                                 </div>
@@ -200,7 +251,13 @@ export default function EditDepartmentForm() {
 
                 {/* Step Content */}
                 <div className="mt-8">
-                    {step === 0 && <EditDepartmentInfoStep departmentData={departmentData} setDepartmentData={setDepartmentData} onNext={() => setStep(1)} />}
+                    {step === 0 && (
+                        <EditDepartmentInfoStep
+                            departmentData={departmentData}
+                            setDepartmentData={setDepartmentData}
+                            onNext={() => setStep(1)}
+                        />
+                    )}
                     {step === 1 && (canAssignSupervisor || canRemoveSupervisor) && (
                         <EditAssignSupervisorStep
                             departmentData={departmentData}
@@ -238,19 +295,32 @@ export default function EditDepartmentForm() {
                             canRemoveMember={canRemoveMember}
                         />
                     )}
-                    {step === 3 && <EditReviewStep departmentData={departmentData} selectedUser={selectedUser} onBack={() => setStep(2)} onSubmit={async () => {
-                        const supervisorId = selectedUser?.id || selectedUser?.userId || selectedUser?.userID || selectedUser?.UserId || departmentData.supervisorId;
+                    {step === 3 && (
+                        <EditReviewStep
+                            departmentData={departmentData}
+                            selectedUser={selectedUser}
+                            onBack={() => setStep(2)}
+                            onSubmit={async () => {
+                                const supervisorId =
+                                    selectedUser?.id ||
+                                    selectedUser?.userId ||
+                                    selectedUser?.userID ||
+                                    selectedUser?.UserId ||
+                                    departmentData.supervisorId;
                         const body = {
                             name: departmentData.name,
                             description: departmentData.description || "",
-                            supervisorId: supervisorId || null
+                                    supervisorId: supervisorId || null,
                         };
                         try {
                             await updateDepartment({ id, ...body }).unwrap();
                         } catch (error) {
                             throw error;
                         }
-                    }} isSubmitting={isUpdating} />}
+                            }}
+                            isSubmitting={isUpdating}
+                        />
+                    )}
                 </div>
             </div>
         </div>
@@ -272,40 +342,61 @@ function EditDepartmentInfoStep({ departmentData, setDepartmentData, onNext }) {
 
     return (
         <div className="space-y-6">
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-6 bg-gradient-to-br from-[#15919B]/5 to-transparent rounded-xl border-2 border-[var(--border-color)]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                        {t("departments.editDepartmentForm.departmentInfo.departmentName")} <span className="text-red-500">*</span>
+                        <label className={`block text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            {t("departments.editDepartmentForm.departmentInfo.departmentName")} <span className="text-[var(--error-color)]">*</span>
                     </label>
                     <input
-                        className="form-input w-full"
+                            className={`w-full px-4 py-3 border-2 rounded-xl bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-2 transition-all ${
+                                departmentData.name?.trim()
+                                    ? 'border-[#15919B]/40 focus:border-[#15919B] focus:ring-[#15919B]/20'
+                                    : 'border-[var(--border-color)] focus:border-[#15919B]/60 focus:ring-[#15919B]/10'
+                            }`}
                         placeholder={t("departments.editDepartmentForm.departmentInfo.departmentName")}
                         type="text"
                         value={departmentData.name || ""}
                         onChange={(e) => handleInputChange('name', e.target.value)}
+                            dir={isArabic ? 'rtl' : 'ltr'}
                     />
                 </div>
-                {/* shortName removed */}
                 <div>
-                    <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
+                        <label className={`block text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
                         {t("departments.editDepartmentForm.departmentInfo.description")}
                     </label>
                     <textarea
-                        className="form-input w-full"
+                            className="w-full px-4 py-3 border-2 border-[var(--border-color)] rounded-xl bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[#15919B]/20 focus:border-[#15919B] resize-none transition-all"
                         placeholder={t("departments.editDepartmentForm.departmentInfo.description")}
                         rows="4"
                         value={departmentData.description || ""}
                         onChange={(e) => handleInputChange('description', e.target.value)}
+                            dir={isArabic ? 'rtl' : 'ltr'}
                     />
                 </div>
-                {/* status removed */}
+                </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
-                <button type="button" className="btn-secondary" onClick={() => navigate('/pages/admin/all-departments')}>{t("departments.editDepartmentForm.buttons.cancel")}</button>
-                <button type="button" className="btn-primary" onClick={onNext}>{t("departments.editDepartmentForm.buttons.next")}</button>
+            <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-4 border-t border-[var(--border-color)]`}>
+                <button
+                    type="button"
+                    className="px-6 py-3 rounded-xl border-2 border-[var(--border-color)] text-[var(--text-color)] font-semibold hover:bg-[var(--hover-color)] transition-all duration-200"
+                    onClick={() => navigate('/pages/admin/all-departments')}
+                >
+                    {t("departments.editDepartmentForm.buttons.cancel")}
+                </button>
+                <button
+                    type="button"
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                        departmentData.name?.trim()
+                            ? 'bg-gradient-to-r from-[#15919B] to-[#09D1C7] text-white hover:shadow-lg hover:scale-105'
+                            : 'bg-[var(--container-color)] text-[var(--sub-text-color)] border-2 border-[var(--border-color)] cursor-not-allowed opacity-60'
+                    }`}
+                    onClick={onNext}
+                    disabled={!departmentData.name?.trim()}
+                >
+                    {t("departments.editDepartmentForm.buttons.next")}
+                </button>
             </div>
         </div>
     );
@@ -330,6 +421,7 @@ function EditAssignSupervisorStep({
     filteredSupervisorUsers,
     canAssignSupervisor = true,
     canRemoveSupervisor = true,
+    departmentData,
 }) {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
@@ -337,76 +429,248 @@ function EditAssignSupervisorStep({
     const safeUsers = Array.isArray(users) ? users : [];
     const safeFilteredUsers = Array.isArray(filteredSupervisorUsers) ? filteredSupervisorUsers : safeUsers;
 
+    useEffect(() => {
+        if (!selectedUser || selectedRole || safeRoles.length === 0) return;
+
+        const roleIds = new Set();
+        const roleNames = new Set();
+
+        const addId = (val) => {
+            if (val !== undefined && val !== null && val !== "") {
+                roleIds.add(String(val).toLowerCase());
+            }
+        };
+        const addName = (val) => {
+            if (typeof val === "string" && val.trim()) {
+                roleNames.add(val.trim().toLowerCase());
+            }
+        };
+
+        const addFromRoleObject = (roleObj) => {
+            if (!roleObj) return;
+            addId(roleObj.id || roleObj.roleId || roleObj.roleID || roleObj.Id);
+            addName(roleObj.name || roleObj.roleName);
+        };
+
+        const addFromCollection = (collection) => {
+            if (!Array.isArray(collection)) return;
+            collection.forEach((item) => {
+                if (!item) return;
+                if (typeof item === "string") {
+                    addName(item);
+                } else if (typeof item === "object") {
+                    addFromRoleObject(item);
+                }
+            });
+        };
+
+        // from selected user
+        addId(selectedUser?.roleId || selectedUser?.RoleId || selectedUser?.roleID || selectedUser?.RoleID);
+        addName(selectedUser?.roleName || selectedUser?.RoleName);
+        addFromRoleObject(selectedUser?.role);
+        addFromCollection(selectedUser?.roles);
+        addFromCollection(selectedUser?.userRoles);
+        addFromCollection(selectedUser?.roleAssignments);
+
+        // from departmentData fallback
+        addId(departmentData?.supervisorRoleId || departmentData?.supervisorRoleID);
+        addFromRoleObject(departmentData?.supervisorRole);
+        addName(departmentData?.supervisorRoleName);
+
+        if (roleIds.size === 0 && roleNames.size === 0) return;
+
+        const matchedRole = safeRoles.find((role) => {
+            const roleId = role.id || role.roleId || role.roleID || role.Id;
+            const roleName = role.name || role.roleName;
     return (
-        <div className="space-y-6">
-            {/* Role selection */}
-            <div className="relative">
-                <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => setIsRoleOpen(!isRoleOpen)}>
-                    <span className="text-[var(--sub-text-color)]">{selectedRole ? selectedRole.name : t("departments.newDepartmentForm.assignSupervisor.chooseRole")}</span>
-                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isRoleOpen ? 'rotate-180' : ''}`} size={16} />
+                (roleId && roleIds.has(String(roleId).toLowerCase())) ||
+                (roleName && roleNames.has(roleName.toLowerCase()))
+            );
+        });
+
+        if (matchedRole) {
+            setSelectedRole(matchedRole);
+        }
+    }, [selectedUser, selectedRole, safeRoles, setSelectedRole, departmentData]);
+
+    return (
+        <div className="space-y-6 h-screen">
+            <div className="p-6 bg-gradient-to-br from-[#09D1C7]/5 to-transparent rounded-xl border-2 border-[var(--border-color)]">
+                <div className={`flex items-center gap-3 mb-6 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#09D1C7]/20 to-[#09D1C7]/10 flex items-center justify-center">
+                        <UserCheck className="w-5 h-5 text-[#09D1C7]" />
+                    </div>
+                    <div className={isArabic ? 'text-right' : 'text-left'}>
+                        <h3 className="text-lg font-bold text-[var(--text-color)]">
+                            {t("departments.editDepartmentForm.assignSupervisor.title", "Assign Supervisor")}
+                        </h3>
+                        <p className="text-xs text-[var(--sub-text-color)]">
+                            {t("departments.editDepartmentForm.assignSupervisor.description", "Choose who leads this department.")}
+                        </p>
+                        <p className="text-xs font-semibold mt-2 text-[var(--text-color)]">
+                            {t("departments.editDepartmentForm.assignSupervisor.currentSupervisor", "Current Supervisor")}:{" "}
+                            <span className="text-[var(--sub-text-color)]">
+                                {departmentData.supervisorName?.trim() ||
+                                `${departmentData.supervisorFirstName || ""} ${departmentData.supervisorLastName || ""}`.trim() ||
+                                departmentData.supervisorEmail ||
+                                t("departments.editDepartmentForm.assignSupervisor.none", "None")}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className={`block text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            {t("departments.newDepartmentForm.assignSupervisor.step1", "Step 1: Select Role")}
+                        </label>
+                        <div className="relative" onClick={() => setIsRoleOpen(!isRoleOpen)}>
+                            <div className="form-input flex items-center justify-between border-2 hover:border-[#09D1C7]/50 transition-all cursor-pointer">
+                                <span className={selectedRole ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
+                                    {selectedRole ? selectedRole.name : t("departments.newDepartmentForm.assignSupervisor.chooseRole")}
+                                </span>
+                                <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isRoleOpen ? 'rotate-180' : ''}`} size={18} />
                 </div>
                 {isRoleOpen && (
-                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                        {safeRoles.map((role) => (
-                            <div key={role.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={() => { setSelectedRole(role); setIsRoleOpen(false); setSelectedUser(null); }}>
-                                <div className="text-sm text-[var(--text-color)]">{role.name}</div>
+                                <div className={`absolute top-full ${isArabic ? 'right-0' : 'left-0'} z-20 mt-2 w-full bg-[var(--bg-color)] border-2 border-[#09D1C7]/30 rounded-xl shadow-2xl max-h-60 overflow-y-auto`}>
+                                    {safeRoles.length > 0 ? (
+                                        safeRoles.map((role, idx) => (
+                                            <div
+                                                key={role.id || role.roleId || idx}
+                                                className={`p-3 hover:bg-[#09D1C7]/10 cursor-pointer transition-colors ${
+                                                    selectedRole?.id === role.id ? 'bg-[#09D1C7]/10' : ''
+                                                }`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedRole(role);
+                                                    setIsRoleOpen(false);
+                                                    setSelectedUser(null);
+                                                }}
+                                            >
+                                                <div className="text-sm font-medium text-[var(--text-color)]">{role.name}</div>
                             </div>
-                        ))}
-                        {safeRoles.length === 0 && <div className="p-3 text-[var(--sub-text-color)]">No roles found</div>}
+                                        ))
+                                    ) : (
+                                        <div className="p-4 text-center text-[var(--sub-text-color)]">
+                                            {t("departments.newDepartmentForm.assignSupervisor.noActiveRoles", "No roles found")}
                     </div>
                 )}
+                                </div>
+                            )}
+                        </div>
             </div>
 
-            {/* User selection */}
+                    <div>
+                        <label className={`block text-sm font-semibold text-[var(--text-color)] mb-2 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            {t("departments.newDepartmentForm.assignSupervisor.step2", "Step 2: Select Supervisor")}
+                        </label>
             <div className="relative">
-                <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => selectedRole && setIsUserOpen(!isUserOpen)}>
-                    <span className="text-[var(--sub-text-color)]">{selectedUser ? (selectedUser.name || `${selectedUser.firstName || ''} ${selectedUser.lastName || ''}`.trim()) : t("departments.newDepartmentForm.assignSupervisor.chooseSupervisor")}</span>
-                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isUserOpen ? 'rotate-180' : ''}`} size={16} />
+                            <div
+                                className={`form-input flex items-center justify-between border-2 transition-all cursor-pointer ${
+                                    selectedUser ? 'border-[#09D1C7]/40' : 'hover:border-[#09D1C7]/50'
+                                }`}
+                                onClick={() => selectedRole && setIsUserOpen(!isUserOpen)}
+                            >
+                                <span className={selectedUser ? "text-[var(--text-color)] font-medium" : "text-[var(--sub-text-color)]"}>
+                                    {selectedUser
+                                        ? selectedUser.name || `${selectedUser.firstName || ''} ${selectedUser.lastName || ''}`.trim()
+                                        : selectedRole
+                                            ? t("departments.newDepartmentForm.assignSupervisor.chooseSupervisor")
+                                            : t("departments.newDepartmentForm.assignSupervisor.selectRoleFirst", "Select role first")}
+                                </span>
+                                <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isUserOpen ? 'rotate-180' : ''}`} size={18} />
                 </div>
-                {isUserOpen && (
-                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
-                        {/* Search Input */}
-                        <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
+                            {isUserOpen && selectedRole && (
+                                <div className={`absolute top-full ${isArabic ? 'right-0' : 'left-0'} z-20 mt-2 w-full bg-[var(--bg-color)] border-2 border-[#09D1C7]/30 rounded-xl shadow-2xl max-h-[min(60vh,500px)] overflow-hidden flex flex-col`}>
+                                    <div className="p-3 border-b-2 border-[var(--border-color)] bg-gradient-to-r from-[#09D1C7]/5 to-transparent sticky top-0 z-10">
                             <div className="relative">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
+                                            <Search className={`absolute ${isArabic ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 w-4 h-4 text-[#09D1C7]`} />
                                 <input
                                     type="text"
                                     value={supervisorSearchTerm}
                                     onChange={(e) => setSupervisorSearchTerm(e.target.value)}
                                     placeholder={t("departments.newDepartmentForm.assignSupervisor.searchUsers") || "Search users..."}
-                                    className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                                className={`w-full ${isArabic ? 'pr-10 pl-3' : 'pl-10 pr-3'} py-2.5 text-sm border-2 border-[var(--border-color)] rounded-lg bg-[var(--bg-color)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[#09D1C7]/50 focus:border-[#09D1C7]`}
                                     onClick={(e) => e.stopPropagation()}
                                     dir={isArabic ? 'rtl' : 'ltr'}
                                 />
                             </div>
                         </div>
-                        {/* Users List */}
-                        <div className="overflow-y-auto max-h-[240px]">
-                            {!selectedRole && <div className="p-3 text-[var(--sub-text-color)]">Select a role first</div>}
+                                    <div className="overflow-y-auto flex-1" style={{ maxHeight: 'calc(60vh - 80px)' }}>
                             {selectedRole && safeFilteredUsers.length > 0 ? (
-                                safeFilteredUsers.map((u) => (
-                                    <div key={u.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={() => { 
+                                            safeFilteredUsers.map((u, idx) => {
+                                                const userKey = u?.id || u?.userId || u?.userID || u?.UserId || u?.email || `user-${idx}`;
+                                                const matchedId = u?.id || u?.userId || u?.userID || u?.UserId;
+                                                return (
+                                                <div
+                                                    key={userKey}
+                                                    className={`p-3 hover:bg-[#09D1C7]/10 cursor-pointer transition-colors border-b border-[var(--border-color)]/40 ${
+                                                        matchedId && (selectedUser?.id === matchedId || selectedUser?.userId === matchedId) ? 'bg-[#09D1C7]/10' : ''
+                                                    }`}
+                                                    onClick={() => {
                                         setSelectedUser(u); 
                                         setIsUserOpen(false);
                                         setSupervisorSearchTerm("");
-                                    }}>
-                                        <div className="text-sm text-[var(--text-color)]">{u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}</div>
+                                                    }}
+                                                >
+                                                    <div className="text-sm font-medium text-[var(--text-color)]">{u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}</div>
                                         <div className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</div>
                                     </div>
-                                ))
+                                                );
+                                            })
                             ) : (
-                                selectedRole && <div className="p-3 text-[var(--sub-text-color)]">
-                                    {supervisorSearchTerm ? "No users found matching your search" : "No users found"}
+                                            <div className="p-4 text-center text-[var(--sub-text-color)]">
+                                                {supervisorSearchTerm ? t("departments.newDepartmentForm.assignSupervisor.noUsersSearch", "No users found matching your search") : t("departments.newDepartmentForm.assignSupervisor.noUsersRole", "No users found for this role")}
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
+                            {isUserOpen && !selectedRole && (
+                                <div className="absolute top-full left-0 right-0 z-20 mt-2 w-full bg-[var(--bg-color)] border-2 border-[#09D1C7]/30 rounded-xl shadow-2xl p-4 text-center text-[var(--sub-text-color)]">
+                                    {t("departments.newDepartmentForm.assignSupervisor.selectRoleFirst", "Please select a role first")}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
-                <button type="button" className="btn-secondary" onClick={onBack}>{t("departments.editDepartmentForm.buttons.back")}</button>
-                <button type="button" className="btn-primary" onClick={onNext} disabled={!selectedUser}>{t("departments.editDepartmentForm.buttons.next")}</button>
+            {selectedUser && (
+                <div className="p-5 bg-gradient-to-r from-[#09D1C7]/10 to-[#09D1C7]/5 rounded-xl border border-[#09D1C7]/20">
+                    <div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#09D1C7]/30 to-[#09D1C7]/20 flex items-center justify-center">
+                            <UserCheck className="w-6 h-6 text-[#09D1C7]" />
+                        </div>
+                        <div className={`flex-1 ${isArabic ? 'text-right' : 'text-left'}`}>
+                            <p className="text-sm font-bold text-[var(--text-color)]">
+                                {selectedUser.name || `${selectedUser.firstName || ''} ${selectedUser.lastName || ''}`.trim()}
+                            </p>
+                            <p className="text-xs text-[var(--sub-text-color)]">{selectedUser.email || selectedUser.username}</p>
+                        </div>
+                        <div className="px-3 py-1 rounded-full bg-[#09D1C7]/20 border border-[#09D1C7]/30 text-xs font-semibold text-[#09D1C7]">
+                            {t("departments.editDepartmentForm.assignSupervisor.selected", "Selected")}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-4 border-t border-[var(--border-color)]`}>
+                <button type="button" className="px-6 py-3 rounded-xl border-2 border-[var(--border-color)] text-[var(--text-color)] font-semibold hover:bg-[var(--hover-color)] transition-all duration-200" onClick={onBack}>
+                    {t("departments.editDepartmentForm.buttons.back")}
+                </button>
+                <button
+                    type="button"
+                    className={`px-6 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                        selectedUser
+                            ? 'bg-gradient-to-r from-[#15919B] to-[#09D1C7] text-white hover:shadow-lg hover:scale-105'
+                            : 'bg-[var(--container-color)] text-[var(--sub-text-color)] border-2 border-[var(--border-color)] cursor-not-allowed opacity-60'
+                    }`}
+                    onClick={onNext}
+                    disabled={!selectedUser}
+                >
+                    {t("departments.editDepartmentForm.buttons.next")}
+                </button>
             </div>
         </div>
     );
@@ -428,11 +692,9 @@ function EditSetupTeamsStep({
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
     
-    // Permission check for viewing teams
     const canViewTeams = useHasPermission('Team.View');
     const canViewMembers = useHasPermission('Team.ViewMembers');
     
-    // Fetch teams from API - only if user has permission
     const { data: teamsData, isLoading: isLoadingTeams, refetch: refetchTeams } = useGetTeamsByDepartmentQuery(departmentData.id, {
         skip: !departmentData?.id || !canViewTeams
     });
@@ -442,166 +704,90 @@ function EditSetupTeamsStep({
         return Array.isArray(items) ? items : [];
     }, [teamsData]);
     
-    // State for add/edit team modal
-    const [showAddTeam, setShowAddTeam] = useState(false);
-    const [editingTeam, setEditingTeam] = useState(null);
-    const [newTeam, setNewTeam] = useState({ name: '', description: '', selectedEmployees: [], teamLeader: null });
+    const [isTeamFormOpen, setIsTeamFormOpen] = useState(false);
+    const [teamFormMode, setTeamFormMode] = useState("create");
+    const [activeTeam, setActiveTeam] = useState(null);
+    const [teamFormInitial, setTeamFormInitial] = useState(null);
     
-    // Role/user selection states
-    const [leaderRole, setLeaderRole] = useState(null);
-    const [membersRole, setMembersRole] = useState(null);
-    const [isLeaderRoleOpen, setIsLeaderRoleOpen] = useState(false);
-    const [isLeaderUserOpen, setIsLeaderUserOpen] = useState(false);
-    const [isMembersRoleOpen, setIsMembersRoleOpen] = useState(false);
-    const [isMembersOpen, setIsMembersOpen] = useState(false);
-    const [leaderSearchTerm, setLeaderSearchTerm] = useState("");
-    const [membersSearchTerm, setMembersSearchTerm] = useState("");
-    
-    // API hooks
-    const { data: rolesData } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 50 });
-    const roles = Array.isArray(rolesData?.value) ? rolesData.value : (Array.isArray(rolesData?.data) ? rolesData.data : (Array.isArray(rolesData) ? rolesData : []));
-    
-    const { data: leaderUsersData } = useGetRoleUsersQuery(
-        leaderRole ? { id: leaderRole.id, pageNumber: 1, pageSize: 50 } : { id: "", pageNumber: 1, pageSize: 50 },
-        { skip: !leaderRole }
-    );
-    const leaderUsers = Array.isArray(leaderUsersData?.value) ? leaderUsersData.value : (Array.isArray(leaderUsersData?.data) ? leaderUsersData.data : (Array.isArray(leaderUsersData) ? leaderUsersData : []));
-    
-    const { data: membersUsersData } = useGetRoleUsersQuery(
-        membersRole ? { id: membersRole.id, pageNumber: 1, pageSize: 50 } : { id: "", pageNumber: 1, pageSize: 50 },
-        { skip: !membersRole }
-    );
-    const memberUsers = Array.isArray(membersUsersData?.value) ? membersUsersData.value : (Array.isArray(membersUsersData?.data) ? membersUsersData.data : (Array.isArray(membersUsersData) ? membersUsersData : []));
-    
-    // Filter leader users based on search term
-    const filteredLeaderUsers = useMemo(() => {
-        if (!leaderSearchTerm.trim()) return leaderUsers || [];
-        const search = leaderSearchTerm.toLowerCase();
-        return (leaderUsers || []).filter(u => {
-            const name = (u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()).toLowerCase();
-            const email = (u.email || '').toLowerCase();
-            const username = (u.username || '').toLowerCase();
-            return name.includes(search) || email.includes(search) || username.includes(search);
-        });
-    }, [leaderUsers, leaderSearchTerm]);
-
-    // Filter member users based on search term
-    const filteredMemberUsers = useMemo(() => {
-        if (!membersSearchTerm.trim()) return memberUsers || [];
-        const search = membersSearchTerm.toLowerCase();
-        return (memberUsers || []).filter(u => {
-            const name = (u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()).toLowerCase();
-            const email = (u.email || '').toLowerCase();
-            const username = (u.username || '').toLowerCase();
-            return name.includes(search) || email.includes(search) || username.includes(search);
-        });
-    }, [memberUsers, membersSearchTerm]);
-    
-    // Fetch team members for editing
-    const { data: teamUsersData } = useGetTeamUsersQuery(editingTeam?.id, {
-        skip: !editingTeam?.id
+    const { data: teamUsersData, isLoading: isLoadingTeamUsers } = useGetTeamUsersQuery(activeTeam?.id, {
+        skip: teamFormMode !== "edit" || !activeTeam?.id
     });
     
-    const existingTeamMembers = useMemo(() => {
-        const items = teamUsersData?.value || teamUsersData?.data || teamUsersData?.items || teamUsersData || [];
-        return Array.isArray(items) ? items.map(item => item.user || item) : [];
-    }, [teamUsersData]);
-    
-    const [createTeam, { isLoading: isCreatingTeam }] = useCreateTeamMutation();
+    const [createTeam] = useCreateTeamMutation();
     const [addUsersToTeam] = useAddUsersToTeamMutation();
-    const [updateTeam, { isLoading: isUpdatingTeam }] = useUpdateTeamMutation();
+    const [updateTeam] = useUpdateTeamMutation();
     const [updateUsersInTeam] = useUpdateUsersInTeamMutation();
     const [deleteTeam, { isLoading: isDeletingTeam }] = useDeleteTeamMutation();
     
-    // Initialize edit form when editingTeam changes
     useEffect(() => {
-        if (editingTeam) {
-            setNewTeam({
-                name: editingTeam.name || '',
-                description: editingTeam.description || '',
-                selectedEmployees: existingTeamMembers || [],
-                teamLeader: editingTeam.teamLeader || editingTeam.teamLeadUser || null
-            });
-        }
-    }, [editingTeam, existingTeamMembers]);
-
-    const toggleEmployee = (user, e) => {
-        if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        // Get user ID (try multiple property names)
-        const userId = user?.id || user?.userId || user?.userID || user?.UserId || user?._id;
-        
-        if (!userId) {
+        if (teamFormMode !== "edit" || !activeTeam) {
+            setTeamFormInitial(null);
             return;
         }
-        
-        setNewTeam(prev => {
-            // Check if this user is already selected by comparing IDs strictly
-            const isAlreadySelected = prev.selectedEmployees.some(emp => {
-                const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?._id;
-                // Use strict comparison with string conversion to handle different types
-                return String(empId) === String(userId) && empId != null && userId != null;
-            });
-            
-            if (isAlreadySelected) {
-                // Remove this user from selection - use strict filter
-                const filtered = prev.selectedEmployees.filter(emp => {
-                    const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?._id;
-                    const shouldKeep = String(empId) !== String(userId) || empId == null || userId == null;
-                    return shouldKeep;
-                });
-                return {
-                    ...prev,
-                    selectedEmployees: filtered
-                };
-            } else {
-                // Add this user to selection - only add if not already there
-                const alreadyExists = prev.selectedEmployees.some(emp => {
-                    const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?._id;
-                    return String(empId) === String(userId) && empId != null && userId != null;
-                });
-                
-                if (alreadyExists) {
-                    return prev;
-                }
-                
-                return {
-                    ...prev,
-                    selectedEmployees: [...prev.selectedEmployees, user]
-                };
-            }
+        if (isLoadingTeamUsers) return;
+        const membersSource = teamUsersData?.value || teamUsersData?.data || teamUsersData?.items || teamUsersData || [];
+        const members = Array.isArray(membersSource) ? membersSource.map(item => item.user || item) : [];
+        const leader = activeTeam.teamLeader || activeTeam.teamLeadUser || activeTeam.teamLead || null;
+        setTeamFormInitial({
+            id: activeTeam.id,
+            name: activeTeam.name || '',
+            description: activeTeam.description || '',
+            teamLeader: leader,
+            selectedEmployees: members,
         });
+    }, [teamFormMode, activeTeam, teamUsersData, isLoadingTeamUsers]);
+    
+    const openCreateTeamForm = () => {
+        setTeamFormMode("create");
+        setActiveTeam(null);
+        setTeamFormInitial(null);
+        setIsTeamFormOpen(true);
+    };
+    
+    const openEditTeamForm = (team) => {
+        setTeamFormMode("edit");
+        setActiveTeam(team);
+        setIsTeamFormOpen(true);
     };
 
-    const handleAddTeam = async () => {
-        const teamName = newTeam.name?.trim();
-        const teamLeader = newTeam.teamLeader;
-        const teamLeadId = teamLeader?.id || teamLeader?.userId || teamLeader?.userID || teamLeader?.UserId || teamLeader?._id;
-        
-        if (!teamName) {
-            alert('Please enter a team name');
+    const closeTeamForm = () => {
+        setIsTeamFormOpen(false);
+        setActiveTeam(null);
+        setTeamFormInitial(null);
+        setTeamFormMode("create");
+    };
+    
+    const extractUserId = (member) => member?.id || member?.userId || member?.userID || member?.UserId || member?.Id || member?._id;
+    
+    const handleTeamFormSubmit = async (formData) => {
+        const teamLeadId = formData.teamLeadId;
+        if (!teamLeadId || !departmentData.id) {
+            toast.error(t("departments.editDepartmentForm.setupTeams.errors.missingData", "Missing required team data"));
             return;
         }
-        
-        if (!teamLeader || !teamLeadId) {
-            alert('Please select a team leader');
-            return;
-        }
-        
-        if (!departmentData.id) {
-            alert('Department ID is missing');
-            return;
-        }
-        
         try {
-            // Create team
+            if (teamFormMode === "edit" && activeTeam?.id) {
+                await updateTeam({
+                    id: activeTeam.id,
+                    name: formData.name,
+                    description: formData.description || '',
+                    teamLeadId,
+                    departmentId: departmentData.id,
+                }).unwrap();
+                
+                const userIds = (formData.selectedEmployees || []).map(extractUserId).filter(Boolean);
+                await updateUsersInTeam({
+                    teamId: activeTeam.id,
+                    userIds,
+                    departmentId: departmentData.id
+                }).unwrap();
+                
+                toast.success(t("departments.editDepartmentForm.setupTeams.updateSuccess", { name: formData.name, defaultValue: `Team "${formData.name}" updated successfully!` }));
+            } else {
             const res = await createTeam({
-                name: teamName,
-                description: newTeam.description || '',
-                teamLeadId: teamLeadId,
+                    name: formData.name,
+                    description: formData.description || '',
+                    teamLeadId,
                 departmentId: departmentData.id,
             }).unwrap();
             
@@ -612,12 +798,7 @@ function EditSetupTeamsStep({
                 throw new Error('Team was created but no team ID was returned');
             }
             
-            // Add members if any
-            if (newTeam.selectedEmployees.length > 0) {
-                const userIds = newTeam.selectedEmployees.map(member => {
-                    return member?.id || member?.userId || member?.userID || member?.UserId || member?.Id || member?._id;
-                }).filter(Boolean);
-                
+                const userIds = (formData.selectedEmployees || []).map(extractUserId).filter(Boolean);
                 if (userIds.length > 0) {
                     await addUsersToTeam({ 
                         teamId: createdTeamId, 
@@ -625,391 +806,60 @@ function EditSetupTeamsStep({
                         departmentId: departmentData.id
                     }).unwrap();
                 }
+                
+                toast.success(t("departments.editDepartmentForm.setupTeams.createSuccess", { name: formData.name, defaultValue: `Team "${formData.name}" created successfully!` }));
             }
             
-            // Reset form
-            setNewTeam({ name: '', description: '', selectedEmployees: [], teamLeader: null });
-            setLeaderRole(null);
-            setMembersRole(null);
-            setShowAddTeam(false);
-            setLeaderSearchTerm("");
-            setMembersSearchTerm("");
-            
-            // Refetch teams
+            closeTeamForm();
             refetchTeams();
-            
-            alert(`Team "${teamName}" created successfully!`);
         } catch (err) {
-            const errorMessage = err?.data?.errorMessage || err?.message || 'Failed to create team';
-            alert(errorMessage);
-        }
-    };
-    
-    const handleEditTeam = async () => {
-        if (!editingTeam?.id) return;
-        
-        const teamName = newTeam.name?.trim();
-        const teamLeader = newTeam.teamLeader;
-        const teamLeadId = teamLeader?.id || teamLeader?.userId || teamLeader?.userID || teamLeader?.UserId || teamLeader?._id;
-        
-        if (!teamName) {
-            alert('Please enter a team name');
-            return;
-        }
-        
-        if (!teamLeader || !teamLeadId) {
-            alert('Please select a team leader');
-            return;
-        }
-        
-        try {
-            // Update team
-            await updateTeam({
-                id: editingTeam.id,
-                name: teamName,
-                description: newTeam.description || '',
-                teamLeadId: teamLeadId,
-                departmentId: departmentData.id,
-            }).unwrap();
-            
-            // Update team members using UpdateUsersInTeam (replaces all members)
-            const userIds = newTeam.selectedEmployees.map(member => {
-                return member?.id || member?.userId || member?.userID || member?.UserId || member?.Id || member?._id;
-            }).filter(Boolean);
-            
-            await updateUsersInTeam({
-                teamId: editingTeam.id,
-                userIds,
-                departmentId: departmentData.id
-            }).unwrap();
-            
-            // Reset form
-            setNewTeam({ name: '', description: '', selectedEmployees: [], teamLeader: null });
-            setEditingTeam(null);
-            setLeaderRole(null);
-            setMembersRole(null);
-            setLeaderSearchTerm("");
-            setMembersSearchTerm("");
-            
-            // Refetch teams
-            refetchTeams();
-            
-            alert(`Team "${teamName}" updated successfully!`);
-        } catch (err) {
-            const errorMessage = err?.data?.errorMessage || err?.message || 'Failed to update team';
-            alert(errorMessage);
+            const errorMessage = err?.data?.errorMessage || err?.message || 'Failed to save team';
+            toast.error(errorMessage);
         }
     };
     
     const handleDeleteTeam = async (teamId) => {
-        if (!confirm('Are you sure you want to delete this team?')) return;
+        if (!confirm(t("departments.editDepartmentForm.setupTeams.confirmDelete", "Are you sure you want to delete this team?"))) return;
         
         try {
-            // Pass both id and departmentId for proper cache invalidation
-            await deleteTeam({ id: teamId, departmentId: id }).unwrap();
+            await deleteTeam({ id: teamId, departmentId: departmentData.id }).unwrap();
             refetchTeams();
-            alert('Team deleted successfully!');
+            toast.success(t("departments.editDepartmentForm.setupTeams.deleteSuccess", "Team deleted successfully!"));
         } catch (err) {
             const errorMessage = err?.data?.errorMessage || err?.message || 'Failed to delete team';
-            alert(errorMessage);
+            toast.error(errorMessage);
         }
-    };
-    
-    const openEditModal = (team) => {
-        setEditingTeam(team);
-        setShowAddTeam(true);
-    };
-    
-    const closeModal = () => {
-        setShowAddTeam(false);
-        setEditingTeam(null);
-        setNewTeam({ name: '', description: '', selectedEmployees: [], teamLeader: null });
-        setLeaderRole(null);
-        setMembersRole(null);
-        setLeaderSearchTerm("");
-        setMembersSearchTerm("");
     };
 
     return (
         <div className="space-y-6">
-            {/* Add New Team Form */}
-            {showAddTeam && (
-                <div className="p-6 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)] space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-[var(--text-color)]">
-                            {editingTeam ? 'Edit Team' : 'Add New Team'}
-                        </h3>
-                        <button onClick={closeModal} className="p-2 hover:bg-[var(--hover-color)] rounded-lg">
-                            <X className="text-[var(--sub-text-color)]" size={20} />
-                        </button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input
-                            className="form-input"
-                            placeholder={t("departments.editDepartmentForm.setupTeams.teamName")}
-                            type="text"
-                            value={newTeam.name}
-                            onChange={(e) => setNewTeam(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                        {/* Leader role/user selection */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                                {t("departments.newDepartmentForm.setupTeams.teamLeader")} <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => setIsLeaderRoleOpen(!isLeaderRoleOpen)}>
-                                    <span className="text-[var(--sub-text-color)]">{leaderRole ? leaderRole.name : t("departments.newDepartmentForm.assignSupervisor.chooseRole")}</span>
-                                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isLeaderRoleOpen ? 'rotate-180' : ''}`} size={16} />
-                                </div>
-                                {isLeaderRoleOpen && (
-                                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        {(roles || []).map(role => (
-                                            <div key={role.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => { 
-                                                e.stopPropagation();
-                                                setLeaderRole(role); 
-                                                setIsLeaderRoleOpen(false); 
-                                                setIsLeaderUserOpen(true); 
-                                            }}>
-                                                <div className="text-sm text-[var(--text-color)]">{role.name}</div>
-                                            </div>
-                                        ))}
-                                        {(!roles || roles.length === 0) && <div className="p-3 text-[var(--sub-text-color)]">No roles found</div>}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="relative">
-                                <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => leaderRole && setIsLeaderUserOpen(!isLeaderUserOpen)}>
-                                    <span className="text-[var(--sub-text-color)]">{newTeam.teamLeader ? (newTeam.teamLeader.name || `${newTeam.teamLeader.firstName || ''} ${newTeam.teamLeader.lastName || ''}`.trim()) : t("departments.newDepartmentForm.assignSupervisor.chooseSupervisor")}</span>
-                                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isLeaderUserOpen ? 'rotate-180' : ''}`} size={16} />
-                                </div>
-                                {isLeaderUserOpen && (
-                                    <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
-                                        {/* Search Input */}
-                                        <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
-                                            <div className="relative">
-                                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
-                                                <input
-                                                    type="text"
-                                                    value={leaderSearchTerm}
-                                                    onChange={(e) => setLeaderSearchTerm(e.target.value)}
-                                                    placeholder={t("departments.newDepartmentForm.assignSupervisor.searchUsers") || "Search users..."}
-                                                    className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    dir={isArabic ? 'rtl' : 'ltr'}
-                                                />
-                                            </div>
-                                        </div>
-                                        {/* Users List */}
-                                        <div className="overflow-y-auto max-h-[240px]">
-                                            {leaderRole && filteredLeaderUsers.length > 0 ? (
-                                                filteredLeaderUsers.map(u => (
-                                                    <div key={u.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => { 
-                                                        e.stopPropagation();
-                                                        setNewTeam(prev => ({ ...prev, teamLeader: u })); 
-                                                        setIsLeaderUserOpen(false);
-                                                        setLeaderSearchTerm("");
-                                                    }}>
-                                                        <div className="text-sm text-[var(--text-color)]">{u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}</div>
-                                                        <div className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</div>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                leaderRole && <div className="p-3 text-[var(--sub-text-color)]">
-                                                    {leaderSearchTerm ? "No users found matching your search" : "No users found"}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        {/* Members selection: role then users */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-[var(--text-color)] mb-2">
-                                Team Members <span className="text-[var(--sub-text-color)] text-xs">(Optional - Select multiple)</span>
-                            </label>
-                            <div className="relative">
-                                <div className="form-input cursor-pointer flex items-center justify-between" onClick={() => setIsMembersRoleOpen(!isMembersRoleOpen)}>
-                                    <span className="text-[var(--sub-text-color)]">{membersRole ? membersRole.name : "Select Role for Members"}</span>
-                                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isMembersRoleOpen ? 'rotate-180' : ''}`} size={16} />
-                                </div>
-                                {isMembersRoleOpen && (
-                                    <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                        {(roles || []).map(role => (
-                                            <div key={role.id} className="p-3 hover:bg-[var(--hover-color)] cursor-pointer" onClick={(e) => { 
-                                                e.stopPropagation();
-                                                setMembersRole(role); 
-                                                setIsMembersRoleOpen(false); 
-                                                setIsMembersOpen(true); 
-                                            }}>
-                                                <div className="text-sm text-[var(--text-color)]">{role.name}</div>
-                                            </div>
-                                        ))}
-                                        {(!roles || roles.length === 0) && <div className="p-3 text-[var(--sub-text-color)]">No roles found</div>}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="relative">
-                                <div 
-                                    className="form-input cursor-pointer flex items-center justify-between" 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (membersRole) {
-                                            setIsMembersOpen(!isMembersOpen);
-                                        } else {
-                                            alert('Please select a role first');
-                                        }
-                                    }}
-                                >
-                                    <span className="text-[var(--sub-text-color)]">
-                                        {newTeam.selectedEmployees.length > 0 
-                                            ? `${newTeam.selectedEmployees.length} member${newTeam.selectedEmployees.length > 1 ? 's' : ''} selected` 
-                                            : membersRole 
-                                                ? "Click to select members (multiple allowed)" 
-                                                : "Select a role first"}
-                                    </span>
-                                    <ChevronDown className={`text-[var(--sub-text-color)] transition-transform ${isMembersOpen ? 'rotate-180' : ''}`} size={16} />
-                                </div>
-                                {isMembersOpen && membersRole && (
-                                    <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-[var(--bg-color)] border border-[var(--border-color)] rounded-lg shadow-lg max-h-60 overflow-hidden flex flex-col">
-                                        {/* Search Input */}
-                                        <div className="p-2 border-b border-[var(--border-color)] sticky top-0 bg-[var(--bg-color)]">
-                                            <div className="relative">
-                                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--sub-text-color)]" />
-                                                <input
-                                                    type="text"
-                                                    value={membersSearchTerm}
-                                                    onChange={(e) => setMembersSearchTerm(e.target.value)}
-                                                    placeholder={t("departments.newDepartmentForm.assignSupervisor.searchUsers") || "Search users..."}
-                                                    className="w-full pl-8 pr-3 py-2 text-sm border border-[var(--border-color)] rounded-lg bg-[var(--input-bg)] text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    dir={isArabic ? 'rtl' : 'ltr'}
-                                                />
-                                            </div>
-                                        </div>
-                                        {/* Users List */}
-                                        <div className="overflow-y-auto max-h-[240px]">
-                                            {filteredMemberUsers && filteredMemberUsers.length > 0 ? (
-                                                filteredMemberUsers.map(u => {
-                                                    // Get user ID for comparison
-                                                    const userId = u?.id || u?.userId || u?.userID || u?.UserId || u?._id;
-                                                    const isSelected = userId && newTeam.selectedEmployees.some(emp => {
-                                                        const empId = emp?.id || emp?.userId || emp?.userID || emp?.UserId || emp?._id;
-                                                        // Strict comparison with string conversion and null checks
-                                                        return String(empId) === String(userId) && empId != null && userId != null;
-                                                    });
-                                                    return (
-                                                        <div 
-                                                            key={`user-${userId || u.id || u.email || Math.random()}`} 
-                                                            className={`p-3 cursor-pointer flex items-center justify-between ${
-                                                                isSelected ? 'bg-[var(--accent-color)] bg-opacity-10' : 'hover:bg-[var(--hover-color)]'
-                                                            }`}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                toggleEmployee(u, e);
-                                                            }}
-                                                        >
-                                                            <div className="flex-1">
-                                                                <div className="text-sm text-[var(--text-color)] font-medium">
-                                                                    {u.name || `${u.firstName || ''} ${u.lastName || ''}`.trim()}
-                                                                </div>
-                                                                <div className="text-xs text-[var(--sub-text-color)]">{u.email || u.username}</div>
-                                                            </div>
-                                                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                                                isSelected 
-                                                                    ? 'border-[var(--accent-color)] bg-[var(--accent-color)]' 
-                                                                    : 'border-[var(--border-color)]'
-                                                            }`}>
-                                                                {isSelected && <Check className="text-white" size={12} />}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="p-3 text-[var(--sub-text-color)]">
-                                                    {membersSearchTerm ? "No users found matching your search" : "No users found for this role"}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    <textarea
-                        className="form-input w-full"
-                        placeholder={t("departments.editDepartmentForm.setupTeams.description")}
-                        rows="3"
-                        value={newTeam.description}
-                        onChange={(e) => setNewTeam(prev => ({ ...prev, description: e.target.value }))}
-                    />
-                    
-                    {/* Display selected members */}
-                    {newTeam.selectedEmployees && newTeam.selectedEmployees.length > 0 && (
-                        <div className="space-y-2">
-                            <div className="text-sm font-medium text-[var(--text-color)]">
-                                Selected Members ({newTeam.selectedEmployees.length}):
-                            </div>
-                            <div className="flex flex-wrap gap-2 p-3 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)]">
-                                {newTeam.selectedEmployees.map((emp, idx) => (
-                                    <div 
-                                        key={emp.id || `emp-${idx}`} 
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-color)] rounded-lg border border-[var(--border-color)] text-sm hover:border-[var(--accent-color)] transition-colors"
-                                    >
-                                        <span className="text-[var(--text-color)] font-medium">
-                                            {emp.name || `${emp.firstName || ''} ${emp.lastName || ''}`.trim()}
-                                        </span>
-                                        <span className="text-xs text-[var(--sub-text-color)]">
-                                            {emp.email || emp.username || ''}
-                                        </span>
-                                        <X 
-                                            size={14} 
-                                            className="text-[var(--sub-text-color)] cursor-pointer hover:text-red-500 ml-1" 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleEmployee(emp, e);
-                                            }}
-                                            title="Remove member"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    <div className="flex gap-3">
-                        <button 
-                            type="button" 
-                            className="btn-secondary"
-                            onClick={closeModal}
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            type="button" 
-                            className="btn-primary"
-                            onClick={editingTeam ? handleEditTeam : handleAddTeam}
-                            disabled={isCreatingTeam || isUpdatingTeam}
-                        >
-                            {isCreatingTeam || isUpdatingTeam ? 'Saving...' : (editingTeam ? 'Update Team' : t("departments.editDepartmentForm.buttons.add"))}
-                        </button>
-                    </div>
-                </div>
+            {isTeamFormOpen && (
+                <TeamFormEmbedded
+                    departmentId={departmentData.id}
+                    mode={teamFormMode}
+                    initialTeam={teamFormInitial}
+                    onCancel={closeTeamForm}
+                    onSubmit={handleTeamFormSubmit}
+                    loadingInitial={teamFormMode === "edit" && (isLoadingTeamUsers || !teamFormInitial)}
+                    submitLabel={
+                        teamFormMode === "edit"
+                            ? t("departments.editDepartmentForm.buttons.save", "Save")
+                            : t("departments.editDepartmentForm.buttons.add", "Add")
+                    }
+                />
             )}
 
-            {/* Add New Team Button - Only show if user has permission */}
-            {!showAddTeam && canCreateTeam && (
+            {!isTeamFormOpen && canCreateTeam && (
                 <button
                     type="button"
                     className="btn-primary flex items-center gap-2"
-                    onClick={() => setShowAddTeam(true)}
+                    onClick={openCreateTeamForm}
                 >
                     <Plus size={16} />
                     {t("departments.editDepartmentForm.setupTeams.addNewTeam")}
                 </button>
             )}
 
-            {/* Teams List */}
             {isLoadingTeams ? (
                 <div className="text-center py-8">
                     <div className="text-[var(--sub-text-color)]">Loading teams...</div>
@@ -1024,7 +874,7 @@ function EditSetupTeamsStep({
                             const teamLeader = team.teamLeader || team.teamLeadUser || null;
                             const teamLeaderName = teamLeader 
                                 ? `${teamLeader.firstName || ''} ${teamLeader.lastName || ''}`.trim() || teamLeader.userName || teamLeader.email || 'Unknown'
-                                : 'No leader';
+                                : t("departments.editDepartmentForm.setupTeams.noLeader", "No leader");
                             
                             return (
                                 <div key={team.id} className="p-4 bg-[var(--container-color)] rounded-lg border border-[var(--border-color)]">
@@ -1037,7 +887,7 @@ function EditSetupTeamsStep({
                                                 <div className="text-[var(--text-color)] font-medium">{team.name}</div>
                                                 <div className="text-[var(--sub-text-color)] text-sm mt-1">{team.description || 'No description'}</div>
                                                 <div className="text-xs text-[var(--sub-text-color)] mt-1">
-                                                    Lead by: <span className="font-medium">{teamLeaderName}</span>
+                                                    {t("departments.newDepartmentForm.setupTeams.teamLeader")}: <span className="font-medium">{teamLeaderName}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -1045,8 +895,8 @@ function EditSetupTeamsStep({
                                             {canUpdateTeam && (
                                                 <button 
                                                     className="p-2 hover:bg-[var(--hover-color)] rounded-lg transition-colors"
-                                                    onClick={() => openEditModal(team)}
-                                                    title="Edit team"
+                                                    onClick={() => openEditTeamForm(team)}
+                                                    title={t("departments.editDepartmentForm.setupTeams.editTeam", "Edit team")}
                                                 >
                                                     <Edit className="text-[var(--sub-text-color)]" size={16} />
                                                 </button>
@@ -1056,7 +906,7 @@ function EditSetupTeamsStep({
                                                     className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                                                     onClick={() => handleDeleteTeam(team.id)}
                                                     disabled={isDeletingTeam}
-                                                    title="Delete team"
+                                                    title={t("departments.editDepartmentForm.setupTeams.deleteTeam", "Delete team")}
                                                 >
                                                     <Trash2 className="text-red-500" size={16} />
                                                 </button>
@@ -1065,7 +915,7 @@ function EditSetupTeamsStep({
                                     </div>
                                     {canViewMembers && (
                                         <div className="text-sm text-[var(--sub-text-color)] mt-2">
-                                            {team.teamMembers || team.memberCount || 0} {t("departments.editDepartmentForm.setupTeams.members", "Members")}
+                                            {(team.teamMembers || team.memberCount || 0)} {t("departments.editDepartmentForm.setupTeams.members", "Members")}
                                         </div>
                                     )}
                                 </div>
@@ -1075,11 +925,10 @@ function EditSetupTeamsStep({
                 </div>
             ) : (
                 <div className="text-center py-8">
-                    <div className="text-[var(--sub-text-color)]">No teams found. Click "Add New Team" to create one.</div>
+                    <div className="text-[var(--sub-text-color)]">{t("departments.editDepartmentForm.setupTeams.noTeams", "No teams found. Click \\\"Add New Team\\\" to create one.")}</div>
                 </div>
             )}
 
-            {/* Action Buttons */}
             <div className={`flex ${isArabic ? 'justify-start' : 'justify-end'} gap-3 pt-6`}>
                 <button type="button" className="btn-secondary" onClick={onBack}>{t("departments.editDepartmentForm.buttons.back")}</button>
                 <button type="button" className="btn-primary" onClick={onNext}>{t("departments.editDepartmentForm.buttons.next")}</button>

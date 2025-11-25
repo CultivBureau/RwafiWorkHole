@@ -27,8 +27,22 @@ export default function EditTeamModal({ isOpen, onClose, onUpdateTeam, teamData,
     const teamDepartmentId = departmentId || teamData?.departmentId;
 
     // Roles and users for leader selection
-    const { data: rolesData } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 50 });
-    const roles = Array.isArray(rolesData?.value) ? rolesData.value : (Array.isArray(rolesData?.data) ? rolesData.data : (Array.isArray(rolesData) ? rolesData : []));
+    const { data: rolesData } = useGetAllRolesQuery({ pageNumber: 1, pageSize: 50, status: 0 });
+    const roles = useMemo(() => {
+        const items = rolesData?.value || rolesData?.data || rolesData?.items || rolesData || [];
+        if (!Array.isArray(items)) return [];
+        return items.filter(role => {
+            const status = role?.status;
+            return (
+                status === undefined ||
+                status === null ||
+                status === 0 ||
+                status === "0" ||
+                status === true ||
+                status === "Active"
+            );
+        });
+    }, [rolesData]);
     
     const { data: leaderUsersData } = useGetRoleUsersQuery(
         leaderRole ? { id: leaderRole.id, pageNumber: 1, pageSize: 50 } : { id: "", pageNumber: 1, pageSize: 50 },
