@@ -6,6 +6,7 @@ import { useGetDepartmentSupervisorQuery, useDeleteDepartmentMutation, useRestor
 import { useGetTeamsByDepartmentQuery, useGetTeamUsersQuery } from "../../../services/apis/TeamApi";
 import { useHasPermission } from "../../../hooks/useHasPermission";
 import TeamDetailsPopup from "./all-teams/team-details/team-details-popup";
+import ConfirmDialog from "../all-shifts/confirm-dialog";
 
 export default function DepartmentCard({ department, onDelete, canUpdate = true, canDelete = true, canRestore = true }) {
     const { t, i18n } = useTranslation();
@@ -19,6 +20,8 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
     const [deleteError, setDeleteError] = useState("");
     const [selectedTeam, setSelectedTeam] = useState(null);
     const [isTeamPopupOpen, setIsTeamPopupOpen] = useState(false);
+    const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+    const [departmentToRestore, setDepartmentToRestore] = useState(null);
     const menuRef = React.useRef(null);
     
     // Close menu when clicking outside
@@ -239,20 +242,26 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
         }
     };
 
-    const handleRestoreDepartment = async (e) => {
+    const handleRestoreDepartment = (e) => {
         e.stopPropagation();
         setIsMenuOpen(false);
-        
+        setDepartmentToRestore(department);
+        setShowRestoreConfirm(true);
+    };
+
+    const confirmRestoreDepartment = async () => {
+        if (!departmentToRestore?.id) return;
         try {
-            await restoreDepartment(department.id).unwrap();
-            
-            // Notify parent component to refetch if callback provided
+            await restoreDepartment(departmentToRestore.id).unwrap();
             if (onDelete) {
-                onDelete(department.id);
+                onDelete(departmentToRestore.id);
             }
         } catch (error) {
             const errorMessage = error?.data?.errorMessage || error?.message || 'Failed to restore department. Please try again.';
             alert(errorMessage);
+        } finally {
+            setShowRestoreConfirm(false);
+            setDepartmentToRestore(null);
         }
     };
 
@@ -629,6 +638,20 @@ export default function DepartmentCard({ department, onDelete, canUpdate = true,
                 </div>
             </div>
         )}
+
+        <ConfirmDialog
+            isOpen={showRestoreConfirm}
+            onClose={() => {
+                setShowRestoreConfirm(false);
+                setDepartmentToRestore(null);
+            }}
+            onConfirm={confirmRestoreDepartment}
+            title={t("departments.restore.title", "Restore Department")}
+            message={t("departments.restore.message", "Are you sure you want to restore this department?")}
+            confirmText={t("departments.restore.confirm", "Restore")}
+            cancelText={t("common.cancel", "Cancel")}
+            type="brand"
+        />
         </>
     );
 }
