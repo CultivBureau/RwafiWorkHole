@@ -28,15 +28,9 @@ export default function EditDepartment() {
                 <SideBarAdmin />
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-auto p-4" style={{ background: "var(--bg-all)" }}>
-                    <div
-                        className="h-max rounded-2xl border border-gray-200"
-                        style={{ background: "var(--bg-color)" }}
-                    >
-                        {/* Edit Department content */}
-                        <div className="w-full h-max p-6">
-                            <EditDepartmentForm />
-                        </div>
+                <main className="flex-1 overflow-auto p-6" style={{ background: "var(--bg-all)" }}>
+                    <div className="max-w-6xl mx-auto">
+                        <EditDepartmentForm />
                     </div>
                 </main>
             </div>

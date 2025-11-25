@@ -6,9 +6,19 @@ import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi"
 import { useGetTeamsByDepartmentQuery } from "../../../services/apis/TeamApi";
 import { useGetAllRolesQuery, useGetRoleUsersQuery } from "../../../services/apis/RoleApi";
 
-export default function TeamFormEmbedded({ departmentId, onTeamAdd, onCancel }) {
+export default function TeamFormEmbedded({
+    departmentId,
+    onTeamAdd,
+    onCancel,
+    initialTeam = null,
+    mode = "create",
+    submitLabel,
+    onSubmit,
+    loadingInitial = false,
+}) {
     const { t, i18n } = useTranslation();
     const isArabic = i18n.language === "ar";
+    const isEditMode = mode === "edit";
     
     const [newTeam, setNewTeam] = useState({ 
         name: '', 
@@ -331,6 +341,27 @@ export default function TeamFormEmbedded({ departmentId, onTeamAdd, onCancel }) 
         return user?.email || user?.userName || user?.jobTitle || '';
     };
 
+    useEffect(() => {
+        if (initialTeam) {
+            setNewTeam({
+                name: initialTeam.name || '',
+                description: initialTeam.description || '',
+                teamLeader: initialTeam.teamLeader || null,
+                selectedEmployees: initialTeam.selectedEmployees || [],
+            });
+        } else if (!isEditMode) {
+            setNewTeam({ name: '', description: '', selectedEmployees: [], teamLeader: null });
+            setLeaderDepartment(departmentId || "all");
+            setLeaderRole("all");
+            setLeaderNameSearch("");
+            setMemberDepartment(departmentId || "all");
+            setMemberRole("all");
+            setMemberNameSearch("");
+            setLeaderPage(1);
+            setMembersPage(1);
+        }
+    }, [initialTeam, departmentId, isEditMode]);
+
     const clearLeaderFilters = () => {
         setLeaderDepartment(departmentId || "all");
         setLeaderRole("all");
@@ -343,6 +374,51 @@ export default function TeamFormEmbedded({ departmentId, onTeamAdd, onCancel }) 
         setMemberNameSearch("");
     };
 
+    const handleSubmit = async () => {
+        if (!newTeam.name.trim() || !newTeam.teamLeader) {
+            return;
+        }
+
+        const teamLeadId = newTeam.teamLeader?.id || newTeam.teamLeader?.userId || newTeam.teamLeader?.userID || newTeam.teamLeader?.UserId || newTeam.teamLeader?._id;
+        if (!teamLeadId) return;
+
+        const submission = {
+            id: initialTeam?.id,
+            name: newTeam.name.trim(),
+            description: newTeam.description || '',
+            teamLeader: newTeam.teamLeader,
+            teamLeadId,
+            selectedEmployees: newTeam.selectedEmployees || [],
+        };
+
+        if (onSubmit) {
+            await onSubmit(submission);
+        } else if (onTeamAdd) {
+            onTeamAdd({
+                id: initialTeam?.id || Date.now(),
+                name: submission.name,
+                description: submission.description,
+                teamLeader: submission.teamLeader,
+                selectedEmployees: submission.selectedEmployees,
+                members: (submission.teamLeader ? 1 : 0) + (submission.selectedEmployees || []).length,
+            });
+        }
+
+        if (!isEditMode) {
+            setNewTeam({ name: '', description: '', selectedEmployees: [], teamLeader: null });
+            clearLeaderFilters();
+            clearMemberFilters();
+        }
+    };
+
+    if (loadingInitial) {
+        return (
+            <div className="p-6 bg-[var(--container-color)] rounded-xl border border-[var(--border-color)] flex items-center justify-center">
+                <span className="text-[var(--sub-text-color)]">{t("common.loading", "Loading...")}</span>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6 p-6 bg-gradient-to-br from-[#15919B]/5 to-transparent rounded-xl border-2 border-[var(--border-color)]" dir={isArabic ? "rtl" : "ltr"}>
             {/* Header */}
@@ -353,7 +429,7 @@ export default function TeamFormEmbedded({ departmentId, onTeamAdd, onCancel }) 
                     </div>
                     <div className={isArabic ? 'text-right' : 'text-left'}>
                         <h3 className="text-lg font-bold text-[var(--text-color)]">
-                            {t("departments.newDepartmentForm.setupTeams.addNewTeam", "Add New Team")}
+                            {isEditMode ? t("departments.newDepartmentForm.setupTeams.editTeam", "Edit Team") : t("departments.newDepartmentForm.setupTeams.addNewTeam", "Add New Team")}
                         </h3>
                         <p className="text-xs text-[var(--sub-text-color)]">
                             {t("departments.newDepartmentForm.setupTeams.addTeamDescription", "Create a team with leader and members")}
@@ -905,12 +981,12 @@ export default function TeamFormEmbedded({ departmentId, onTeamAdd, onCancel }) 
                             ? 'bg-gradient-to-r from-[#15919B] to-[#09D1C7] text-white hover:shadow-lg hover:scale-105'
                             : 'bg-[var(--container-color)] text-[var(--sub-text-color)] border-2 border-[var(--border-color)] cursor-not-allowed opacity-60'
                     }`}
-                    onClick={handleAddTeam}
+                    onClick={handleSubmit}
                     disabled={!newTeam.name.trim() || !newTeam.teamLeader}
                 >
                     <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
                         <Plus size={18} />
-                        {t("departments.newDepartmentForm.buttons.add", "Add Team")}
+                        {submitLabel || (isEditMode ? t("departments.newDepartmentForm.buttons.update", "Update Team") : t("departments.newDepartmentForm.buttons.add", "Add Team"))}
                     </div>
                 </button>
             </div>

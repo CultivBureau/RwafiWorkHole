@@ -6,6 +6,7 @@ import { useGetAllRolesQuery, useGetRoleUsersQuery } from "../../../services/api
 import { useCreateDepartmentMutation, useAssignSupervisorMutation } from "../../../services/apis/DepartmentApi";
 import { useCreateTeamMutation, useAddUsersToTeamMutation } from "../../../services/apis/TeamApi";
 import TeamFormEmbedded from "./team-form-embedded";
+import toast from "react-hot-toast";
 
 export default function NewDepartmentForm() {
     const { t, i18n } = useTranslation();
@@ -778,7 +779,7 @@ function ReviewStep({ onBack, departmentInfo, supervisor, teams }) {
                            e?.data?.message || 
                            e?.message || 
                            'Failed to create department';
-            alert(`Error: ${errorMsg}`);
+            toast.error(`Error: ${errorMsg}`);
             setIsSubmitting(false);
             setCurrentStep('department');
         }
@@ -936,7 +937,7 @@ function ReviewStep({ onBack, departmentInfo, supervisor, teams }) {
                            e?.data?.message || 
                            e?.message || 
                            'Failed to create teams';
-            alert(`Error creating teams: ${errorMsg}`);
+            toast.error(`Error creating teams: ${errorMsg}`);
             setIsSubmitting(false);
         }
     };
