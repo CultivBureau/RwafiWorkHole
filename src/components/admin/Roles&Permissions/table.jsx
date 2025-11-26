@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useMemo, useEffect, useRef } from "react"
-import { ChevronLeft, ChevronRight, Edit, Trash2, UserPlus, RotateCcw } from "lucide-react"
+import { ChevronLeft, ChevronRight, Edit, Trash2, UserPlus, RotateCcw, Shield } from "lucide-react"
 import EditRole from "./edit_role"
+import ViewPermissionsModal from "./view_permissions_modal"
 import { useTranslation } from "react-i18next"
 import { useGetAllRolesQuery, useDeleteRoleMutation, useRestoreRoleMutation } from "../../../services/apis/RoleApi"
 import toast from "react-hot-toast"
@@ -15,6 +16,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
     const canUpdateRole = useHasPermission('Role.Update');
     const canDeleteRole = useHasPermission('Role.Delete');
     const canRestoreRole = useHasPermission('Role.Restore');
+    const canViewPermissions = useHasPermission('Role.ViewPermissions');
 
     // Fetch roles from API
     const queryArgs = useMemo(() => ({
@@ -35,6 +37,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
     const [selectedRole, setSelectedRole] = useState(null)
     const [selectedRoleId, setSelectedRoleId] = useState(null)
     const [pendingAction, setPendingAction] = useState(null) // { type: 'delete' | 'restore', role }
+    const [permissionsModal, setPermissionsModal] = useState({ isOpen: false, roleId: null, roleName: null })
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(7)
 
@@ -124,6 +127,14 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
         onRoleSelect?.(role.id);
     };
 
+    const handleViewPermissions = (role) => {
+        setPermissionsModal({
+            isOpen: true,
+            roleId: role.id,
+            roleName: role.role || role.name
+        });
+    };
+
     const handleSaveRole = async () => {
         // Refetch roles after update
         await refetch();
@@ -205,16 +216,29 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                 <td className={`py-4 px-6 text-[var(--text-color)] text-sm font-medium ${isArabic ? 'text-right' : 'text-left'}`}>{role.users}</td>
                 <td className={`py-4 px-6 ${isArabic ? 'text-right' : 'text-left'}`}>{getStatusBadge(role.status)}</td>
                 {/* Actions cell - Only show if user has any action permissions */}
-                {(canUpdateRole || canDeleteRole || canRestoreRole) && (
+                {(canUpdateRole || canDeleteRole || canRestoreRole || canViewPermissions) && (
                     <td className="py-4 px-6" onClick={(e) => e.stopPropagation()}>
                         <div className={`flex items-center gap-2 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            {canViewPermissions && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleViewPermissions(role);
+                                    }}
+                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors cursor-pointer"
+                                    aria-label={t('roles.viewPermissions') || 'View Permissions'}
+                                    title={t('roles.viewPermissions') || 'View Permissions'}
+                                >
+                                    <Shield className="w-4 h-4" />
+                                </button>
+                            )}
                             {canUpdateRole && (
                                 <button
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleEditRole(role);
                                     }}
-                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors cursor-pointer"
                                     aria-label={t('employees.actions.edit')}
                                     title={t('employees.actions.edit')}
                                 >
@@ -227,7 +251,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                         e.stopPropagation();
                                         openActionModal("delete", role);
                                     }}
-                                    className="p-2 text-[var(--error-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                                    className="p-2 text-[var(--error-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors cursor-pointer"
                                     aria-label={t('employees.actions.delete')}
                                     title={t('employees.actions.delete')}
                                 >
@@ -240,7 +264,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                         e.stopPropagation();
                                         openActionModal("restore", role);
                                     }}
-                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors"
+                                    className="p-2 text-[var(--accent-color)] hover:bg-[var(--hover-color)] rounded-lg transition-colors cursor-pointer"
                                     aria-label={t('roles.actions.restore') || 'Restore'}
                                     title={t('roles.actions.restore') || 'Restore'}
                                 >
@@ -294,7 +318,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                             {t('roles.table.status')}
                                         </th>
                                         {/* Actions column - Only show if user has any action permissions */}
-                {(canUpdateRole || canDeleteRole || canRestoreRole) && (
+                {(canUpdateRole || canDeleteRole || canRestoreRole || canViewPermissions) && (
                                             <th className={`py-3 px-4 text-sm font-medium text-[var(--text-color)] ${isArabic ? 'text-right' : 'text-left'}`}>
                                                 {t('roles.table.actions')}
                                             </th>
@@ -304,7 +328,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                 <tbody>
                                     {currentPageData.length === 0 ? (
                                         <tr>
-                                            <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="py-8 text-center">
+                                            <td colSpan={(canUpdateRole || canDeleteRole || canViewPermissions) ? 4 : 3} className="py-8 text-center">
                                                 <span className="text-[var(--sub-text-color)] text-sm" dir={isArabic ? 'rtl' : 'ltr'}>
                                                     {t('roles.table.noRoles') || 'No roles found'}
                                                 </span>
@@ -316,7 +340,7 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                                             {/* Empty rows */}
                                             {emptyRows.map((_, index) => (
                                                 <tr key={`empty-${index}`} className="border-b border-[var(--border-color)] last:border-b-0">
-                                                    <td colSpan={(canUpdateRole || canDeleteRole) ? 4 : 3} className="h-[68px]"></td>
+                                                    <td colSpan={(canUpdateRole || canDeleteRole || canViewPermissions) ? 4 : 3} className="h-[68px]"></td>
                                                 </tr>
                                             ))}
                                         </>
@@ -428,8 +452,16 @@ const RolesTable = ({ onRoleSelect, searchValue = "", statusFilter = "0" }) => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
+                    </div>
+                )}
+
+            {/* View Permissions Modal */}
+            <ViewPermissionsModal
+                isOpen={permissionsModal.isOpen}
+                onClose={() => setPermissionsModal({ isOpen: false, roleId: null, roleName: null })}
+                roleId={permissionsModal.roleId}
+                roleName={permissionsModal.roleName}
+            />
         </div>
     );
 };

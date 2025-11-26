@@ -1164,7 +1164,9 @@
       "restoreFailed": "فشل استعادة الدور"
     },
     "noPermissionToViewPermissions": "لا يوجد صلاحية لعرض الصلاحيات",
-    "noPermissionToViewPermissionsDesc": "ليس لديك صلاحية لعرض الصلاحيات. لا يزال بإمكانك إنشاء دور، لكن لن تتمكن من تعيين الصلاحيات له."
+    "noPermissionToViewPermissionsDesc": "ليس لديك صلاحية لعرض الصلاحيات. لا يزال بإمكانك إنشاء دور، لكن لن تتمكن من تعيين الصلاحيات له.",
+    "viewPermissions": "عرض الصلاحيات",
+    "noPermissions": "لا توجد صلاحيات مخصصة لهذا الدور"
   },
   "adminDashboard": {
     "cards": {
