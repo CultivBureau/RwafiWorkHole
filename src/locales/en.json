@@ -798,6 +798,8 @@
     },
     "table": {
       "employee": "Employee",
+      "employeeId": "Employee ID",
+      "email": "Email",
       "role": "Role",
       "jobTitle": "Job Title",
       "team": "Team",
@@ -805,6 +807,12 @@
       "department": "Department",
       "status": "Status",
       "action": "Action"
+    },
+    "export": {
+      "button": "Export to Excel",
+      "noData": "No data to export",
+      "success": "Employees data exported successfully",
+      "sheetName": "Employees"
     },
     "pagination": {
       "page": "Page",
@@ -1586,15 +1594,26 @@
       "pageOf": "{{page}} of {{total}} page",
       "columns": {
         "name": "Name",
+        "type": "Leave Type",
         "leaveType": "Leave Type",
-        "from": "From",
-        "to": "To",
+        "from": "From Date",
+        "to": "To Date",
         "days": "Days",
         "status": "Status",
         "reason": "Reason",
         "approver": "Approver",
+        "teamLead": "Team Lead Approver",
+        "teamLeadActionDate": "Team Lead Action Date",
+        "hrApprover": "HR Approver",
+        "hrActionDate": "HR Action Date",
         "action": "Action"
       }
+    },
+    "export": {
+      "button": "Export to Excel",
+      "noData": "No data to export",
+      "success": "Leave requests exported successfully",
+      "sheetName": "Leave Requests"
     },
     "popup": {
       "leaveType": "Leave Type",
