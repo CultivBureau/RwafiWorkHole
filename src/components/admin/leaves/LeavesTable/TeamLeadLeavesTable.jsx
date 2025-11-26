@@ -13,6 +13,7 @@ function normalizeDecision(status) {
 	if (lower.includes("reject")) return "Rejected"
 	if (lower.includes("approve") || lower.includes("confirm")) return "Approved"
 	if (lower.includes("pending")) return "Pending"
+	if (lower.includes("cancel")) return "Cancelled"
 	return status
 }
 
@@ -44,6 +45,14 @@ const getStatusBadge = (status, t) => {
 					className={`${baseClasses} bg-[var(--approved-leave-box-bg)] text-[var(--success-color)] border-[var(--success-color)]`}
 				>
 					{t("adminLeaves.status.approved", "Approved")}
+				</span>
+			)
+		case "cancelled":
+			return (
+				<span
+					className={`${baseClasses} bg-gray-100 text-gray-600 border-gray-200`}
+				>
+					{t("adminLeaves.status.cancelled", "Cancelled")}
 				</span>
 			)
 		default:
@@ -440,6 +449,9 @@ const TeamLeadLeavesTable = () => {
 									<option value="pending">
 										{t("adminLeaves.table.status.pending", "Pending")}
 									</option>
+									<option value="cancelled">
+										{t("adminLeaves.table.status.cancelled", "Cancelled")}
+									</option>
 								</select>
 							</div>
 
@@ -698,30 +710,35 @@ const TeamLeadLeavesTable = () => {
 											</div>
 										</td>
 										<td className="py-4 px-6">
-											<button
-												className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--container-color)] border border-[var(--border-color)] hover:bg-[var(--hover-color)] transition-colors"
-												onClick={() => setSelectedLeave(leave)}
-											>
-												<svg
-													className="h-5 w-5 text-[var(--accent-color)]"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
+											{normalizeDecision(leave.status)?.toLowerCase() === "pending" &&
+											normalizeDecision(leave.finalDecision)?.toLowerCase() !== "cancelled" ? (
+												<button
+													className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--container-color)] border border-[var(--border-color)] hover:bg-[var(--hover-color)] transition-colors"
+													onClick={() => setSelectedLeave(leave)}
 												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-													/>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={2}
-														d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-													/>
-												</svg>
-											</button>
+													<svg
+														className="h-5 w-5 text-[var(--accent-color)]"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth={2}
+															d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+														/>
+														<path
+															strokeLinecap="round"
+															strokeLinejoin="round"
+															strokeWidth={2}
+															d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+														/>
+													</svg>
+												</button>
+											) : (
+												<span className="text-xs text-[var(--sub-text-color)]">—</span>
+											)}
 										</td>
 									</tr>
 								))}

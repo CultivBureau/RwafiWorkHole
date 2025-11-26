@@ -1,8 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronLeft, ChevronRight, Eye, Edit, RefreshCw, FileX, Calendar } from "lucide-react";
-import { useGetMyLeaveRequestsQuery } from "../../services/apis/LeaveApi";
+import { ChevronDown, ChevronLeft, ChevronRight, RefreshCw, FileX, Calendar, Loader2 } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useGetMyLeaveRequestsQuery, useCancelLeaveRequestMutation } from "../../services/apis/LeaveApi";
 import { useGetAllLeaveTypesQuery } from "../../services/apis/LeaveTypeApi";
+import CancelLeaveModal from "./CancelLeaveModal";
 
 const LeaveTable = () => {
   const { t, i18n } = useTranslation();
@@ -15,10 +17,14 @@ const LeaveTable = () => {
   const [dateTo, setDateTo] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cancelingId, setCancelingId] = useState(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedLeaveToCancel, setSelectedLeaveToCancel] = useState(null);
   const itemsPerPage = 6;
 
   // Fetch user's leave requests from API
-  const { data: leaveRequestsData, isLoading, isError: error, refetch, isFetching } = useGetMyLeaveRequestsQuery();
+  const { data: leaveRequestsData, isLoading, isError: error, refetch } = useGetMyLeaveRequestsQuery();
+  const [cancelLeaveRequest] = useCancelLeaveRequestMutation();
 
   // Fetch leave types to map IDs to names
   const { data: leaveTypesData } = useGetAllLeaveTypesQuery({ 
@@ -35,6 +41,7 @@ const LeaveTable = () => {
     if (statusLower.includes("reject")) return "rejected";
     if (statusLower.includes("approve") || statusLower.includes("confirm")) return "approved";
     if (statusLower.includes("pending")) return "pending";
+    if (statusLower.includes("cancel")) return "cancelled";
     return statusLower;
   };
 
@@ -159,6 +166,49 @@ const LeaveTable = () => {
     return filtered;
   }, [leaves, sortBy, leaveType, status, dateFrom, dateTo]);
 
+  // Handle cancel leave request - opens modal
+  const handleCancelRequest = (record) => {
+    if (!record?.id) return;
+    setSelectedLeaveToCancel(record);
+    setShowCancelModal(true);
+  };
+
+  // Handle confirm cancel from modal
+  const handleConfirmCancel = async (cancelReason) => {
+    if (!selectedLeaveToCancel || !cancelReason) {
+      return;
+    }
+
+    setCancelingId(selectedLeaveToCancel.id);
+    try {
+      await cancelLeaveRequest({
+        requestId: selectedLeaveToCancel.id,
+        cancelReason: cancelReason,
+      }).unwrap();
+
+      toast.success(t("leaves.table.cancelSuccess", "Leave request cancelled successfully."));
+      await refetch();
+      localStorage.setItem("leaveDataUpdated", Date.now().toString());
+      window.dispatchEvent(new Event("leaveDataChanged"));
+    } catch (err) {
+      const message =
+        err?.data?.message ||
+        err?.data?.errorMessage ||
+        err?.message ||
+        t("leaves.table.cancelError", "Failed to cancel leave request. Please try again.");
+      toast.error(message);
+    } finally {
+      setCancelingId(null);
+      setSelectedLeaveToCancel(null);
+    }
+  };
+
+  // Handle close modal
+  const handleCloseCancelModal = () => {
+    setShowCancelModal(false);
+    setSelectedLeaveToCancel(null);
+  };
+
   // Pagination (API already paginates, but filters are client-side)
   const totalPages = pagination.totalPages;
   const totalEntries = pagination.total;
@@ -167,10 +217,11 @@ const LeaveTable = () => {
   const getStatusBadge = (status) => {
     const normalized = normalizeStatus(status);
     const statusConfig = {
-      pending: { bg: "bg-yellow-100", text: "text-yellow-700", label: t("leaves.table.status.pending") },
-      approved: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved") },
-      rejected: { bg: "bg-red-100", text: "text-red-700", label: t("leaves.table.status.rejected") },
-      confirmed: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved") }
+      pending: { bg: "bg-yellow-100", text: "text-yellow-700", label: t("leaves.table.status.pending", "Pending") },
+      approved: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved", "Approved") },
+      rejected: { bg: "bg-red-100", text: "text-red-700", label: t("leaves.table.status.rejected", "Rejected") },
+      confirmed: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved", "Approved") },
+      cancelled: { bg: "bg-gray-200", text: "text-gray-700", label: t("leaves.table.status.cancelled", "Cancelled") }
     };
 
     const config = statusConfig[normalized] || statusConfig.pending;
@@ -376,10 +427,11 @@ const LeaveTable = () => {
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               options={[
-                { value: "all", label: t("leaves.table.status.all") },
-                { value: "pending", label: t("leaves.table.status.pending") },
-                { value: "approved", label: t("leaves.table.status.approved") },
-                { value: "rejected", label: t("leaves.table.status.rejected") }
+                { value: "all", label: t("leaves.table.status.all", "All Status") },
+                { value: "pending", label: t("leaves.table.status.pending", "Pending") },
+                { value: "approved", label: t("leaves.table.status.approved", "Approved") },
+                { value: "rejected", label: t("leaves.table.status.rejected", "Rejected") },
+                { value: "cancelled", label: t("leaves.table.status.cancelled", "Cancelled") }
               ]}
               label={t("leaves.table.status.label")}
             />
@@ -460,6 +512,10 @@ const LeaveTable = () => {
                   style={{ color: 'var(--table-header-text)' }}>
                   {t("leaves.table.columns.approver")}
                 </th>
+                <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isArabic ? 'text-right' : 'text-left'}`}
+                  style={{ color: 'var(--table-header-text)' }}>
+                  {t("leaves.table.columns.action", "Action")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -525,6 +581,26 @@ const LeaveTable = () => {
                     style={{ color: 'var(--table-text)' }}>
                     {record.reviewerName || "-"}
                   </td>
+                  <td className={`px-6 py-4 text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
+                    {normalizeStatus(record.status) === "pending" ? (
+                      <button
+                        onClick={() => handleCancelRequest(record)}
+                        disabled={cancelingId === record.id}
+                        className="px-3 py-1.5 text-xs rounded-full border font-medium flex items-center gap-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        style={{
+                          borderColor: 'var(--error-color)',
+                          color: cancelingId === record.id ? 'var(--sub-text-color)' : 'var(--error-color)',
+                        }}
+                      >
+                        {cancelingId === record.id && <Loader2 className="w-3 h-3 animate-spin" />}
+                        {cancelingId === record.id
+                          ? t("leaves.table.cancelling", "Cancelling...")
+                          : t("leaves.table.cancel", "Cancel")}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-[var(--sub-text-color)]">—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -570,6 +646,14 @@ const LeaveTable = () => {
           </div>
         </div>
       )}
+
+      {/* Cancel Leave Modal */}
+      <CancelLeaveModal
+        isOpen={showCancelModal}
+        onClose={handleCloseCancelModal}
+        onConfirm={handleConfirmCancel}
+        isArabic={isArabic}
+      />
     </div>
   );
 };

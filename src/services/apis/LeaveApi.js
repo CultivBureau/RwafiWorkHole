@@ -117,6 +117,22 @@ export const leaveApi = createApi({
       ],
     }),
 
+    // Cancel existing leave request
+    cancelLeaveRequest: builder.mutation({
+      query: ({ requestId, cancelReason }) => ({
+        url: `/api/v1/LeaveRequest/Cancel/${requestId}/cancel`,
+        method: "PUT",
+        body: {
+          cancelReason,
+        },
+      }),
+      invalidatesTags: [
+        { type: "LeaveRequests", id: "MY_LIST" },
+        { type: "LeaveRequests", id: "TEAM_LEAD_LIST" },
+        { type: "Dashboard", id: "EMPLOYEE_LEAVE_SUMMARY" },
+      ],
+    }),
+
     // Get leave request statistics
     getLeaveStatistics: builder.query({
       query: () => ({
@@ -152,6 +168,7 @@ export const {
   useHrOverrideMutation,
   useGetMyLeaveRequestsQuery,
   useSubmitLeaveRequestMutation,
+  useCancelLeaveRequestMutation,
   useGetLeaveStatisticsQuery,
   useGetUserLeaveLogsQuery,
 } = leaveApi;
