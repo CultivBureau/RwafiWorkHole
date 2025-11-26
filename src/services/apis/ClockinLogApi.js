@@ -7,12 +7,17 @@ export const clockinLogApi = createApi({
   tagTypes: ["ClockinLogs"],
   endpoints: (builder) => ({
     getCompanyClockinLogs: builder.query({
-      query: ({ pageNumber = 1, pageSize = 20, isAbsent } = {}) => {
-        const params = { pageNumber, pageSize };
-        // Only add isAbsent to params if it's explicitly provided (not undefined)
-        if (isAbsent !== undefined) {
-          params.isAbsent = isAbsent;
+      query: ({ pageNumber = 1, pageSize = 20, day, toDay, status = "All" } = {}) => {
+        const params = { pageNumber, pageSize, status };
+        
+        // Add optional date filters if provided
+        if (day) {
+          params.day = day;
         }
+        if (toDay) {
+          params.toDay = toDay;
+        }
+        
         return {
           url: "/api/v1/ClockinLogs/GetAllByCompanyId/company",
           method: "GET",
