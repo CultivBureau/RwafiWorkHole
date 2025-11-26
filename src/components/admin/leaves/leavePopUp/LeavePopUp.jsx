@@ -170,19 +170,25 @@ const LeavePopUp = ({
   const canApprove = userRole === "teamLead" && (isPendingStatus || !isFinalStatus)
   const canReject = userRole === "teamLead" && (isPendingStatus || !isFinalStatus)
   
-  // HR can confirm if status is approved by team lead (not rejected, not already confirmed)
+  // HR can confirm/reject ONLY if status is "TeamLeadApproved"
+  // HR can view all requests but can only take action on TeamLeadApproved requests
+  // For any other status, HR has NO actions - view only
+  // Check both the normalized status and the original status to handle case variations
+  const originalStatus = (displayStatus || "").trim()
+  const isTeamLeadApproved = normalizedStatus === "teamleadapproved" || 
+                             normalizedStatus.includes("teamleadapproved") ||
+                             originalStatus === "TeamLeadApproved"
+  
+  // HR can only confirm/reject if status is exactly "TeamLeadApproved" and not already processed
   const canConfirm = userRole === "hr" && 
-                     (normalizedStatus === "approved" || 
-                      normalizedStatus.includes("approved") || 
-                      normalizedStatus === "teamleadapproved") &&
+                     isTeamLeadApproved &&
                      !normalizedStatus.includes("rejected") &&
                      !normalizedStatus.includes("hrconfirmed") &&
-                     !normalizedStatus.includes("confirmed")
+                     !normalizedStatus.includes("confirmed") &&
+                     !normalizedStatus.includes("cancelled")
   
-  // HR can override any status (pending, approved, or rejected) - allows overriding team lead rejections
-  const canOverride = userRole === "hr" && 
-                      !normalizedStatus.includes("hrconfirmed") &&
-                      !normalizedStatus.includes("confirmed")
+  // HR has NO override option - can only act on TeamLeadApproved status
+  const canOverride = false
 
   // Format avatar display
   const getAvatarDisplay = () => {
@@ -348,14 +354,6 @@ const LeavePopUp = ({
                   className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? t("adminLeaves.popup.processing", "Processing...") : t("adminLeaves.popup.reject", "Reject")}
-                </button>
-                <button
-                  onClick={() => setShowOverrideModal(true)}
-                  disabled={isSubmitting}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  {t("adminLeaves.popup.override", "Override")}
                 </button>
               </div>
             </>

@@ -61,7 +61,7 @@ const HrLeavesTable = () => {
 
 	// Pagination states
 	const [currentPage, setCurrentPage] = useState(1)
-	const [pageSize] = useState(10)
+	const [pageSize] = useState(100) // Increased to show more items per page
 
 	// Filter states
 	const [sortBy, setSortBy] = useState("newest")
@@ -87,62 +87,60 @@ const HrLeavesTable = () => {
 	const leaveRequests = useMemo(() => {
 		if (!data) return []
 		const items = data?.value || data?.data || data?.items || data || []
-		return Array.isArray(items) ? items : []
+		const parsed = Array.isArray(items) ? items : []
+		// Debug: Log to verify data is being received
+		if (process.env.NODE_ENV === 'development') {
+			console.log('HrLeavesTable - API Response:', { 
+				data, 
+				itemsCount: parsed.length,
+				sampleItem: parsed[0] 
+			})
+		}
+		return parsed
 	}, [data])
 
 	// Format leave request for display
-	// HR should only see requests that have been APPROVED by the team lead
-	// This includes: approved requests (team lead approved), confirmed requests (both team lead and HR confirmed),
-	// and cancelled/rejected requests that were previously approved by team lead
-	// Filter out: pending requests (not yet reviewed by team lead)
+	// HR can see ALL leave requests in the company (no filtering)
+	// HR can only take action (confirm/reject) on requests with status "TeamLeadApproved"
+	// For all other statuses, HR can only view the request details
 	const formattedLeaves = useMemo(() => {
-		// Filter to show requests approved by team lead (including confirmed and cancelled ones)
-		const filteredRequests = leaveRequests.filter(request => {
-			const status = (request.requestStatus || "").toLowerCase().trim()
-			
-			// Exclude pending requests (not yet reviewed by team lead)
-			if (status === "pending" || status.includes("pending")) {
-				return false
-			}
-			
-			// Include requests that are approved by team lead OR confirmed by both team lead and HR
-			// Check if status indicates approval or confirmation
-			const isApproved = status === "approved" || 
-			                   status.includes("approved") || 
-			                   status === "teamleadapproved" ||
-			                   status.includes("teamleadapproved")
-			
-			const isConfirmed = status === "confirmed" || 
-			                    status.includes("confirmed") ||
-			                    status === "hrconfirmed" ||
-			                    status.includes("hrconfirmed")
-			
-			// Include rejected requests that have team lead approval (HR rejected after team lead approved)
-			const isRejected = status.includes("rejected") || 
-			                   status === "rejected"
-			
-			// Also check if team lead has taken action (indicates review has happened)
-			// For confirmed/rejected requests, team lead action is required (must be approved first)
-			const hasTeamLeadAction = request.teamLeadActionDate || 
-			                          request.teamLeadName || 
-			                          request.teamLeadApprover
-			
-			// Show if (approved by team lead) OR (confirmed by both) OR (rejected but had team lead approval)
-			// All require team lead action
-			if (isRejected) {
-				// For rejected, only show if it had team lead approval first
-				return hasTeamLeadAction
-			}
-			
-			// For approved/confirmed, require team lead action
-			return (isApproved || isConfirmed) && hasTeamLeadAction
-		})
-		
-		return filteredRequests.map(request => {
+		// Show ALL requests from the API - no filtering
+		const formatted = leaveRequests.map(request => {
 			const startDate = request.startDate ? new Date(request.startDate) : null
 			const endDate = request.endDate ? new Date(request.endDate) : null
-			const teamLeadActionDate = request.teamLeadActionDate ? new Date(request.teamLeadActionDate) : null
-			const hrActionDate = request.hrActionDate || request.hrConfirmDate ? new Date(request.hrActionDate || request.hrConfirmDate) : null
+			
+			// Get team lead approval information from teamLeadApprovals array
+			const teamLeadApprovals = request.teamLeadApprovals || []
+			const approvedTeamLeads = teamLeadApprovals.filter(
+				approval => approval.status === "TeamLeadApproved" || 
+				           (approval.status || "").toLowerCase().includes("teamleadapproved")
+			)
+			
+			// Get the most recent team lead approval (latest timestamp)
+			const latestTeamLeadApproval = approvedTeamLeads.length > 0
+				? approvedTeamLeads.reduce((latest, current) => {
+						const currentTime = new Date(current.timestamp || 0).getTime()
+						const latestTime = new Date(latest.timestamp || 0).getTime()
+						return currentTime > latestTime ? current : latest
+					}, approvedTeamLeads[0])
+				: null
+			
+			const teamLeadActionDate = latestTeamLeadApproval?.timestamp 
+				? new Date(latestTeamLeadApproval.timestamp) 
+				: (request.teamLeadActionDate ? new Date(request.teamLeadActionDate) : null)
+			
+			const hrActionDate = request.hrActionDate ? new Date(request.hrActionDate) : null
+			
+			// Get team lead name from the latest approval or fallback to old fields
+			const teamLeadName = latestTeamLeadApproval?.teamLeadName || 
+			                    request.teamLeadName || 
+			                    request.teamLeadApprover || 
+			                    ""
+			
+			// Get team lead comment from the latest approval or fallback
+			const teamLeadComment = latestTeamLeadApproval?.comment || 
+			                       request.teamLeadComment || 
+			                       ""
 			
 			return {
 				id: request.id,
@@ -156,14 +154,14 @@ const HrLeavesTable = () => {
 				days: request.totalDays || 0,
 				status: request.requestStatus || "Approved",
 				reason: request.reason || "",
-				attachmentUrl: request.attachmentUrl,
+				attachmentUrl: request.attachmentUrl || (request.attachments && request.attachments.length > 0 ? request.attachments[0] : null),
 				// Team Lead Approver fields
-				teamLeadName: request.teamLeadName || request.teamLeadApprover || "",
-				teamLeadComment: request.teamLeadComment || "",
+				teamLeadName: teamLeadName,
+				teamLeadComment: teamLeadComment,
 				teamLeadActionDate: teamLeadActionDate ? teamLeadActionDate.toLocaleDateString() : "",
 				teamLeadActionDateSort: teamLeadActionDate,
 				// HR Approver fields
-				hrApproverName: request.hrApproverName || request.hrApprover || "",
+				hrApproverName: request.hrName || request.hrApproverName || request.hrApprover || "",
 				hrActionDate: hrActionDate ? hrActionDate.toLocaleDateString() : "",
 				hrActionDateSort: hrActionDate,
 				hrComment: request.hrComment || "",
@@ -174,8 +172,21 @@ const HrLeavesTable = () => {
 				endDate: request.endDate,
 				totalDays: request.totalDays,
 				requestStatus: request.requestStatus,
+				// Store full teamLeadApprovals array for reference
+				teamLeadApprovals: teamLeadApprovals,
 			}
 		})
+		
+		// Debug: Log formatted leaves to verify data
+		if (process.env.NODE_ENV === 'development') {
+			console.log('HrLeavesTable - Formatted Leaves:', { 
+				count: formatted.length,
+				statuses: formatted.map(l => ({ id: l.id, name: l.name, status: l.status })),
+				teamLeadApproved: formatted.filter(l => l.status === "TeamLeadApproved" || l.status?.toLowerCase().includes("teamleadapproved"))
+			})
+		}
+		
+		return formatted
 	}, [leaveRequests])
 
 	// Handle table column sorting
