@@ -1270,15 +1270,26 @@
       "pageOf": " {{page}} من {{total}} صفحة",
       "columns": {
         "name": "الاسم",
+        "type": "نوع الإجازة",
         "leaveType": "نوع الإجازة",
-        "from": "من",
-        "to": "إلى",
+        "from": "من تاريخ",
+        "to": "إلى تاريخ",
         "days": "الأيام",
         "status": "الحالة",
         "reason": "السبب",
         "approver": "المعتمد",
+        "teamLead": "معتمد قائد الفريق",
+        "teamLeadActionDate": "تاريخ إجراء قائد الفريق",
+        "hrApprover": "معتمد الموارد البشرية",
+        "hrActionDate": "تاريخ إجراء الموارد البشرية",
         "action": "الإجراء"
       }
+    },
+    "export": {
+      "button": "تصدير إلى Excel",
+      "noData": "لا توجد بيانات للتصدير",
+      "success": "تم تصدير طلبات الإجازة بنجاح",
+      "sheetName": "طلبات الإجازة"
     },
     "popup": {
       "leaveType": "نوع الإجازة",
