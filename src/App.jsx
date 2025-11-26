@@ -114,7 +114,7 @@ function App() {
                       element={
                         <ProtectedRoute>
                           <PermissionGuard
-                            backendPermissions={["LeaveRequest.Submit", "LeaveRequest.UserView"]}
+                            backendPermissions={["LeaveRequest.UserView"]}
                           >
                             <Suspense fallback={<Loading />}>
                               <Leaves />
@@ -240,7 +240,7 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <PermissionGuard
-                          backendPermissions={["LeaveRequest.View", "LeaveRequest.ViewTeams", "LeaveRequest.Review", "LeaveRequest.Confirm", "LeaveRequest.Override"]}
+                          backendPermissions={["LeaveRequest.ViewTeams", "LeaveRequest.Review", "LeaveRequest.Confirm", "LeaveRequest.Override"]}
                         >
                           <Suspense fallback={<Loading />}>
                             <LeavesAdmin />
