@@ -220,8 +220,15 @@
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
       "pageOf": " {{page}} من {{total}} صفحة",
+      "export": {
+        "button": "تصدير إلى Excel",
+        "success": "تم تصدير بيانات الحضور بنجاح",
+        "noData": "لا توجد بيانات للتصدير",
+        "sheetName": "الحضور"
+      },
       "columns": {
         "employeeName": "اسم الموظفين",
+        "email": "البريد الإلكتروني",
         "date": "التاريخ",
         "checkIn": "تسجيل الدخول",
         "checkOut": "تسجيل الخروج",

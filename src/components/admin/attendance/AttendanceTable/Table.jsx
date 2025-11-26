@@ -3,7 +3,9 @@
 import { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next";
 import { useLang } from "../../../../contexts/LangContext";
-import { ChevronDown, ChevronUp, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, Users, Download } from "lucide-react";
+import * as XLSX from "xlsx";
+import toast from "react-hot-toast";
 import { useLazyGetCompanyClockinLogsQuery } from "../../../../services/apis/ClockinLogApi";
 import { utcToLocalTime, utcToLocalDate, calculateDurationFromUtc } from '../../../../utils/timeUtils';
 import { isWithinShiftRadius } from '../../../../utils/locationUtils';
@@ -385,6 +387,81 @@ const AttendanceTable = () => {
 
   const handleRefresh = () => setReloadKey((prev) => prev + 1)
 
+  const handleExportToExcel = () => {
+    if (filteredAndSortedData.length === 0) {
+      toast.error(
+        t("adminAttendance.table.export.noData", "No data to export"),
+        {
+          duration: 3000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        }
+      );
+      return;
+    }
+
+    // Prepare data for Excel export
+    const exportData = filteredAndSortedData.map((employee, index) => ({
+      "#": index + 1,
+      [t("adminAttendance.table.columns.employeeName", "Employees Name")]: employee.name,
+      [t("adminAttendance.table.columns.email", "Email")]: employee.email || "—",
+      [t("adminAttendance.table.columns.date", "Date")]: employee.date,
+      [t("adminAttendance.table.columns.checkIn", "Check-in")]: employee.checkIn,
+      [t("adminAttendance.table.columns.checkOut", "Check-out")]: employee.checkOut,
+      [t("adminAttendance.table.columns.workHours", "Work hours")]: employee.workHours,
+      [t("adminAttendance.table.columns.status", "Status")]: employee.status,
+      [t("adminAttendance.table.columns.location", "Location")]: employee.location,
+      [t("adminAttendance.table.columns.shift", "Shift")]: employee.shiftName,
+      [t("adminAttendance.table.columns.reason", "Reason")]: employee.reason || "—",
+      [t("adminAttendance.table.columns.breakDuration", "Break Duration")]: employee.breakDuration || "—",
+    }));
+
+    // Create workbook and worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, t("adminAttendance.table.export.sheetName", "Attendance"));
+
+    // Auto-size columns
+    const maxWidth = 50;
+    const wscols = [
+      { wch: 5 },   // #
+      { wch: 25 },  // Employee Name
+      { wch: 25 },  // Email
+      { wch: 12 },  // Date
+      { wch: 12 },  // Check-in
+      { wch: 12 },  // Check-out
+      { wch: 12 },  // Work Hours
+      { wch: 15 },  // Status
+      { wch: 20 },  // Location
+      { wch: 15 },  // Shift
+      { wch: 30 },  // Reason
+      { wch: 15 },  // Break Duration
+    ];
+    ws['!cols'] = wscols;
+
+    // Generate filename with current date
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const filename = `attendance_${dateStr}.xlsx`;
+
+    // Export file
+    XLSX.writeFile(wb, filename);
+
+    // Show success toast
+    toast.success(
+      t("adminAttendance.table.export.success", "Attendance data exported successfully"),
+      {
+        duration: 3000,
+        style: {
+          background: '#10B981',
+          color: '#fff',
+        },
+      }
+    );
+  }
+
   const getStatusBadge = (status) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium inline-block border";
     switch (status) {
@@ -580,7 +657,7 @@ const AttendanceTable = () => {
               type="button"
               onClick={handleRefresh}
               disabled={isFetchingLogs}
-              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold transition-colors duration-200 disabled:opacity-50"
+              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold transition-colors duration-200 disabled:opacity-50 flex items-center gap-1.5"
               style={{
                 borderColor: 'var(--border-color)',
                 backgroundColor: 'var(--bg-color)',
@@ -588,6 +665,20 @@ const AttendanceTable = () => {
               }}
             >
               {t("attendanceTable.refresh", "Refresh")}
+            </button>
+            <button
+              type="button"
+              onClick={handleExportToExcel}
+              disabled={isFetchingLogs || filteredAndSortedData.length === 0}
+              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold transition-colors duration-200 disabled:opacity-50 flex items-center gap-1.5 hover:bg-[var(--hover-color)]"
+              style={{
+                borderColor: 'var(--accent-color)',
+                backgroundColor: 'var(--bg-color)',
+                color: 'var(--accent-color)',
+              }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              {t("adminAttendance.table.export.button", "Export to Excel")}
             </button>
           </div>
         </div>

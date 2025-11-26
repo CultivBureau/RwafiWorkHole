@@ -268,8 +268,15 @@
       "dateFrom": "Date from",
       "dateTo": "Date To",
       "pageOf": " {{page}} of {{total}} page",
+      "export": {
+        "button": "Export to Excel",
+        "success": "Attendance data exported successfully",
+        "noData": "No data to export",
+        "sheetName": "Attendance"
+      },
       "columns": {
         "employeeName": "Employees Name",
+        "email": "Email",
         "date": "Date",
         "checkIn": "Check-in",
         "checkOut": "Check-out",
