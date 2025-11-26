@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Popup from "../common/Popup";
 import CustomToast from "../common/CustomToast";
 import ClockInPopup from "../Time_Tracking_Components/ClockInPopup/ClockInPopup";
 import LeaveRequest from "../leave-requests/leave-request";
+import { getPermissions } from "../../utils/page";
+import { hasBackendPermission } from "../../utils/permissionMapping";
 
 const QuickActions = () => {
     const { t, i18n } = useTranslation();
@@ -13,6 +15,10 @@ const QuickActions = () => {
     const [activePopup, setActivePopup] = useState(null);
     const [toastVisible, setToastVisible] = useState(false);
     const [toastMessage, setToastMessage] = useState('');
+
+    // Get user permissions
+    const backendPermissions = getPermissions() || [];
+    const hasLeaveViewPermission = hasBackendPermission(backendPermissions, ["LeaveRequest.UserView"]);
 
     // Custom toast function
     const showToast = (message) => {
@@ -28,7 +34,7 @@ const QuickActions = () => {
         setActivePopup(null);
     };
 
-    const actions = [
+    const allActions = [
         {
             id: 'clockIn',
             icon: "/assets/quick_actions/clock_in.svg",
@@ -72,6 +78,17 @@ const QuickActions = () => {
             implemented: false,
         },
     ];
+
+    // Filter actions based on permissions - hide leave request if user doesn't have permission
+    const actions = useMemo(() => {
+        return allActions.filter(action => {
+            // Hide leave request action if user doesn't have LeaveRequest.UserView permission
+            if (action.id === 'requestLeave' && !hasLeaveViewPermission) {
+                return false;
+            }
+            return true;
+        });
+    }, [hasLeaveViewPermission]);
 
     const handleActionClick = (action) => {
         if (!action.implemented) {

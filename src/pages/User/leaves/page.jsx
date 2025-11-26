@@ -6,13 +6,24 @@ import LeaveRequest from "../../../components/leave-requests/leave-request";
 import LeaveSummaryCards from "../../../components/leave-requests/leave-summary-cards";
 import LeaveTable from "../../../components/leave-requests/table";
 import { useLang } from "../../../contexts/LangContext";
+import { PermissionGuard } from "../../../components/common/PermissionGuard";
+import { useTranslation } from "react-i18next";
 
 const Leaves = () => {
   const { isRtl } = useLang();
+  const { t } = useTranslation();
   
   // Static data - components will handle their own static data if needed
 
   return (
+    <PermissionGuard 
+      backendPermissions={["LeaveRequest.UserView"]}
+      loadingFallback={
+        <div className="flex items-center justify-center min-h-screen" style={{ background: "var(--bg-all)" }}>
+          <span className="text-[var(--sub-text-color)]">{t('common.loading') || 'Loading...'}</span>
+        </div>
+      }
+    >
     <div
       className="w-full h-screen flex flex-col"
       style={{ background: "var(--bg-all)" }}
@@ -60,6 +71,7 @@ const Leaves = () => {
         </main>
       </div>
     </div>
+    </PermissionGuard>
   );
 };
 
