@@ -244,12 +244,54 @@ export default function AllDepartments() {
             {filteredDepartments.length > 0 && (
                 <div className={`flex items-center justify-between px-4 py-3 rounded-xl bg-[var(--container-color)]/20 border border-[var(--border-color)] ${isArabic ? 'flex-row-reverse' : ''}`}>
                     <span className="text-sm font-medium text-[var(--text-color)]">
-                        Showing <span className="font-bold text-[var(--accent-color)]">{filteredDepartments.length}</span> {statusFilter === "active" ? "active" : "inactive"} department{filteredDepartments.length !== 1 ? "s" : ""}
-                        {searchTerm && ` matching "${searchTerm}"`}
+                        {(() => {
+                            const statusText = statusFilter === "active" 
+                                ? t("allDepartments.filter.active", "Active") 
+                                : t("allDepartments.filter.inactive", "Inactive");
+                            const plural = filteredDepartments.length !== 1 ? "s" : "";
+                            const count = filteredDepartments.length;
+                            
+                            if (searchTerm) {
+                                const text = t("allDepartments.resultsSummary.showingWithSearch", {
+                                    count,
+                                    status: statusText,
+                                    searchTerm: searchTerm,
+                                    plural
+                                });
+                                const parts = text.split(/(\d+)/);
+                                return parts.map((part, index) => 
+                                    /^\d+$/.test(part) ? (
+                                        <span key={index} className="font-bold" style={{ color: 'var(--accent-color)' }}>
+                                            {part}
+                                        </span>
+                                    ) : (
+                                        <span key={index}>{part}</span>
+                                    )
+                                );
+                            } else {
+                                const text = t("allDepartments.resultsSummary.showing", {
+                                    count,
+                                    status: statusText,
+                                    plural
+                                });
+                                const parts = text.split(/(\d+)/);
+                                return parts.map((part, index) => 
+                                    /^\d+$/.test(part) ? (
+                                        <span key={index} className="font-bold" style={{ color: 'var(--accent-color)' }}>
+                                            {part}
+                                        </span>
+                                    ) : (
+                                        <span key={index}>{part}</span>
+                                    )
+                                );
+                            }
+                        })()}
                     </span>
                     {departmentsFromApi.length > filteredDepartments.length && (
                         <span className="text-xs text-[var(--sub-text-color)]">
-                            {departmentsFromApi.length - filteredDepartments.length} hidden by filters
+                            {t("allDepartments.resultsSummary.hiddenByFilters", {
+                                count: departmentsFromApi.length - filteredDepartments.length
+                            })}
                         </span>
                     )}
                 </div>

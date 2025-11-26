@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { useLang } from "../../../../contexts/LangContext"
-import { ChevronDown, ChevronUp } from "lucide-react"
+import { ChevronDown, ChevronUp, Calendar } from "lucide-react"
 import LeavePopUp from "../leavePopUp/LeavePopUp"
 
 // Sample leave request data with enhanced fields for sorting
@@ -497,6 +497,17 @@ const LeavesTable = () => {
 
 				{/* Table */}
 				<div className="overflow-x-auto">
+					{currentData.length === 0 ? (
+						<div className="py-16 px-6 text-center">
+							<Calendar className="h-16 w-16 text-[var(--sub-text-color)] mx-auto mb-4 opacity-50" />
+							<p className="text-lg font-medium text-[var(--text-color)] mb-2">
+								{t("adminLeaves.empty.general.title", "No Leave Requests")}
+							</p>
+							<p className="text-sm text-[var(--sub-text-color)]">
+								{t("adminLeaves.empty.general.message", "No leave requests found matching your filters.")}
+							</p>
+						</div>
+					) : (
 					<table className="w-full">
 						<thead className="bg-[var(--table-header-bg)]">
 							<tr>
@@ -654,6 +665,7 @@ const LeavesTable = () => {
 							))}
 						</tbody>
 					</table>
+					)}
 				</div>
 			</div>
 		</>

@@ -418,29 +418,6 @@ const AttendanceTable = () => {
 						/>
 					</div>
 
-					<div className={`flex items-center gap-3 ${isArabic ? 'flex-row-reverse' : ''}`}>
-						<div className={`text-sm font-medium ${isArabic ? 'text-right' : 'text-left'}`} style={{ color: 'var(--sub-text-color)' }}>
-							{t("attendanceTable.showing", { count: paginatedRecords.length, total: totalRecords })}
-							{totalRecords > 0 && (
-								<span className="block text-xs mt-0.5" style={{ color: 'var(--sub-text-color)' }}>
-									{`${showingFrom}-${showingTo}`}
-								</span>
-							)}
-						</div>
-						<button
-							type="button"
-							onClick={handleRefresh}
-							className="px-3 py-1.5 rounded-full border text-xs font-medium transition-colors duration-200 disabled:opacity-60"
-							style={{
-								borderColor: 'var(--border-color)',
-								color: 'var(--text-color)',
-								backgroundColor: 'var(--bg-color)'
-							}}
-							disabled={isFetchingLogs}
-						>
-							{t("attendanceTable.refresh", "Refresh")}
-						</button>
-					</div>
 				</div>
 			</div>
 

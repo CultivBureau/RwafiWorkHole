@@ -776,6 +776,18 @@
     "results": "results",
     "addNew": "Add New Employee",
     "add": "Add",
+    "noFiltersActive": "No filters applied",
+    "noResults": "No employees found",
+    "clearFilters": "Clear filters",
+    "loading": "Loading employees...",
+    "error": "Failed to load employees",
+    "retry": "Retry",
+    "viewMode": {
+      "grid": "Grid View",
+      "table": "Table View"
+    },
+    "allDepartments": "All Departments",
+    "allTeams": "All Teams",
     "filters": {
       "status": "Status",
       "role": "Role",
@@ -785,6 +797,8 @@
     "table": {
       "employee": "Employee",
       "role": "Role",
+      "jobTitle": "Job Title",
+      "team": "Team",
       "joinDate": "Join Date",
       "department": "Department",
       "status": "Status",
@@ -1112,6 +1126,15 @@
       "placeholder": "Search departments...",
       "addNewDepartment": "Add New Department",
       "editDepartment": "Edit Department"
+    },
+    "filter": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "resultsSummary": {
+      "showing": "Showing {{count}} {{status}} department{{plural}}",
+      "showingWithSearch": "Showing {{count}} {{status}} department{{plural}} matching \"{{searchTerm}}\"",
+      "hiddenByFilters": "{{count}} hidden by filters"
     },
     "departmentCard": {
       "members": "Members",
@@ -1547,7 +1570,9 @@
         "all": "All Status",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "approvedFromTeamLead": "Approved from Team Lead",
+        "confirmed": "Confirmed"
       },
       "dateFrom": "Date From",
       "dateTo": "Date To",
@@ -1596,7 +1621,24 @@
     "status": {
       "pending": "Pending",
       "approved": "Approved",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "confirmed": "Confirmed"
+    },
+    "loading": "Loading leave requests...",
+    "error": "Failed to load leave requests",
+    "retry": "Retry",
+    "empty": {
+      "title": "No Team Leave Requests",
+      "teamLead": "No leave requests from your team members yet.",
+      "hr": {
+        "title": "No Approved Leave Requests",
+        "message": "No approved leave requests found.",
+        "subtitle": "Waiting for team leader approval."
+      },
+      "general": {
+        "title": "No Leave Requests",
+        "message": "No leave requests found matching your filters."
+      }
     }
   },
   "adminTeamWallet": {

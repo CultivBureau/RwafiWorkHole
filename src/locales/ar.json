@@ -723,6 +723,18 @@
     "results": "نتيجة",
     "addNew": "إضافة موظف جديد",
     "add": "إضافة",
+    "noFiltersActive": "لا توجد مرشحات مطبقة",
+    "noResults": "لم يتم العثور على موظفين",
+    "clearFilters": "مسح المرشحات",
+    "loading": "جاري تحميل الموظفين...",
+    "error": "فشل تحميل الموظفين",
+    "retry": "إعادة المحاولة",
+    "viewMode": {
+      "grid": "عرض الشبكة",
+      "table": "عرض الجدول"
+    },
+    "allDepartments": "جميع الأقسام",
+    "allTeams": "جميع الفرق",
     "filters": {
       "status": "الحالة",
       "role": "الدور",
@@ -732,6 +744,8 @@
     "table": {
       "employee": "الموظف",
       "role": "الدور",
+      "jobTitle": "المسمى الوظيفي",
+      "team": "الفريق",
       "joinDate": "تاريخ الانضمام",
       "department": "القسم",
       "status": "الحالة",
@@ -1235,7 +1249,9 @@
         "all": "جميع الحالات",
         "pending": "معلقة",
         "approved": "مقبولة",
-        "rejected": "مرفوضة"
+        "rejected": "مرفوضة",
+        "approvedFromTeamLead": "معتمدة من قائد الفريق",
+        "confirmed": "مؤكدة"
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",
@@ -1284,7 +1300,24 @@
     "status": {
       "pending": "معلقة",
       "approved": "مقبولة",
-      "rejected": "مرفوضة"
+      "rejected": "مرفوضة",
+      "confirmed": "مؤكدة"
+    },
+    "loading": "جاري تحميل طلبات الإجازة...",
+    "error": "فشل تحميل طلبات الإجازة",
+    "retry": "إعادة المحاولة",
+    "empty": {
+      "title": "لا توجد طلبات إجازة للفريق",
+      "teamLead": "لا توجد طلبات إجازة من أعضاء فريقك بعد.",
+      "hr": {
+        "title": "لا توجد طلبات إجازة معتمدة",
+        "message": "لم يتم العثور على طلبات إجازة معتمدة.",
+        "subtitle": "في انتظار موافقة قائد الفريق."
+      },
+      "general": {
+        "title": "لا توجد طلبات إجازة",
+        "message": "لم يتم العثور على طلبات إجازة تطابق المرشحات الخاصة بك."
+      }
     }
   },
   "adminTeamWallet": {
@@ -1544,6 +1577,15 @@
       "placeholder": "ابحث عن الأقسام...",
       "addNewDepartment": "إضافة قسم جديد",
       "editDepartment": "تعديل القسم"
+    },
+    "filter": {
+      "active": "نشط",
+      "inactive": "غير نشط"
+    },
+    "resultsSummary": {
+      "showing": "عرض {{count}} قسم {{status}}",
+      "showingWithSearch": "عرض {{count}} قسم {{status}} يطابق \"{{searchTerm}}\"",
+      "hiddenByFilters": "{{count}} مخفي بواسطة المرشحات"
     },
     "departmentCard": {
       "members": "الأعضاء",
