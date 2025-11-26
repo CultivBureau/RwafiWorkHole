@@ -605,8 +605,10 @@
         "label": "Status",
         "all": "All Status",
         "pending": "Pending",
+        "teamLeadApproved": "Team Lead Approved",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "cancelled": "Cancelled"
       },
       "dateFrom": "Date From",
       "dateTo": "Date To",

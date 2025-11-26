@@ -552,8 +552,10 @@
         "label": "الحالة",
         "all": "جميع الحالات",
         "pending": "معلقة",
+        "teamLeadApproved": "معتمد من قائد الفريق",
         "approved": "مقبولة",
-        "rejected": "مرفوضة"
+        "rejected": "مرفوضة",
+        "cancelled": "ملغاة"
       },
       "dateFrom": "من تاريخ",
       "dateTo": "إلى تاريخ",

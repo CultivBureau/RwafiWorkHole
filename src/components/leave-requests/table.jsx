@@ -34,14 +34,45 @@ const LeaveTable = () => {
   });
 
   // Normalize status from API to display status
-  const normalizeStatus = (status) => {
+  const normalizeStatus = (status, requestData = null) => {
     if (!status) return "pending";
     const statusLower = status.toLowerCase();
-    if (statusLower === "confirmed" || statusLower === "true") return "approved";
-    if (statusLower.includes("reject")) return "rejected";
-    if (statusLower.includes("approve") || statusLower.includes("confirm")) return "approved";
-    if (statusLower.includes("pending")) return "pending";
+    
+    // Check for cancelled status first
     if (statusLower.includes("cancel")) return "cancelled";
+    
+    // Check for rejected status
+    if (statusLower.includes("reject")) return "rejected";
+    
+    // Check for confirmed/HR confirmed status (both team lead and HR approved)
+    if (statusLower === "confirmed" || 
+        statusLower.includes("hrconfirmed") || 
+        statusLower === "true") {
+      return "confirmed";
+    }
+    
+    // Check for team lead approved status
+    // This includes: "teamleadapproved", "approved" (when team lead approved but not HR confirmed)
+    // We also check if request has teamLeadActionDate but no hrActionDate
+    const hasTeamLeadApproval = requestData?.teamLeadActionDate || 
+                                 requestData?.teamLeadName || 
+                                 requestData?.teamLeadApprover;
+    const hasHrApproval = requestData?.hrActionDate || 
+                          requestData?.hrConfirmDate || 
+                          requestData?.hrApproverName || 
+                          requestData?.hrApprover;
+    
+    if (statusLower.includes("teamleadapproved") || 
+        (statusLower.includes("approve") && hasTeamLeadApproval && !hasHrApproval)) {
+      return "teamLeadApproved";
+    }
+    
+    // Regular approved status (when HR has also confirmed)
+    if (statusLower.includes("approve") || statusLower.includes("confirm")) {
+      return hasHrApproval ? "approved" : "teamLeadApproved";
+    }
+    
+    if (statusLower.includes("pending")) return "pending";
     return statusLower;
   };
 
@@ -60,24 +91,42 @@ const LeaveTable = () => {
   const leaves = useMemo(() => {
     if (!leaveRequestsData?.value) return [];
     const items = Array.isArray(leaveRequestsData.value) ? leaveRequestsData.value : [];
-    return items.map(request => ({
-      id: request.id,
-      leaveType: request.leaveType || "Unknown",
-      startDate: request.startDate,
-      endDate: request.endDate,
-      fromDate: request.startDate ? new Date(request.startDate).toISOString().split("T")[0] : "",
-      toDate: request.endDate ? new Date(request.endDate).toISOString().split("T")[0] : "",
-      days: request.totalDays || 0,
-      numberOfDays: request.totalDays || 0,
-      reason: request.reason || "",
-      status: normalizeStatus(request.requestStatus),
-      requestStatus: request.requestStatus,
-      reviewerName: request.reviewerName || "",
-      reviewerComment: request.reviewerComment || "",
-      reviewedAt: request.reviewedAt,
-      attachmentUrl: request.attachmentUrl,
-      createdAt: request.startDate, // Use startDate as fallback for createdAt
-    }));
+    return items.map(request => {
+      // Prepare request data for status normalization
+      const requestData = {
+        teamLeadActionDate: request.teamLeadActionDate,
+        teamLeadName: request.teamLeadName,
+        teamLeadApprover: request.teamLeadApprover,
+        hrActionDate: request.hrActionDate,
+        hrConfirmDate: request.hrConfirmDate,
+        hrApproverName: request.hrApproverName,
+        hrApprover: request.hrApprover,
+      };
+      
+      return {
+        id: request.id,
+        leaveType: request.leaveType || "Unknown",
+        startDate: request.startDate,
+        endDate: request.endDate,
+        fromDate: request.startDate ? new Date(request.startDate).toISOString().split("T")[0] : "",
+        toDate: request.endDate ? new Date(request.endDate).toISOString().split("T")[0] : "",
+        days: request.totalDays || 0,
+        numberOfDays: request.totalDays || 0,
+        reason: request.reason || "",
+        status: normalizeStatus(request.requestStatus, requestData),
+        requestStatus: request.requestStatus,
+        reviewerName: request.reviewerName || "",
+        reviewerComment: request.reviewerComment || "",
+        reviewedAt: request.reviewedAt,
+        attachmentUrl: request.attachmentUrl,
+        createdAt: request.startDate, // Use startDate as fallback for createdAt
+        // Include approval data for status determination
+        teamLeadActionDate: request.teamLeadActionDate,
+        teamLeadName: request.teamLeadName,
+        hrActionDate: request.hrActionDate,
+        hrApproverName: request.hrApproverName,
+      };
+    });
   }, [leaveRequestsData]);
 
   const pagination = { page: currentPage, limit: itemsPerPage, total: leaves.length, totalPages: Math.ceil(leaves.length / itemsPerPage) };
@@ -214,10 +263,12 @@ const LeaveTable = () => {
   const totalEntries = pagination.total;
   const currentPageData = filteredData;
 
-  const getStatusBadge = (status) => {
-    const normalized = normalizeStatus(status);
+  const getStatusBadge = (status, record = null) => {
+    // Use the record's normalized status if available, otherwise normalize it
+    const normalized = record?.status || normalizeStatus(status, record);
     const statusConfig = {
       pending: { bg: "bg-yellow-100", text: "text-yellow-700", label: t("leaves.table.status.pending", "Pending") },
+      teamLeadApproved: { bg: "bg-blue-100", text: "text-blue-700", label: t("leaves.table.status.teamLeadApproved", "Team Lead Approved") },
       approved: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved", "Approved") },
       rejected: { bg: "bg-red-100", text: "text-red-700", label: t("leaves.table.status.rejected", "Rejected") },
       confirmed: { bg: "bg-green-100", text: "text-green-700", label: t("leaves.table.status.approved", "Approved") },
@@ -429,6 +480,7 @@ const LeaveTable = () => {
               options={[
                 { value: "all", label: t("leaves.table.status.all", "All Status") },
                 { value: "pending", label: t("leaves.table.status.pending", "Pending") },
+                { value: "teamLeadApproved", label: t("leaves.table.status.teamLeadApproved", "Team Lead Approved") },
                 { value: "approved", label: t("leaves.table.status.approved", "Approved") },
                 { value: "rejected", label: t("leaves.table.status.rejected", "Rejected") },
                 { value: "cancelled", label: t("leaves.table.status.cancelled", "Cancelled") }
@@ -554,7 +606,7 @@ const LeaveTable = () => {
                     {record.days}
                   </td>
                   <td className={`px-6 py-4 ${isArabic ? 'text-right' : 'text-left'}`}>
-                    {getStatusBadge(record.status)}
+                    {getStatusBadge(record.status, record)}
                   </td>
                   <td className={`px-6 py-4 text-sm ${isArabic ? 'text-right' : 'text-left'} max-w-xs`}
                     style={{ color: 'var(--table-text)' }}>
