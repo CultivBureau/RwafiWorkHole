@@ -137,9 +137,24 @@ const AttendanceTable = () => {
       let page = 1;
 
       try {
+        // Determine isAbsent parameter based on status filter
+        let isAbsentParam = undefined;
+        if (statusFilter === "absent") {
+          // Only absent records
+          isAbsentParam = true;
+        } else if (statusFilter === "onTime" || statusFilter === "late") {
+          // Exclude absent records for "On Time" and "Late arrival"
+          isAbsentParam = false;
+        }
+        // If "all", isAbsentParam remains undefined (not sent to API)
+
         while (!isCancelled && page <= MAX_PAGES) {
           const response = await fetchLogsTrigger(
-            { pageNumber: page, pageSize: SERVER_PAGE_SIZE },
+            { 
+              pageNumber: page, 
+              pageSize: SERVER_PAGE_SIZE,
+              isAbsent: isAbsentParam
+            },
             true
           ).unwrap();
 
@@ -173,7 +188,7 @@ const AttendanceTable = () => {
     return () => {
       isCancelled = true;
     };
-  }, [fetchLogsTrigger, reloadKey]);
+  }, [fetchLogsTrigger, reloadKey, statusFilter]);
 
   useEffect(() => {
     setCurrentPage(1);

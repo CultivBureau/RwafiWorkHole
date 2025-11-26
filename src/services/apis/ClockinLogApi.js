@@ -7,11 +7,18 @@ export const clockinLogApi = createApi({
   tagTypes: ["ClockinLogs"],
   endpoints: (builder) => ({
     getCompanyClockinLogs: builder.query({
-      query: ({ pageNumber = 1, pageSize = 20 } = {}) => ({
-        url: "/api/v1/ClockinLogs/GetAllByCompanyId/company",
-        method: "GET",
-        params: { pageNumber, pageSize },
-      }),
+      query: ({ pageNumber = 1, pageSize = 20, isAbsent } = {}) => {
+        const params = { pageNumber, pageSize };
+        // Only add isAbsent to params if it's explicitly provided (not undefined)
+        if (isAbsent !== undefined) {
+          params.isAbsent = isAbsent;
+        }
+        return {
+          url: "/api/v1/ClockinLogs/GetAllByCompanyId/company",
+          method: "GET",
+          params,
+        };
+      },
       providesTags: (result) => [{ type: "ClockinLogs", id: "COMPANY_LIST" }],
     }),
 
