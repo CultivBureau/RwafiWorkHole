@@ -139,24 +139,34 @@ const AttendanceTable = () => {
       let page = 1;
 
       try {
-        // Determine isAbsent parameter based on status filter
-        let isAbsentParam = undefined;
-        if (statusFilter === "absent") {
-          // Only absent records
-          isAbsentParam = true;
-        } else if (statusFilter === "onTime" || statusFilter === "late") {
-          // Exclude absent records for "On Time" and "Late arrival"
-          isAbsentParam = false;
+        // Map UI filter values to API status values
+        let apiStatus = "All";
+        if (statusFilter === "onTime") {
+          apiStatus = "OnTime";
+        } else if (statusFilter === "absent") {
+          apiStatus = "Absent";
+        } else if (statusFilter === "late") {
+          apiStatus = "LateArrival";
         }
-        // If "all", isAbsentParam remains undefined (not sent to API)
+
+        // Prepare date parameters
+        const queryParams = {
+          pageNumber: page,
+          pageSize: SERVER_PAGE_SIZE,
+          status: apiStatus,
+        };
+
+        // Add date filters if provided
+        if (dateFromFilter) {
+          queryParams.day = dateFromFilter;
+        }
+        if (dateToFilter) {
+          queryParams.toDay = dateToFilter;
+        }
 
         while (!isCancelled && page <= MAX_PAGES) {
           const response = await fetchLogsTrigger(
-            { 
-              pageNumber: page, 
-              pageSize: SERVER_PAGE_SIZE,
-              isAbsent: isAbsentParam
-            },
+            { ...queryParams, pageNumber: page },
             true
           ).unwrap();
 
@@ -190,7 +200,7 @@ const AttendanceTable = () => {
     return () => {
       isCancelled = true;
     };
-  }, [fetchLogsTrigger, reloadKey, statusFilter]);
+  }, [fetchLogsTrigger, reloadKey, statusFilter, dateFromFilter, dateToFilter]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -258,43 +268,15 @@ const AttendanceTable = () => {
   const filteredAndSortedData = useMemo(() => {
     let filtered = [...companyLogs]
 
-    // Apply filters
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(employee => {
-        if (statusFilter === "onTime") return employee.status === "On Time"
-        if (statusFilter === "absent") return employee.status === "Absent"
-        if (statusFilter === "late") return employee.status === "Late arrival"
-        return true
-      })
-    }
-
+    // Status filter is now handled by API
+    // Date range filter is now handled by API
+    
+    // Apply location filter (client-side only)
     if (locationFilter !== "all") {
       filtered = filtered.filter(employee => {
         if (locationFilter === "office") return employee.location === "Work from office"
         if (locationFilter === "home") return employee.location === "Work from home"
         return true
-      })
-    }
-
-    // Apply date range filter
-    if (dateFromFilter || dateToFilter) {
-      filtered = filtered.filter(employee => {
-        const employeeDate = employee.dateSort
-        let isInRange = true
-
-        if (dateFromFilter) {
-          const fromDate = new Date(dateFromFilter)
-          isInRange = isInRange && employeeDate >= fromDate
-        }
-
-        if (dateToFilter) {
-          const toDate = new Date(dateToFilter)
-          // Set to end of day for inclusive comparison
-          toDate.setHours(23, 59, 59, 999)
-          isInRange = isInRange && employeeDate <= toDate
-        }
-
-        return isInRange
       })
     }
 
@@ -670,7 +652,7 @@ const AttendanceTable = () => {
               type="button"
               onClick={handleExportToExcel}
               disabled={isFetchingLogs || filteredAndSortedData.length === 0}
-              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold transition-colors duration-200 disabled:opacity-50 flex items-center gap-1.5 hover:bg-[var(--hover-color)]"
+              className="px-3 py-1.5 rounded-full border text-[10px] font-semibold cursor-pointer transition-colors duration-200 disabled:opacity-50 flex items-center gap-1.5 hover:bg-[var(--hover-color)]"
               style={{
                 borderColor: 'var(--accent-color)',
                 backgroundColor: 'var(--bg-color)',
