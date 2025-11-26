@@ -562,10 +562,6 @@ const LeaveTable = () => {
                 </th>
                 <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isArabic ? 'text-right' : 'text-left'}`}
                   style={{ color: 'var(--table-header-text)' }}>
-                  {t("leaves.table.columns.approver")}
-                </th>
-                <th className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider ${isArabic ? 'text-right' : 'text-left'}`}
-                  style={{ color: 'var(--table-header-text)' }}>
                   {t("leaves.table.columns.action", "Action")}
                 </th>
               </tr>
@@ -628,10 +624,6 @@ const LeaveTable = () => {
                         </div>
                       )}
                     </div>
-                  </td>
-                  <td className={`px-6 py-4 text-sm ${isArabic ? 'text-right' : 'text-left'}`}
-                    style={{ color: 'var(--table-text)' }}>
-                    {record.reviewerName || "-"}
                   </td>
                   <td className={`px-6 py-4 text-sm ${isArabic ? 'text-right' : 'text-left'}`}>
                     {normalizeStatus(record.status) === "pending" ? (
