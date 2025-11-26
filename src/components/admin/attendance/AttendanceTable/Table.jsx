@@ -653,7 +653,7 @@ const AttendanceTable = () => {
                 </span>
               )}
             </div>
-            <button
+            {/* <button
               type="button"
               onClick={handleRefresh}
               disabled={isFetchingLogs}
@@ -665,7 +665,7 @@ const AttendanceTable = () => {
               }}
             >
               {t("attendanceTable.refresh", "Refresh")}
-            </button>
+            </button> */}
             <button
               type="button"
               onClick={handleExportToExcel}
@@ -815,9 +815,9 @@ const AttendanceTable = () => {
                     <div className="text-sm text-center max-w-md">
                       {t("adminAttendance.table.emptyDescription", "When team members start clocking in, their activity will appear here.")}
                     </div>
-                    <button onClick={handleRefresh} className="btn-secondary">
+                    {/* <button onClick={handleRefresh} className="btn-secondary">
                       {t("adminAttendance.table.refresh", "Refresh")}
-                    </button>
+                    </button> */}
                   </div>
                 </td>
               </tr>

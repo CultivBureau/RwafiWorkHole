@@ -1815,6 +1815,59 @@
       "saveFailed": "Failed to save break"
     }
   },
+  "breakAdmin": {
+    "tabs": {
+      "types": "Break Types",
+      "logs": "Break Logs"
+    }
+  },
+  "breakLogs": {
+    "unknownUser": "Unknown User",
+    "filters": {
+      "user": "User",
+      "allUsers": "All Users",
+      "selectUser": "Select User",
+      "searchUser": "Search user...",
+      "noUsers": "No users found",
+      "status": "Status",
+      "allStatus": "All Status",
+      "sortBy": "Sort By",
+      "newestFirst": "Newest First",
+      "oldestFirst": "Oldest First"
+    },
+    "pageOf": "Page {{page}} of {{total}} page",
+    "showing": "Showing {{count}} of {{total}} records",
+    "refresh": "Refresh",
+    "loading": "Loading break logs...",
+    "errorLoading": "Failed to load break logs",
+    "retry": "Retry",
+    "emptyTitle": "No break logs yet",
+    "emptyDescription": "When employees take breaks, their activity will appear here.",
+    "noEmail": "No email",
+    "status": {
+      "ongoing": "Ongoing",
+      "completed": "Completed",
+      "exceeded": "Exceeded"
+    },
+    "table": {
+      "columns": {
+        "employeeName": "Employee Name",
+        "email": "Email",
+        "date": "Date",
+        "breakType": "Break Type",
+        "startTime": "Start Time",
+        "endTime": "End Time",
+        "duration": "Duration",
+        "status": "Status"
+      }
+    },
+    "export": {
+      "button": "Export to Excel",
+      "noData": "No data to export",
+      "success": "Break logs exported successfully",
+      "sheetName": "Break Logs"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "saving": "Saving...",

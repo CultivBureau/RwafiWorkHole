@@ -1814,6 +1814,59 @@
       "saveFailed": "فشل حفظ الاستراحة"
     }
   },
+  "breakAdmin": {
+    "tabs": {
+      "types": "أنواع الاستراحات",
+      "logs": "سجلات الاستراحات"
+    }
+  },
+  "breakLogs": {
+    "unknownUser": "مستخدم غير معروف",
+    "filters": {
+      "user": "المستخدم",
+      "allUsers": "جميع المستخدمين",
+      "selectUser": "اختر المستخدم",
+      "searchUser": "ابحث عن المستخدم...",
+      "noUsers": "لم يتم العثور على مستخدمين",
+      "status": "الحالة",
+      "allStatus": "جميع الحالات",
+      "sortBy": "ترتيب حسب",
+      "newestFirst": "الأحدث أولاً",
+      "oldestFirst": "الأقدم أولاً"
+    },
+    "pageOf": "الصفحة {{page}} من {{total}}",
+    "showing": "عرض {{count}} من {{total}} سجل",
+    "refresh": "تحديث",
+    "loading": "جاري تحميل سجلات الاستراحات...",
+    "errorLoading": "فشل تحميل سجلات الاستراحات",
+    "retry": "إعادة المحاولة",
+    "emptyTitle": "لا توجد سجلات استراحات بعد",
+    "emptyDescription": "عندما يأخذ الموظفون استراحات، ستظهر أنشطتهم هنا.",
+    "noEmail": "لا يوجد بريد إلكتروني",
+    "status": {
+      "ongoing": "قيد التنفيذ",
+      "completed": "مكتمل",
+      "exceeded": "تجاوز الوقت"
+    },
+    "table": {
+      "columns": {
+        "employeeName": "اسم الموظف",
+        "email": "البريد الإلكتروني",
+        "date": "التاريخ",
+        "breakType": "نوع الاستراحة",
+        "startTime": "وقت البدء",
+        "endTime": "وقت الانتهاء",
+        "duration": "المدة",
+        "status": "الحالة"
+      }
+    },
+    "export": {
+      "button": "تصدير إلى Excel",
+      "noData": "لا توجد بيانات للتصدير",
+      "success": "تم تصدير سجلات الاستراحات بنجاح",
+      "sheetName": "سجلات الاستراحات"
+    }
+  },
   "common": {
     "loading": "جاري التحميل...",
     "saving": "جاري الحفظ...",
