@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2, RotateCcw, Loader2, Calendar } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Search, LayoutGrid, TableIcon, Plus, Eye, Edit, Trash2, RotateCcw, Loader2, Calendar, Download } from "lucide-react";
 import EmployeeCard from "./employee-card";
 import EditEmployeePopup from "./edit-employee";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 import { useGetAllUsersQuery, useDeleteUserMutation, useRestoreUserMutation } from "../../../services/apis/UserApi";
 import { useGetAllDepartmentsQuery } from "../../../services/apis/DepartmentApi";
 import { useGetAllRolesQuery } from "../../../services/apis/RoleApi";
@@ -406,6 +407,76 @@ const EmployeesTable = () => {
         });
     };
 
+    const handleExportToExcel = () => {
+        if (filteredEmployees.length === 0) {
+            toast.error(
+                t("employees.export.noData", "No data to export"),
+                {
+                    duration: 3000,
+                    style: {
+                        background: '#EF4444',
+                        color: '#fff',
+                    },
+                }
+            );
+            return;
+        }
+
+        // Prepare data for Excel export
+        const exportData = filteredEmployees.map((employee, index) => ({
+            "#": index + 1,
+            [t("employees.table.employee", "Employee")]: employee.name,
+            [t("employees.table.employeeId", "Employee ID")]: employee.employeeId || "—",
+            [t("employees.table.email", "Email")]: employee.email || "—",
+            [t("employees.table.role", "Role")]: employee.role || "—",
+            [t("employees.table.jobTitle", "Job Title")]: employee.position || "—",
+            [t("employees.table.department", "Department")]: employee.departments?.join(", ") || employee.department || "—",
+            [t("employees.table.team", "Team")]: employee.teams?.join(", ") || "—",
+            [t("employees.table.joinDate", "Join Date")]: employee.joinDate || "—",
+            [t("employees.table.status", "Status")]: employee.status || "—",
+        }));
+
+        // Create workbook and worksheet
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, t("employees.export.sheetName", "Employees"));
+
+        // Auto-size columns
+        const wscols = [
+            { wch: 5 },   // #
+            { wch: 25 },  // Employee Name
+            { wch: 20 },  // Employee ID
+            { wch: 30 },  // Email
+            { wch: 20 },  // Role
+            { wch: 20 },  // Job Title
+            { wch: 25 },  // Department
+            { wch: 20 },  // Team
+            { wch: 15 },  // Join Date
+            { wch: 12 },  // Status
+        ];
+        ws['!cols'] = wscols;
+
+        // Generate filename with current date
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const filename = `employees_${dateStr}.xlsx`;
+
+        // Export file
+        XLSX.writeFile(wb, filename);
+
+        // Show success toast
+        toast.success(
+            t("employees.export.success", "Employees data exported successfully"),
+            {
+                duration: 3000,
+                style: {
+                    background: '#10B981',
+                    color: '#fff',
+                },
+            }
+        );
+    };
+
     return (
         <>
         <style>{DATE_PICKER_HIDE_ICON_CSS}</style>
@@ -606,8 +677,25 @@ const EmployeesTable = () => {
                             ))}
                         </div>
 
-                        {/* View Toggle and Add Button */}
+                        {/* View Toggle, Export and Add Button */}
                         <div className={`flex items-center gap-3 shrink-0 ${isArabic ? 'flex-row-reverse' : ''}`}>
+                            {/* Export to Excel Button */}
+                            <button
+                                onClick={handleExportToExcel}
+                                disabled={filteredEmployees.length === 0}
+                                className={`flex items-center gap-2 h-[44px] px-4 rounded-xl text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--hover-color)] cursor-pointer ${isArabic ? 'flex-row-reverse' : ''}`}
+                                style={{
+                                    borderColor: 'var(--accent-color)',
+                                    backgroundColor: 'var(--bg-color)',
+                                    color: 'var(--accent-color)',
+                                    border: '1px solid var(--accent-color)'
+                                }}
+                                title={t("employees.export.button", "Export to Excel")}
+                            >
+                                <Download className="w-4 h-4" />
+                                <span className="hidden sm:inline">{t("employees.export.button", "Export to Excel")}</span>
+                            </button>
+
                             {/* View Mode Toggle */}
                             <div
                                 className="flex items-center rounded-xl p-1 shadow-sm"

@@ -798,6 +798,8 @@
     },
     "table": {
       "employee": "Employee",
+      "employeeId": "Employee ID",
+      "email": "Email",
       "role": "Role",
       "jobTitle": "Job Title",
       "team": "Team",
@@ -805,6 +807,12 @@
       "department": "Department",
       "status": "Status",
       "action": "Action"
+    },
+    "export": {
+      "button": "Export to Excel",
+      "noData": "No data to export",
+      "success": "Employees data exported successfully",
+      "sheetName": "Employees"
     },
     "pagination": {
       "page": "Page",
