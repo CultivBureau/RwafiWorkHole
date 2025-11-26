@@ -1537,7 +1537,12 @@
       "restoreFailed": "Failed to restore role"
     },
     "noPermissionToViewPermissions": "No Permission to View Permissions",
-    "noPermissionToViewPermissionsDesc": "You do not have permission to view permissions. You can still create a role, but you will not be able to assign permissions to it."
+    "noPermissionToViewPermissionsDesc": "You do not have permission to view permissions. You can still create a role, but you will not be able to assign permissions to it.",
+    "viewPermissions": "View Permissions",
+    "noPermissions": "No permissions assigned to this role",
+    "errors": {
+      "loadPermissionsFailed": "Failed to load permissions"
+    }
   },
   "adminLeaves": {
     "manageLeaveTypes": "Manage Leave Types",
