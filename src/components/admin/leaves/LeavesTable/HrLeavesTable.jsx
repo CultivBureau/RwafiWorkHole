@@ -9,17 +9,44 @@ import toast from "react-hot-toast"
 import LeavePopUp from "../leavePopUp/LeavePopUp"
 import { useGetAllHrRequestsQuery } from "../../../../services/apis/LeaveApi"
 
+const normalizeStatus = (status) => {
+	if (!status) return "pending"
+	const lower = status.toLowerCase()
+	if (lower.includes("reject")) return "rejected"
+	if (lower.includes("confirm")) return "confirmed"
+	if (lower.includes("approve")) return "approved"
+	if (lower.includes("pending")) return "pending"
+	if (lower.includes("cancel")) return "cancelled"
+	return status
+}
+
+const formatStatusLabel = (status) => {
+	if (!status || typeof status !== "string") return "Unknown"
+	const spaced = status
+		.replace(/_/g, " ")
+		.replace(/([a-z])([A-Z])/g, "$1 $2")
+		.trim()
+	if (!spaced) return "Unknown"
+	return spaced
+		.split(" ")
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+		.join(" ")
+}
+
 const getStatusBadge = (status, t) => {
 	const baseClasses =
 		"px-3 py-1 rounded-full text-xs font-medium inline-block border"
-	const statusLower = status?.toLowerCase() || ""
+	const normalized = normalizeStatus(status)
+	const statusLower = normalized?.toLowerCase() || ""
+	const label = formatStatusLabel(status)
 	switch (statusLower) {
 		case "pending":
 			return (
 				<span
 					className={`${baseClasses} bg-[var(--pending-leave-box-bg)] text-[var(--warning-color)] border-[var(--warning-color)]`}
 				>
-					{t("adminLeaves.status.pending", "Pending")}
+					{label}
 				</span>
 			)
 		case "rejected":
@@ -27,7 +54,7 @@ const getStatusBadge = (status, t) => {
 				<span
 					className={`${baseClasses} bg-[var(--rejected-leave-box-bg)] text-[var(--error-color)] border-[var(--error-color)]`}
 				>
-					{t("adminLeaves.status.rejected", "Rejected")}
+					{label}
 				</span>
 			)
 		case "approved":
@@ -35,7 +62,15 @@ const getStatusBadge = (status, t) => {
 				<span
 					className={`${baseClasses} bg-[var(--approved-leave-box-bg)] text-[var(--success-color)] border-[var(--success-color)]`}
 				>
-					{t("adminLeaves.status.approved", "Approved")}
+					{label}
+				</span>
+			)
+		case "cancelled":
+			return (
+				<span
+					className={`${baseClasses} bg-gray-100 text-gray-600 border-gray-200`}
+				>
+					{label}
 				</span>
 			)
 		case "confirmed":
@@ -43,7 +78,7 @@ const getStatusBadge = (status, t) => {
 				<span
 					className={`${baseClasses} bg-[var(--approved-leave-box-bg)] text-[var(--success-color)] border-[var(--success-color)]`}
 				>
-					{t("adminLeaves.status.confirmed", "Confirmed")}
+					{label}
 				</span>
 			)
 		default:
@@ -51,7 +86,7 @@ const getStatusBadge = (status, t) => {
 				<span
 					className={`${baseClasses} bg-[var(--container-color)] text-[var(--sub-text-color)] border-[var(--border-color)]`}
 				>
-					{status || "Unknown"}
+					{label}
 				</span>
 			)
 	}
