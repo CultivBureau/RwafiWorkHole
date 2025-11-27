@@ -8,6 +8,7 @@ import * as XLSX from "xlsx"
 import toast from "react-hot-toast"
 import LeavePopUp from "../leavePopUp/LeavePopUp"
 import { useGetAllTeamLeadRequestsQuery } from "../../../../services/apis/LeaveApi"
+import { useGetAllLeaveTypesQuery } from "../../../../services/apis/LeaveTypeApi"
 
 function normalizeDecision(status) {
 	if (!status) return "Pending"
@@ -71,6 +72,11 @@ const getStatusBadge = (status, t) => {
 const TeamLeadLeavesTable = () => {
 	const { t } = useTranslation()
 	const { isRtl } = useLang()
+	const { data: leaveTypesData } = useGetAllLeaveTypesQuery({
+		pageNumber: 1,
+		pageSize: 100,
+		status: 0, // Active types only
+	})
 
 	// Pagination states
 	const [currentPage, setCurrentPage] = useState(1)
@@ -90,6 +96,25 @@ const TeamLeadLeavesTable = () => {
 	// Popup / local override states
 	const [selectedLeave, setSelectedLeave] = useState(null)
 	const [manualUpdates, setManualUpdates] = useState({})
+
+	const leaveTypeOptions = useMemo(() => {
+		const raw =
+			leaveTypesData?.value ||
+			leaveTypesData?.data ||
+			leaveTypesData?.items ||
+			leaveTypesData?.results ||
+			(Array.isArray(leaveTypesData) ? leaveTypesData : [])
+		const list = Array.isArray(raw) ? raw : []
+		const uniqueNames = Array.from(
+			new Set(
+				list
+					.map((type) => type?.name)
+					.filter((name) => typeof name === "string" && name.trim().length > 0)
+					.map((name) => name.trim())
+			)
+		)
+		return uniqueNames.sort((a, b) => a.localeCompare(b))
+	}, [leaveTypesData])
 
 	// Fetch leave requests from API
 	const { data, isLoading, isError, error, refetch } = useGetAllTeamLeadRequestsQuery({
@@ -490,18 +515,11 @@ const TeamLeadLeavesTable = () => {
 									<option value="all">
 										{t("adminLeaves.table.leaveType.all", "All Types")}
 									</option>
-									<option value="annual">
-										{t("adminLeaves.table.leaveType.annual", "Annual")}
-									</option>
-									<option value="sick">
-										{t("adminLeaves.table.leaveType.sick", "Sick")}
-									</option>
-									<option value="emergency">
-										{t("adminLeaves.table.leaveType.emergency", "Emergency")}
-									</option>
-									<option value="unpaid">
-										{t("adminLeaves.table.leaveType.unpaid", "Unpaid")}
-									</option>
+									{leaveTypeOptions.map((type) => (
+										<option key={type} value={type}>
+											{type}
+										</option>
+									))}
 								</select>
 							</div>
 

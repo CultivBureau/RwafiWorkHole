@@ -30,7 +30,7 @@ const LeaveTable = () => {
   const { data: leaveTypesData } = useGetAllLeaveTypesQuery({ 
     pageNumber: 1, 
     pageSize: 50,
-    status: 2 // All types
+    status: 0 // Active types only
   });
 
   // Normalize status from API to display status
@@ -77,15 +77,38 @@ const LeaveTable = () => {
   };
 
   // Create a map of leave type names for lookup
+  const leaveTypeNames = useMemo(() => {
+    const raw =
+      leaveTypesData?.value ||
+      leaveTypesData?.data ||
+      leaveTypesData?.items ||
+      leaveTypesData?.results ||
+      (Array.isArray(leaveTypesData) ? leaveTypesData : []);
+    const list = Array.isArray(raw) ? raw : [];
+    return Array.from(
+      new Set(
+        list
+          .map((type) => type?.name)
+          .filter((name) => typeof name === "string" && name.trim().length > 0)
+          .map((name) => name.trim())
+      )
+    ).sort((a, b) => a.localeCompare(b));
+  }, [leaveTypesData]);
+
   const leaveTypeMap = useMemo(() => {
-    if (!leaveTypesData?.value) return {};
-    const items = Array.isArray(leaveTypesData.value) ? leaveTypesData.value : [];
     const map = {};
-    items.forEach(type => {
-      map[type.name] = type.name; // Map name to name (API returns name as string)
+    leaveTypeNames.forEach((name) => {
+      map[name] = name;
     });
     return map;
-  }, [leaveTypesData]);
+  }, [leaveTypeNames]);
+
+  const leaveTypeFilterOptions = useMemo(() => {
+    return [
+      { value: "all", label: t("leaves.table.leaveType.all", "All Types") },
+      ...leaveTypeNames.map((name) => ({ value: name, label: name })),
+    ];
+  }, [leaveTypeNames, t]);
 
   // Parse leave requests from API response
   const leaves = useMemo(() => {
@@ -464,13 +487,7 @@ const LeaveTable = () => {
             <SelectField
               value={leaveType}
               onChange={(e) => setLeaveType(e.target.value)}
-              options={[
-                { value: "all", label: t("leaves.table.leaveType.all") },
-                { value: "annual", label: t("leaves.table.leaveType.annual") },
-                { value: "sick", label: t("leaves.table.leaveType.sick") },
-                { value: "emergency", label: t("leaves.table.leaveType.emergency") },
-                { value: "unpaid", label: t("leaves.table.leaveType.unpaid") }
-              ]}
+              options={leaveTypeFilterOptions}
               label={t("leaves.table.leaveType.label")}
             />
 

@@ -8,6 +8,7 @@ import * as XLSX from "xlsx"
 import toast from "react-hot-toast"
 import LeavePopUp from "../leavePopUp/LeavePopUp"
 import { useGetAllHrRequestsQuery } from "../../../../services/apis/LeaveApi"
+import { useGetAllLeaveTypesQuery } from "../../../../services/apis/LeaveTypeApi"
 
 const normalizeStatus = (status) => {
 	if (!status) return "pending"
@@ -95,6 +96,11 @@ const getStatusBadge = (status, t) => {
 const HrLeavesTable = () => {
 	const { t } = useTranslation()
 	const { isRtl } = useLang()
+	const { data: leaveTypesData } = useGetAllLeaveTypesQuery({
+		pageNumber: 1,
+		pageSize: 100,
+		status: 0, // Active types only
+	})
 
 	// Pagination states
 	const [currentPage, setCurrentPage] = useState(1)
@@ -113,6 +119,25 @@ const HrLeavesTable = () => {
 
 	// Popup state
 	const [selectedLeave, setSelectedLeave] = useState(null)
+
+	const leaveTypeOptions = useMemo(() => {
+		const raw =
+			leaveTypesData?.value ||
+			leaveTypesData?.data ||
+			leaveTypesData?.items ||
+			leaveTypesData?.results ||
+			(Array.isArray(leaveTypesData) ? leaveTypesData : [])
+		const list = Array.isArray(raw) ? raw : []
+		const uniqueNames = Array.from(
+			new Set(
+				list
+					.map((type) => type?.name)
+					.filter((name) => typeof name === "string" && name.trim().length > 0)
+					.map((name) => name.trim())
+			)
+		)
+		return uniqueNames.sort((a, b) => a.localeCompare(b))
+	}, [leaveTypesData])
 
 	// Fetch leave requests from API (only approved requests)
 	const { data, isLoading, isError, refetch } = useGetAllHrRequestsQuery({
@@ -226,6 +251,19 @@ const HrLeavesTable = () => {
 		return formatted
 	}, [leaveRequests])
 
+	const statusFilterOptions = useMemo(() => {
+		const unique = new Map()
+		formattedLeaves.forEach((leave) => {
+			const rawStatus = leave.status || "Unknown"
+			if (!unique.has(rawStatus)) {
+				unique.set(rawStatus, formatStatusLabel(rawStatus))
+			}
+		})
+		return Array.from(unique.entries())
+			.sort((a, b) => a[1].localeCompare(b[1]))
+			.map(([value, label]) => ({ value, label }))
+	}, [formattedLeaves])
+
 	// Handle table column sorting
 	const handleTableSort = (column) => {
 		if (tableSortColumn === column) {
@@ -242,29 +280,7 @@ const HrLeavesTable = () => {
 
 		// Apply filters
 		if (statusFilter !== "all") {
-			filtered = filtered.filter(leave => {
-				const status = leave.status?.toLowerCase() || ""
-				const isConfirmed = status.includes("confirmed") || 
-				                   status === "confirmed" ||
-				                   leave.hrActionDate || 
-				                   leave.hrApproverName
-				const isRejected = status.includes("rejected") || 
-				                  status === "rejected"
-				
-				if (statusFilter === "approved") {
-					// Show approved by team lead but NOT yet confirmed by HR
-					return !isConfirmed && !isRejected && (status.includes("approved") || status === "approved")
-				} else if (statusFilter === "confirmed") {
-					// Show confirmed by both team lead and HR
-					return isConfirmed
-				} else if (statusFilter === "rejected") {
-					// Show rejected
-					return isRejected
-				}
-				
-				// Fallback to exact match for other statuses
-				return status === statusFilter.toLowerCase()
-			})
+			filtered = filtered.filter(leave => (leave.status || "Unknown") === statusFilter)
 		}
 
 		if (leaveTypeFilter !== "all") {
@@ -497,18 +513,11 @@ const HrLeavesTable = () => {
 									<option value="all">
 										{t("adminLeaves.table.leaveType.all", "All Types")}
 									</option>
-									<option value="annual">
-										{t("adminLeaves.table.leaveType.annual", "Annual")}
-									</option>
-									<option value="sick">
-										{t("adminLeaves.table.leaveType.sick", "Sick")}
-									</option>
-									<option value="emergency">
-										{t("adminLeaves.table.leaveType.emergency", "Emergency")}
-									</option>
-									<option value="unpaid">
-										{t("adminLeaves.table.leaveType.unpaid", "Unpaid")}
-									</option>
+									{leaveTypeOptions.map((type) => (
+										<option key={type} value={type}>
+											{type}
+										</option>
+									))}
 								</select>
 							</div>
 
@@ -524,15 +533,11 @@ const HrLeavesTable = () => {
 									<option value="all">
 										{t("adminLeaves.table.status.all", "All Status")}
 									</option>
-									<option value="approved">
-										{t("adminLeaves.table.status.approvedFromTeamLead", "Approved from Team Lead")}
-									</option>
-									<option value="confirmed">
-										{t("adminLeaves.table.status.confirmed", "Confirmed")}
-									</option>
-									<option value="rejected">
-										{t("adminLeaves.table.status.rejected", "Rejected")}
-									</option>
+									{statusFilterOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
 								</select>
 							</div>
 
